@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -86,36 +87,45 @@ namespace SIGLENT
             try
             {
                 tempClient = new TcpClient();
+                tempClient.ReceiveTimeout = _readTimeout;
+                tempClient.SendTimeout = _readTimeout;
                 
-                // Set connection timeout using Task.WhenAny with better error handling
-                var connectTask = tempClient.ConnectAsync(_ipAddress, _port);
-                var timeoutTask = Task.Delay(_connectTimeout);
-                
-                var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-                
-                if (completedTask == timeoutTask)
+                // Use Task.Run with CancellationToken for timeout
+                using (var cts = new CancellationTokenSource(_connectTimeout))
                 {
-                    // Connection timed out
-                    tempClient?.Close();
-                    tempClient?.Dispose();
-                    throw new TimeoutException($"Connection to {_ipAddress}:{_port} timed out after {_connectTimeout}ms.");
-                }
-                
-                // Wait for the connection task to complete and check for exceptions
-                try
-                {
-                    await connectTask;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Connection failed: {ex.Message}", ex);
+                    try
+                    {
+                        await Task.Run(async () =>
+                        {
+                            await Task.Factory.FromAsync(
+                                tempClient.BeginConnect,
+                                tempClient.EndConnect,
+                                _ipAddress,
+                                _port,
+                                null
+                            );
+                        }, cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        tempClient?.Close();
+                        tempClient?.Dispose();
+                        throw new TimeoutException($"Connection to {_ipAddress}:{_port} timed out after {_connectTimeout}ms.");
+                    }
+                    catch (Exception ex)
+                    {
+                        tempClient?.Close();
+                        tempClient?.Dispose();
+                        throw new Exception($"Connection failed: {ex.Message}", ex);
+                    }
                 }
 
                 // Check if connection was successful
                 if (!tempClient.Connected)
                 {
                     tempClient?.Close();
-                    throw new Exception("Failed to establish connection to device");
+                    tempClient?.Dispose();
+                    throw new Exception("Connection failed - TcpClient not connected");
                 }
 
                 // Connection successful, assign to class member

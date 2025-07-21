@@ -28,6 +28,14 @@ namespace MultiRecord
         private string _lastReadingUnit;
         private bool _isOverload = false;
 
+        // Tolerance settings
+        private bool _toleranceEnabled = false;
+        private double _toleranceValueDC = 0.5;
+        private double _toleranceValueAC = 1.0;
+        private double _toleranceValue2W = 0.1;
+        private bool _toleranceIsPercent = true;
+        private double _toleranceTargetValue = 5.0;
+
         private readonly string _dataFilePath;
         private readonly string _appDataFolder;
         private readonly string _settingsFilePath;
@@ -43,6 +51,7 @@ namespace MultiRecord
             InitializeForm();
             InitializeDataTableAndLoadData();
             LoadLastSuccessfulConnection();
+            InitializeToleranceControls();
         }
 
         private void InitializeForm()
@@ -53,6 +62,21 @@ namespace MultiRecord
             UpdateConnectionStatus(false);
             panelParameters.Visible = false;
             LogActivity("แอปพลิเคชันเริ่มต้นแล้ว ยินดีต้อนรับ!");
+        }
+
+        private void InitializeToleranceControls()
+        {
+            // Wire up event handlers for Designer-created controls
+            checkBoxEnableTolerance.CheckedChanged += CheckBoxEnableTolerance_CheckedChanged;
+            textBoxTargetValue.TextChanged += TextBoxTargetValue_TextChanged;
+            textBoxDCTolerance.TextChanged += TextBoxDCTolerance_TextChanged;
+            textBoxACTolerance.TextChanged += TextBoxACTolerance_TextChanged;
+            textBox2WTolerance.TextChanged += TextBox2WTolerance_TextChanged;
+            checkBoxIsPercent.CheckedChanged += CheckBoxIsPercent_CheckedChanged;
+
+            // Load tolerance settings
+            LoadToleranceSettings();
+            LogActivity("เชื่อมต่อ Tolerance Controls สำเร็จ");
         }
 
         // *** ปรับปรุง InitializeDataTableAndLoadData() ***
@@ -92,6 +116,20 @@ namespace MultiRecord
             // Validate input first
             if (!ValidateConnectionInput())
                 return;
+
+            // Clean up existing connection first
+            if (_dmm != null)
+            {
+                try
+                {
+                    _dmm.Dispose();
+                }
+                catch { }
+                finally
+                {
+                    _dmm = null;
+                }
+            }
                 
             buttonConnect.Enabled = false;
             buttonConnect.Text = "Connecting...";
@@ -141,8 +179,18 @@ namespace MultiRecord
             }
         }
 
+        private static DateTime lastDisconnectClick = DateTime.MinValue;
+        
         private async void buttonDisconnect_Click(object sender, EventArgs e)
         {
+            // Check for double-click (within 500ms) for force disconnect
+            if ((DateTime.Now - lastDisconnectClick).TotalMilliseconds < 500)
+            {
+                ForceDisconnect();
+                return;
+            }
+            lastDisconnectClick = DateTime.Now;
+            
             // Disable button during disconnection
             buttonDisconnect.Enabled = false;
             buttonDisconnect.Text = "Disconnecting...";
@@ -172,8 +220,15 @@ namespace MultiRecord
             catch (Exception ex)
             {
                 LogActivity($"เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: {ex.Message}", true);
-                MessageBox.Show($"เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ:\n{ex.Message}", 
-                    "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
+                var result = MessageBox.Show($"เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ:\n{ex.Message}\n\nต้องการบังคับตัดการเชื่อมต่อหรือไม่?", 
+                    "ข้อผิดพลาด", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    
+                if (result == DialogResult.Yes)
+                {
+                    ForceDisconnect();
+                    return;
+                }
                 
                 // Force cleanup anyway
                 if (_dmm != null)
@@ -185,7 +240,8 @@ namespace MultiRecord
             }
             finally
             {
-                // Re-enable the button (but it should be disabled by UpdateConnectionStatus)
+                // Force re-enable and reset button state
+                buttonDisconnect.Enabled = (_dmm != null);
                 buttonDisconnect.Text = "Disconnect";
             }
         }
@@ -199,13 +255,8 @@ namespace MultiRecord
             }
             
             LogActivity("การเชื่อมต่อขาดหาย!", true);
-            UpdateConnectionStatus(false);
             
-            // Show connection lost notification
-            MessageBox.Show("การเชื่อมต่อกับเครื่องมือขาดหาย!\nโปรดตรวจสอบการเชื่อมต่อและลองเชื่อมต่อใหม่", 
-                "การเชื่อมต่อขาดหาย", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            
-            // Clean up the connection object
+            // Clean up the connection object first
             if (_dmm != null)
             {
                 try
@@ -221,6 +272,13 @@ namespace MultiRecord
                     _dmm = null;
                 }
             }
+            
+            // Update UI after cleanup
+            UpdateConnectionStatus(false);
+            
+            // Show connection lost notification
+            MessageBox.Show("การเชื่อมต่อกับเครื่องมือขาดหาย!\nโปรดตรวจสอบการเชื่อมต่อและลองเชื่อมต่อใหม่", 
+                "การเชื่อมต่อขาดหาย", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         // ========= Measurement and Parameter Control =========
@@ -544,7 +602,8 @@ namespace MultiRecord
         private void UpdateConnectionStatus(bool isConnected)
         {
             groupBoxConnection.Enabled = !isConnected;
-            buttonDisconnect.Enabled = isConnected;
+            // Always enable disconnect if DMM exists, regardless of connection status
+            buttonDisconnect.Enabled = (_dmm != null);
             groupBoxFunctions.Enabled = isConnected;
             groupBoxSystem.Enabled = isConnected;
             groupBoxRecord.Enabled = isConnected;
@@ -624,6 +683,116 @@ namespace MultiRecord
             richTextBoxLog.ScrollToCaret();
         }
 
+        #region --- Tolerance Control Event Handlers ---
+
+        private void CheckBoxEnableTolerance_CheckedChanged(object sender, EventArgs e)
+        {
+            var checkBox = sender as CheckBox;
+            _toleranceEnabled = checkBox.Checked;
+            LogActivity($"Tolerance Check: {(_toleranceEnabled ? "เปิด" : "ปิด")}");
+            SaveToleranceSettings();
+        }
+
+        private void TextBoxTargetValue_TextChanged(object sender, EventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (double.TryParse(textBox.Text, out double value))
+            {
+                _toleranceTargetValue = value;
+                SaveToleranceSettings();
+            }
+        }
+
+        private void TextBoxDCTolerance_TextChanged(object sender, EventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (double.TryParse(textBox.Text, out double value))
+            {
+                _toleranceValueDC = value;
+                SaveToleranceSettings();
+            }
+        }
+
+        private void TextBoxACTolerance_TextChanged(object sender, EventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (double.TryParse(textBox.Text, out double value))
+            {
+                _toleranceValueAC = value;
+                SaveToleranceSettings();
+            }
+        }
+
+        private void TextBox2WTolerance_TextChanged(object sender, EventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (double.TryParse(textBox.Text, out double value))
+            {
+                _toleranceValue2W = value;
+                SaveToleranceSettings();
+            }
+        }
+
+        private void CheckBoxIsPercent_CheckedChanged(object sender, EventArgs e)
+        {
+            var checkBox = sender as CheckBox;
+            _toleranceIsPercent = checkBox.Checked;
+            LogActivity($"Tolerance Mode: {(_toleranceIsPercent ? "Percentage" : "Absolute")}");
+            SaveToleranceSettings();
+        }
+
+        private bool CheckTolerance(double currentValue, MeasurementFunction function)
+        {
+            if (!_toleranceEnabled || _toleranceTargetValue == 0.0) return true;
+
+            double toleranceValue = 0.0;
+            switch (function)
+            {
+                case MeasurementFunction.VoltageDC:
+                case MeasurementFunction.CurrentDC:
+                    toleranceValue = _toleranceValueDC;
+                    break;
+                case MeasurementFunction.VoltageAC:
+                case MeasurementFunction.CurrentAC:
+                    toleranceValue = _toleranceValueAC;
+                    break;
+                case MeasurementFunction.Resistance2W:
+                    toleranceValue = _toleranceValue2W;
+                    break;
+                default:
+                    return true; // No tolerance check for other functions
+            }
+
+            double allowedDeviation;
+            if (_toleranceIsPercent)
+            {
+                allowedDeviation = Math.Abs(_toleranceTargetValue * toleranceValue / 100.0);
+            }
+            else
+            {
+                allowedDeviation = toleranceValue;
+            }
+
+            double deviation = Math.Abs(currentValue - _toleranceTargetValue);
+            bool withinTolerance = deviation <= allowedDeviation;
+
+            if (!withinTolerance)
+            {
+                string deviationStr = _toleranceIsPercent 
+                    ? $"{(deviation / Math.Abs(_toleranceTargetValue)) * 100:F2}%" 
+                    : $"{deviation:F4}";
+                
+                LogActivity($"ค่าเกิน Tolerance! ค่าปัจจุบัน: {currentValue:F4}, เป้าหมาย: {_toleranceTargetValue:F4}, เบี่ยงเบน: {deviationStr}", true);
+                
+                // Play over sound
+                SoundUtil.Over();
+            }
+
+            return withinTolerance;
+        }
+
+        #endregion
+
         #region --- Input Validation ---
         
         private bool ValidateConnectionInput()
@@ -668,6 +837,44 @@ namespace MultiRecord
         }
 
         #endregion
+
+        // Force disconnect method for emergency situations
+        private void ForceDisconnect()
+        {
+            LogActivity("กำลังบังคับตัดการเชื่อมต่อ...");
+            
+            if (_dmm != null)
+            {
+                try
+                {
+                    // Try graceful disconnect first
+                    _dmm.Disconnect();
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"Graceful disconnect ล้มเหลว: {ex.Message}");
+                }
+                
+                try
+                {
+                    // Force dispose
+                    _dmm.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"Force dispose ล้มเหลว: {ex.Message}");
+                }
+                finally
+                {
+                    _dmm = null;
+                }
+            }
+            
+            // Force UI update
+            UpdateConnectionStatus(false);
+            ClearDisplayReadings();
+            LogActivity("บังคับตัดการเชื่อมต่อเสร็จสิ้น");
+        }
 
         #region --- Settings Management ---
         
@@ -723,6 +930,119 @@ namespace MultiRecord
             catch (Exception ex)
             {
                 LogActivity($"บันทึกการตั้งค่าล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void SaveToleranceSettings()
+        {
+            try
+            {
+                Directory.CreateDirectory(_appDataFolder);
+                var toleranceFilePath = Path.Combine(_appDataFolder, "tolerance.ini");
+                var settings = new List<string>
+                {
+                    $"ToleranceEnabled={_toleranceEnabled}",
+                    $"ToleranceTargetValue={_toleranceTargetValue.ToString(CultureInfo.InvariantCulture)}",
+                    $"ToleranceValueDC={_toleranceValueDC.ToString(CultureInfo.InvariantCulture)}",
+                    $"ToleranceValueAC={_toleranceValueAC.ToString(CultureInfo.InvariantCulture)}",
+                    $"ToleranceValue2W={_toleranceValue2W.ToString(CultureInfo.InvariantCulture)}",
+                    $"ToleranceIsPercent={_toleranceIsPercent}"
+                };
+                File.WriteAllLines(toleranceFilePath, settings, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"บันทึก Tolerance Settings ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void LoadToleranceSettings()
+        {
+            try
+            {
+                var toleranceFilePath = Path.Combine(_appDataFolder, "tolerance.ini");
+                if (File.Exists(toleranceFilePath))
+                {
+                    var lines = File.ReadAllLines(toleranceFilePath);
+                    foreach (var line in lines)
+                    {
+                        if (line.StartsWith("ToleranceEnabled="))
+                        {
+                            bool.TryParse(line.Substring("ToleranceEnabled=".Length), out _toleranceEnabled);
+                        }
+                        else if (line.StartsWith("ToleranceTargetValue="))
+                        {
+                            double.TryParse(line.Substring("ToleranceTargetValue=".Length), NumberStyles.Any, CultureInfo.InvariantCulture, out _toleranceTargetValue);
+                        }
+                        else if (line.StartsWith("ToleranceValueDC="))
+                        {
+                            double.TryParse(line.Substring("ToleranceValueDC=".Length), NumberStyles.Any, CultureInfo.InvariantCulture, out _toleranceValueDC);
+                        }
+                        else if (line.StartsWith("ToleranceValueAC="))
+                        {
+                            double.TryParse(line.Substring("ToleranceValueAC=".Length), NumberStyles.Any, CultureInfo.InvariantCulture, out _toleranceValueAC);
+                        }
+                        else if (line.StartsWith("ToleranceValue2W="))
+                        {
+                            double.TryParse(line.Substring("ToleranceValue2W=".Length), NumberStyles.Any, CultureInfo.InvariantCulture, out _toleranceValue2W);
+                        }
+                        else if (line.StartsWith("ToleranceIsPercent="))
+                        {
+                            bool.TryParse(line.Substring("ToleranceIsPercent=".Length), out _toleranceIsPercent);
+                        }
+                    }
+
+                    // Update UI controls with loaded values
+                    UpdateToleranceControls();
+                    LogActivity("โหลด Tolerance Settings สำเร็จ");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลด Tolerance Settings ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void UpdateToleranceControls()
+        {
+            // Find and update tolerance controls
+            foreach (Control control in this.Controls)
+            {
+                if (control is GroupBox groupBox && groupBox.Text == "Tolerance Check")
+                {
+                    foreach (Control subControl in groupBox.Controls)
+                    {
+                        if (subControl is CheckBox checkBox)
+                        {
+                            if (checkBox.Text == "Enable Tolerance Check")
+                            {
+                                checkBox.Checked = _toleranceEnabled;
+                            }
+                            else if (checkBox.Text == "Use Percentage (%)")
+                            {
+                                checkBox.Checked = _toleranceIsPercent;
+                            }
+                        }
+                        else if (subControl is TextBox textBox)
+                        {
+                            switch (textBox.Name)
+                            {
+                                case "textBoxTargetValue":
+                                    textBox.Text = _toleranceTargetValue.ToString(CultureInfo.InvariantCulture);
+                                    break;
+                                case "textBoxDCTolerance":
+                                    textBox.Text = _toleranceValueDC.ToString(CultureInfo.InvariantCulture);
+                                    break;
+                                case "textBoxACTolerance":
+                                    textBox.Text = _toleranceValueAC.ToString(CultureInfo.InvariantCulture);
+                                    break;
+                                case "textBox2WTolerance":
+                                    textBox.Text = _toleranceValue2W.ToString(CultureInfo.InvariantCulture);
+                                    break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -806,12 +1126,66 @@ namespace MultiRecord
             string unit = _isOverload ? "" : _lastReadingUnit;
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+            // Check tolerance และเพิ่ม marker ถ้าเกิน
+            bool withinTolerance = true;
+            if (!_isOverload && _toleranceEnabled && _toleranceTargetValue != 0.0)
+            {
+                withinTolerance = CheckToleranceForRecord(_lastReadingValue, _currentFunction);
+                if (!withinTolerance)
+                {
+                    measurement += " [OVER]"; // เพิ่ม marker ถ้าเกิน tolerance
+                }
+            }
+
             _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp);
-            LogActivity($"บันทึกค่า No. {newId}: {function}, {measurement} {unit}");
+            
+            string logMessage = $"บันทึกค่า No. {newId}: {function}, {measurement} {unit}";
+            if (!withinTolerance)
+            {
+                logMessage += " (เกิน Tolerance!)";
+            }
+            LogActivity(logMessage, !withinTolerance);
+            
             SaveDataToFile();
 
             // *** เพิ่มการ select แถวล่าสุด ***
             SelectLatestRow();
+        }
+
+        private bool CheckToleranceForRecord(double currentValue, MeasurementFunction function)
+        {
+            if (!_toleranceEnabled || _toleranceTargetValue == 0.0) return true;
+
+            double toleranceValue = 0.0;
+            switch (function)
+            {
+                case MeasurementFunction.VoltageDC:
+                case MeasurementFunction.CurrentDC:
+                    toleranceValue = _toleranceValueDC;
+                    break;
+                case MeasurementFunction.VoltageAC:
+                case MeasurementFunction.CurrentAC:
+                    toleranceValue = _toleranceValueAC;
+                    break;
+                case MeasurementFunction.Resistance2W:
+                    toleranceValue = _toleranceValue2W;
+                    break;
+                default:
+                    return true; // No tolerance check for other functions
+            }
+
+            double allowedDeviation;
+            if (_toleranceIsPercent)
+            {
+                allowedDeviation = Math.Abs(_toleranceTargetValue * toleranceValue / 100.0);
+            }
+            else
+            {
+                allowedDeviation = toleranceValue;
+            }
+
+            double deviation = Math.Abs(currentValue - _toleranceTargetValue);
+            return deviation <= allowedDeviation;
         }
 
 
@@ -849,10 +1223,7 @@ namespace MultiRecord
 
             if (confirmResult == DialogResult.Yes)
             {
-                // ฟีเจอร์ใหม่: เล่นเสียง 2 ครั้ง
-                SoundUtil.Beep();
-                await Task.Delay(500);
-                SoundUtil.Beep();
+                SoundUtil.Delete();
 
                 foreach (DataGridViewRow row in dataGridViewRecords.SelectedRows.Cast<DataGridViewRow>().ToList())
                 {
@@ -930,6 +1301,47 @@ namespace MultiRecord
             }
         }
 
+        private void buttonCopyTable_Click(object sender, EventArgs e)
+        {
+            if (_recordsTable.Rows.Count == 0)
+            {
+                MessageBox.Show("ไม่มีข้อมูลให้คัดลอก", "แจ้งเตือน", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                var measurementValues = new List<string>();
+
+                // เฉพาะค่า Measurement
+                foreach (DataRow row in _recordsTable.Rows)
+                {
+                    measurementValues.Add(row["Measurement"].ToString());
+                }
+
+                // Copy to clipboard with multiple formats for better compatibility
+                string clipboardText = string.Join(Environment.NewLine, measurementValues);
+                
+                var dataObject = new DataObject();
+                dataObject.SetText(clipboardText, TextDataFormat.Text);
+                dataObject.SetText(clipboardText, TextDataFormat.UnicodeText);
+                
+                // For Excel compatibility, also set as CSV format
+                string csvData = string.Join("\r\n", measurementValues);
+                dataObject.SetData(DataFormats.CommaSeparatedValue, csvData);
+                
+                Clipboard.SetDataObject(dataObject, true);
+
+                LogActivity($"คัดลอกข้อมูล {_recordsTable.Rows.Count} แถวไปยังคลิปบอร์ดแล้ว");
+                MessageBox.Show("คัดลอกข้อมูลไปยังคลิปบอร์ดสำเร็จ!", "สำเร็จ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"คัดลอกข้อมูลล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private async void buttonGetIDN_Click(object sender, EventArgs e)
         {
             if (_dmm == null || !_dmm.IsConnected) return;
@@ -981,10 +1393,7 @@ namespace MultiRecord
 
             try
             {
-                // เล่นเสียงเตือน 2 ครั้ง (เหมือนกับ buttonDeleteRecord_Click)
-                SoundUtil.Beep();
-                await Task.Delay(200); // หน่วงเวลาเล็กน้อยระหว่างเสียง
-                SoundUtil.Beep();
+                SoundUtil.Delete();
 
                 // เก็บข้อมูลแถวล่าสุดก่อนลบ เพื่อแสดงใน Log
                 DataRow lastRow = _recordsTable.Rows[_recordsTable.Rows.Count - 1];

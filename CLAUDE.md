@@ -11,7 +11,7 @@ MultiRecord is a C# WinForms application for interfacing with SIGLENT SDM3055 di
 ### Building the Project
 - **Visual Studio**: Open `MultiRecord.sln` and build using Ctrl+Shift+B or Build menu
 - **MSBuild**: `msbuild MultiRecord.sln /p:Configuration=Release`
-- **Command Line**: `dotnet build` (if .NET Core compatible)
+- **Command Line**: `dotnet build MultiRecord.sln` (targets .NET Framework 4.8)
 
 ### Running the Application  
 - **Debug**: Press F5 in Visual Studio or use Debug > Start Debugging
@@ -19,7 +19,11 @@ MultiRecord is a C# WinForms application for interfacing with SIGLENT SDM3055 di
 
 ### Package Management
 - **NuGet Restore**: `nuget restore MultiRecord.sln` or use Visual Studio Package Manager
-- **Key Dependencies**: NAudio (2.2.1), Microsoft.Win32.Registry (4.7.0)
+- **Key Dependencies**: NAudio (2.2.1), Microsoft.Win32.Registry (4.7.0), EPPlus (4.5.3.3)
+
+### Testing
+- **No automated tests**: Project currently relies on manual testing with physical SIGLENT SDM3055 hardware
+- **Hardware Required**: SIGLENT SDM3055 digital multimeter connected via Ethernet/TCP
 
 ## Architecture Overview
 
@@ -64,5 +68,26 @@ The application supports multiple measurement types via `MeasurementFunction` en
 
 - **Async/Await**: All DMM operations are asynchronous to prevent UI blocking
 - **Event-driven**: Uses events for connection status and measurement data updates  
-- **MVVM-like separation**: Form1 acts as controller, SDM3055 as model, with clear data binding
+- **MVP Pattern**: Form1 acts as presenter, SDM3055 as model, WinForms as view layer
 - **Resource management**: Proper disposal patterns for network and audio resources
+- **Observer Pattern**: DMM publishes measurement events, UI subscribes and reacts
+- **Command Queuing**: Thread-safe SCPI command execution using SemaphoreSlim
+
+## File Structure and Key Locations
+
+### Project Files
+- `MultiRecord.sln` - Visual Studio solution file
+- `MultiRecord/MultiRecord.csproj` - Main project file (.NET Framework 4.8)
+- `MultiRecord/packages.config` - NuGet package dependencies
+
+### Source Code
+- `MultiRecord/Program.cs` - Application entry point
+- `MultiRecord/Form1.cs` - Main UI controller and business logic
+- `MultiRecord/Form1.Designer.cs` - Auto-generated UI layout code  
+- `MultiRecord/SiglentHelper.cs` - DMM communication library (SDM3055 class)
+- `MultiRecord/SoundUtil.cs` - Audio feedback utility using NAudio
+
+### Data Storage
+- Application data stored in `%AppData%/MultiRecordApp/`
+- CSV export files with timestamp-based naming
+- Settings persistence using INI-style configuration

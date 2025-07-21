@@ -21,6 +21,17 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.panelChassis = new System.Windows.Forms.Panel();
+            this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
+            this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
+            this.textBox2WTolerance = new System.Windows.Forms.TextBox();
+            this.label2WTolerance = new System.Windows.Forms.Label();
+            this.textBoxACTolerance = new System.Windows.Forms.TextBox();
+            this.labelACTolerance = new System.Windows.Forms.Label();
+            this.textBoxDCTolerance = new System.Windows.Forms.TextBox();
+            this.labelDCTolerance = new System.Windows.Forms.Label();
+            this.textBoxTargetValue = new System.Windows.Forms.TextBox();
+            this.labelTargetValue = new System.Windows.Forms.Label();
+            this.checkBoxEnableTolerance = new System.Windows.Forms.CheckBox();
             this.panelParameters = new System.Windows.Forms.Panel();
             this.buttonSetRelative = new System.Windows.Forms.Button();
             this.comboBoxSpeed = new System.Windows.Forms.ComboBox();
@@ -31,6 +42,7 @@
             this.groupBoxRecord = new System.Windows.Forms.GroupBox();
             this.buttonClearTable = new System.Windows.Forms.Button();
             this.buttonDeleteRecord = new System.Windows.Forms.Button();
+            this.buttonCopyTable = new System.Windows.Forms.Button();
             this.buttonExportCsv = new System.Windows.Forms.Button();
             this.buttonRecord = new System.Windows.Forms.Button();
             this.dataGridViewRecords = new System.Windows.Forms.DataGridView();
@@ -67,6 +79,7 @@
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.panelChassis.SuspendLayout();
+            this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
             this.groupBoxRecord.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecords)).BeginInit();
@@ -80,6 +93,7 @@
             // panelChassis
             // 
             this.panelChassis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.panelChassis.Controls.Add(this.groupBoxTolerance);
             this.panelChassis.Controls.Add(this.panelParameters);
             this.panelChassis.Controls.Add(this.groupBoxRecord);
             this.panelChassis.Controls.Add(this.groupBoxSystem);
@@ -92,6 +106,129 @@
             this.panelChassis.Name = "panelChassis";
             this.panelChassis.Size = new System.Drawing.Size(1528, 624);
             this.panelChassis.TabIndex = 0;
+            // 
+            // groupBoxTolerance
+            // 
+            this.groupBoxTolerance.Controls.Add(this.checkBoxIsPercent);
+            this.groupBoxTolerance.Controls.Add(this.textBox2WTolerance);
+            this.groupBoxTolerance.Controls.Add(this.label2WTolerance);
+            this.groupBoxTolerance.Controls.Add(this.textBoxACTolerance);
+            this.groupBoxTolerance.Controls.Add(this.labelACTolerance);
+            this.groupBoxTolerance.Controls.Add(this.textBoxDCTolerance);
+            this.groupBoxTolerance.Controls.Add(this.labelDCTolerance);
+            this.groupBoxTolerance.Controls.Add(this.textBoxTargetValue);
+            this.groupBoxTolerance.Controls.Add(this.labelTargetValue);
+            this.groupBoxTolerance.Controls.Add(this.checkBoxEnableTolerance);
+            this.groupBoxTolerance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBoxTolerance.ForeColor = System.Drawing.Color.White;
+            this.groupBoxTolerance.Location = new System.Drawing.Point(750, 490);
+            this.groupBoxTolerance.Name = "groupBoxTolerance";
+            this.groupBoxTolerance.Size = new System.Drawing.Size(766, 122);
+            this.groupBoxTolerance.TabIndex = 6;
+            this.groupBoxTolerance.TabStop = false;
+            this.groupBoxTolerance.Text = "Tolerance Check";
+            // 
+            // checkBoxIsPercent
+            // 
+            this.checkBoxIsPercent.Checked = true;
+            this.checkBoxIsPercent.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxIsPercent.ForeColor = System.Drawing.Color.White;
+            this.checkBoxIsPercent.Location = new System.Drawing.Point(13, 94);
+            this.checkBoxIsPercent.Name = "checkBoxIsPercent";
+            this.checkBoxIsPercent.Size = new System.Drawing.Size(120, 20);
+            this.checkBoxIsPercent.TabIndex = 9;
+            this.checkBoxIsPercent.Text = "Percentage Mode";
+            this.checkBoxIsPercent.UseVisualStyleBackColor = true;
+            // 
+            // textBox2WTolerance
+            // 
+            this.textBox2WTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBox2WTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBox2WTolerance.ForeColor = System.Drawing.Color.White;
+            this.textBox2WTolerance.Location = new System.Drawing.Point(250, 67);
+            this.textBox2WTolerance.Name = "textBox2WTolerance";
+            this.textBox2WTolerance.Size = new System.Drawing.Size(80, 23);
+            this.textBox2WTolerance.TabIndex = 8;
+            this.textBox2WTolerance.Text = "0.1";
+            // 
+            // label2WTolerance
+            // 
+            this.label2WTolerance.ForeColor = System.Drawing.Color.White;
+            this.label2WTolerance.Location = new System.Drawing.Point(213, 70);
+            this.label2WTolerance.Name = "label2WTolerance";
+            this.label2WTolerance.Size = new System.Drawing.Size(75, 20);
+            this.label2WTolerance.TabIndex = 7;
+            this.label2WTolerance.Text = "2W Tolerance:";
+            // 
+            // textBoxACTolerance
+            // 
+            this.textBoxACTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxACTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBoxACTolerance.ForeColor = System.Drawing.Color.White;
+            this.textBoxACTolerance.Location = new System.Drawing.Point(250, 42);
+            this.textBoxACTolerance.Name = "textBoxACTolerance";
+            this.textBoxACTolerance.Size = new System.Drawing.Size(80, 23);
+            this.textBoxACTolerance.TabIndex = 6;
+            this.textBoxACTolerance.Text = "1.0";
+            // 
+            // labelACTolerance
+            // 
+            this.labelACTolerance.ForeColor = System.Drawing.Color.White;
+            this.labelACTolerance.Location = new System.Drawing.Point(213, 45);
+            this.labelACTolerance.Name = "labelACTolerance";
+            this.labelACTolerance.Size = new System.Drawing.Size(75, 20);
+            this.labelACTolerance.TabIndex = 5;
+            this.labelACTolerance.Text = "AC Tolerance:";
+            // 
+            // textBoxDCTolerance
+            // 
+            this.textBoxDCTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxDCTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBoxDCTolerance.ForeColor = System.Drawing.Color.White;
+            this.textBoxDCTolerance.Location = new System.Drawing.Point(93, 67);
+            this.textBoxDCTolerance.Name = "textBoxDCTolerance";
+            this.textBoxDCTolerance.Size = new System.Drawing.Size(80, 23);
+            this.textBoxDCTolerance.TabIndex = 4;
+            this.textBoxDCTolerance.Text = "0.5";
+            // 
+            // labelDCTolerance
+            // 
+            this.labelDCTolerance.ForeColor = System.Drawing.Color.White;
+            this.labelDCTolerance.Location = new System.Drawing.Point(12, 70);
+            this.labelDCTolerance.Name = "labelDCTolerance";
+            this.labelDCTolerance.Size = new System.Drawing.Size(75, 20);
+            this.labelDCTolerance.TabIndex = 3;
+            this.labelDCTolerance.Text = "DC Tolerance:";
+            // 
+            // textBoxTargetValue
+            // 
+            this.textBoxTargetValue.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxTargetValue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBoxTargetValue.ForeColor = System.Drawing.Color.White;
+            this.textBoxTargetValue.Location = new System.Drawing.Point(93, 42);
+            this.textBoxTargetValue.Name = "textBoxTargetValue";
+            this.textBoxTargetValue.Size = new System.Drawing.Size(80, 23);
+            this.textBoxTargetValue.TabIndex = 2;
+            this.textBoxTargetValue.Text = "5.0";
+            // 
+            // labelTargetValue
+            // 
+            this.labelTargetValue.ForeColor = System.Drawing.Color.White;
+            this.labelTargetValue.Location = new System.Drawing.Point(12, 45);
+            this.labelTargetValue.Name = "labelTargetValue";
+            this.labelTargetValue.Size = new System.Drawing.Size(75, 20);
+            this.labelTargetValue.TabIndex = 1;
+            this.labelTargetValue.Text = "Target Value:";
+            // 
+            // checkBoxEnableTolerance
+            // 
+            this.checkBoxEnableTolerance.ForeColor = System.Drawing.Color.White;
+            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(9, 16);
+            this.checkBoxEnableTolerance.Name = "checkBoxEnableTolerance";
+            this.checkBoxEnableTolerance.Size = new System.Drawing.Size(180, 20);
+            this.checkBoxEnableTolerance.TabIndex = 0;
+            this.checkBoxEnableTolerance.Text = "Enable Tolerance Check";
+            this.checkBoxEnableTolerance.UseVisualStyleBackColor = true;
             // 
             // panelParameters
             // 
@@ -185,6 +322,7 @@
             // 
             this.groupBoxRecord.Controls.Add(this.buttonClearTable);
             this.groupBoxRecord.Controls.Add(this.buttonDeleteRecord);
+            this.groupBoxRecord.Controls.Add(this.buttonCopyTable);
             this.groupBoxRecord.Controls.Add(this.buttonExportCsv);
             this.groupBoxRecord.Controls.Add(this.buttonRecord);
             this.groupBoxRecord.Controls.Add(this.dataGridViewRecords);
@@ -192,7 +330,7 @@
             this.groupBoxRecord.ForeColor = System.Drawing.Color.White;
             this.groupBoxRecord.Location = new System.Drawing.Point(751, 12);
             this.groupBoxRecord.Name = "groupBoxRecord";
-            this.groupBoxRecord.Size = new System.Drawing.Size(765, 600);
+            this.groupBoxRecord.Size = new System.Drawing.Size(765, 472);
             this.groupBoxRecord.TabIndex = 5;
             this.groupBoxRecord.TabStop = false;
             this.groupBoxRecord.Text = "Data Recording";
@@ -202,12 +340,12 @@
             this.buttonClearTable.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
             this.buttonClearTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonClearTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonClearTable.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.buttonClearTable.Location = new System.Drawing.Point(675, 22);
+            this.buttonClearTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonClearTable.Location = new System.Drawing.Point(630, 22);
             this.buttonClearTable.Name = "buttonClearTable";
-            this.buttonClearTable.Size = new System.Drawing.Size(79, 33);
+            this.buttonClearTable.Size = new System.Drawing.Size(124, 33);
             this.buttonClearTable.TabIndex = 4;
-            this.buttonClearTable.Text = "Clear All";
+            this.buttonClearTable.Text = "ล้างค่าทั้งหมด";
             this.buttonClearTable.UseVisualStyleBackColor = false;
             this.buttonClearTable.Click += new System.EventHandler(this.buttonClearTable_Click);
             // 
@@ -216,26 +354,40 @@
             this.buttonDeleteRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(186)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.buttonDeleteRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonDeleteRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonDeleteRecord.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.buttonDeleteRecord.Location = new System.Drawing.Point(590, 22);
+            this.buttonDeleteRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonDeleteRecord.Location = new System.Drawing.Point(545, 22);
             this.buttonDeleteRecord.Name = "buttonDeleteRecord";
             this.buttonDeleteRecord.Size = new System.Drawing.Size(79, 33);
             this.buttonDeleteRecord.TabIndex = 3;
-            this.buttonDeleteRecord.Text = "Delete";
+            this.buttonDeleteRecord.Text = "ลบ";
             this.buttonDeleteRecord.UseVisualStyleBackColor = false;
             this.buttonDeleteRecord.Click += new System.EventHandler(this.buttonDeleteRecord_Click);
+            // 
+            // buttonCopyTable
+            // 
+            this.buttonCopyTable.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(122)))), ((int)(((byte)(183)))));
+            this.buttonCopyTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonCopyTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonCopyTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonCopyTable.Location = new System.Drawing.Point(135, 22);
+            this.buttonCopyTable.Name = "buttonCopyTable";
+            this.buttonCopyTable.Size = new System.Drawing.Size(119, 33);
+            this.buttonCopyTable.TabIndex = 5;
+            this.buttonCopyTable.Text = "คัดลอกตาราง";
+            this.buttonCopyTable.UseVisualStyleBackColor = false;
+            this.buttonCopyTable.Click += new System.EventHandler(this.buttonCopyTable_Click);
             // 
             // buttonExportCsv
             // 
             this.buttonExportCsv.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
             this.buttonExportCsv.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonExportCsv.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonExportCsv.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.buttonExportCsv.Location = new System.Drawing.Point(465, 22);
+            this.buttonExportCsv.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonExportCsv.Location = new System.Drawing.Point(420, 22);
             this.buttonExportCsv.Name = "buttonExportCsv";
             this.buttonExportCsv.Size = new System.Drawing.Size(119, 33);
             this.buttonExportCsv.TabIndex = 2;
-            this.buttonExportCsv.Text = "Export to CSV";
+            this.buttonExportCsv.Text = "ส่งออกไฟล์ CSV";
             this.buttonExportCsv.UseVisualStyleBackColor = false;
             this.buttonExportCsv.Click += new System.EventHandler(this.buttonExportCsv_Click);
             // 
@@ -244,12 +396,12 @@
             this.buttonRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(151)))), ((int)(((byte)(234)))));
             this.buttonRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonRecord.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.buttonRecord.Location = new System.Drawing.Point(340, 22);
+            this.buttonRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonRecord.Location = new System.Drawing.Point(10, 22);
             this.buttonRecord.Name = "buttonRecord";
             this.buttonRecord.Size = new System.Drawing.Size(119, 33);
             this.buttonRecord.TabIndex = 1;
-            this.buttonRecord.Text = "Record Value";
+            this.buttonRecord.Text = "บันทึกค่า";
             this.buttonRecord.UseVisualStyleBackColor = false;
             this.buttonRecord.Click += new System.EventHandler(this.buttonRecord_Click);
             // 
@@ -284,7 +436,7 @@
             this.dataGridViewRecords.ReadOnly = true;
             this.dataGridViewRecords.RowHeadersVisible = false;
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRecords.Size = new System.Drawing.Size(745, 520);
+            this.dataGridViewRecords.Size = new System.Drawing.Size(745, 405);
             this.dataGridViewRecords.TabIndex = 0;
             // 
             // groupBoxSystem
@@ -708,6 +860,8 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
             this.panelChassis.ResumeLayout(false);
+            this.groupBoxTolerance.ResumeLayout(false);
+            this.groupBoxTolerance.PerformLayout();
             this.panelParameters.ResumeLayout(false);
             this.panelParameters.PerformLayout();
             this.groupBoxRecord.ResumeLayout(false);
@@ -772,5 +926,17 @@
         private System.Windows.Forms.ComboBox comboBoxRange;
         private System.Windows.Forms.Label labelRange;
         private System.Windows.Forms.Label labelRelativeState;
+        private System.Windows.Forms.GroupBox groupBoxTolerance;
+        private System.Windows.Forms.CheckBox checkBoxEnableTolerance;
+        private System.Windows.Forms.Label labelTargetValue;
+        private System.Windows.Forms.TextBox textBoxTargetValue;
+        private System.Windows.Forms.Label labelDCTolerance;
+        private System.Windows.Forms.TextBox textBoxDCTolerance;
+        private System.Windows.Forms.Label labelACTolerance;
+        private System.Windows.Forms.TextBox textBoxACTolerance;
+        private System.Windows.Forms.Label label2WTolerance;
+        private System.Windows.Forms.TextBox textBox2WTolerance;
+        private System.Windows.Forms.CheckBox checkBoxIsPercent;
+        private System.Windows.Forms.Button buttonCopyTable;
     }
 }
