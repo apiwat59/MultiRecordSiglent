@@ -103,9 +103,17 @@ namespace MultiRecord
             // *** เพิ่มการตั้งค่า Selection Mode ***
             dataGridViewRecords.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewRecords.MultiSelect = true; // เปิดให้เลือกหลายแถวได้ (สำหรับการลบ)
+            
+            // *** คืนค่าเป็น ReadOnly เนื่องจากจะใช้ Edit Panel แทน ***
+            dataGridViewRecords.ReadOnly = true;
+            dataGridViewRecords.AllowUserToDeleteRows = false;
+            dataGridViewRecords.AllowUserToAddRows = false;
 
             // ปรับแต่งการแสดงผลให้แสดง measurement + unit รวมกัน
             dataGridViewRecords.CellFormatting += DataGridViewRecords_CellFormatting;
+            
+            // *** เพิ่ม Event Handler สำหรับ Double Click เพื่อแก้ไข ***
+            dataGridViewRecords.CellDoubleClick += DataGridViewRecords_CellDoubleClick;
 
             LoadDataFromFile();
 
@@ -1296,6 +1304,8 @@ namespace MultiRecord
                     bool hasToleranceMarker = measurement.Contains("[OVER]");
                     string cleanMeasurement = measurement.Replace(" [OVER]", "");
                     
+                    // เอาส่วน inline editing ออกเนื่องจากใช้ Edit Panel แทน
+                    
                     if (double.TryParse(cleanMeasurement, NumberStyles.Any, CultureInfo.InvariantCulture, out double value) && !string.IsNullOrEmpty(unit))
                     {
                         // Format for display readability
@@ -1350,6 +1360,251 @@ namespace MultiRecord
                 return $"{value:F6} {unit}";
             }
         }
+
+        #region --- DataGridView Edit Panel Event Handlers ---
+
+        private void DataGridViewRecords_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // เรียก Edit Panel เมื่อ double click
+            if (e.RowIndex >= 0)
+            {
+                buttonEditRecord_Click(sender, e);
+            }
+        }
+
+        private void buttonEditRecord_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewRecords.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("กรุณาเลือกแถวที่ต้องการแก้ไข", "ไม่ได้เลือกแถว", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // เปิด Edit Panel Dialog
+            ShowEditDialog();
+        }
+
+        private void ShowEditDialog()
+        {
+            var selectedRow = dataGridViewRecords.SelectedRows[0];
+            int rowIndex = selectedRow.Index;
+            
+            // ดึงข้อมูลปัจจุบัน
+            string currentMeasurement = selectedRow.Cells["Measurement"].Value?.ToString() ?? "";
+            string function = selectedRow.Cells["Function"].Value?.ToString() ?? "";
+            string unit = selectedRow.Cells["Unit"].Value?.ToString() ?? "";
+            
+            // แปลงค่าจากการแสดงผลกลับเป็นค่าดิบ
+            string rawValue = GetRawValueFromDisplay(currentMeasurement);
+            
+            // สร้าง Edit Dialog
+            using (var editForm = new Form())
+            {
+                editForm.Text = $"แก้ไขค่า - Row {rowIndex + 1}";
+                editForm.Size = new Size(400, 200);
+                editForm.StartPosition = FormStartPosition.CenterParent;
+                editForm.BackColor = Color.FromArgb(45, 45, 48);
+                editForm.ForeColor = Color.White;
+                editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                editForm.MaximizeBox = false;
+                editForm.MinimizeBox = false;
+
+                // Labels
+                var lblFunction = new Label 
+                { 
+                    Text = $"Function: {function}", 
+                    Location = new Point(20, 20), 
+                    Size = new Size(350, 25),
+                    ForeColor = Color.LightGray
+                };
+                
+                var lblUnit = new Label 
+                { 
+                    Text = $"Unit: {unit}", 
+                    Location = new Point(20, 45), 
+                    Size = new Size(350, 25),
+                    ForeColor = Color.LightGray
+                };
+                
+                var lblValue = new Label 
+                { 
+                    Text = "ค่าใหม่:", 
+                    Location = new Point(20, 75), 
+                    Size = new Size(100, 25),
+                    ForeColor = Color.White
+                };
+                
+                // TextBox for editing
+                var txtValue = new TextBox 
+                { 
+                    Text = rawValue,
+                    Location = new Point(130, 72), 
+                    Size = new Size(240, 25),
+                    BackColor = Color.FromArgb(30, 30, 30),
+                    ForeColor = Color.White,
+                    BorderStyle = BorderStyle.FixedSingle
+                };
+                txtValue.SelectAll();
+                
+                // Buttons
+                var btnOK = new Button 
+                { 
+                    Text = "ตกลง", 
+                    Location = new Point(215, 115), 
+                    Size = new Size(75, 30),
+                    BackColor = Color.FromArgb(0, 122, 204),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat
+                };
+                
+                var btnCancel = new Button 
+                { 
+                    Text = "ยกเลิก", 
+                    Location = new Point(295, 115), 
+                    Size = new Size(75, 30),
+                    BackColor = Color.FromArgb(63, 63, 70),
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat
+                };
+                
+                btnOK.Click += (s, args) => 
+                {
+                    string newValue = txtValue.Text.Trim();
+                    
+                    // Validate input
+                    if (!ValidateEditInput(newValue))
+                    {
+                        return; // ถ้า validate ไม่ผ่านให้คงอยู่ใน dialog
+                    }
+                    
+                    // Update the record
+                    UpdateRecord(rowIndex, newValue);
+                    editForm.DialogResult = DialogResult.OK;
+                    editForm.Close();
+                };
+                
+                btnCancel.Click += (s, args) => 
+                {
+                    editForm.DialogResult = DialogResult.Cancel;
+                    editForm.Close();
+                };
+                
+                // Add controls
+                editForm.Controls.AddRange(new Control[] { lblFunction, lblUnit, lblValue, txtValue, btnOK, btnCancel });
+                
+                // Set focus and show dialog
+                txtValue.Focus();
+                editForm.ShowDialog(this);
+            }
+        }
+
+        private string GetRawValueFromDisplay(string displayValue)
+        {
+            // ถ้าเป็น OVERLOAD หรือมี [OVER] ให้คืนค่าเดิม
+            if (displayValue.Equals("OVERLOAD", StringComparison.OrdinalIgnoreCase) || 
+                displayValue.Contains("[OVER]"))
+            {
+                return displayValue;
+            }
+            
+            // แยกค่าและหน่วยจากการแสดงผล
+            if (displayValue.Contains(" "))
+            {
+                string[] parts = displayValue.Split(' ');
+                if (parts.Length >= 2)
+                {
+                    string valuepart = parts[0];
+                    string unitpart = string.Join(" ", parts.Skip(1));
+                    
+                    if (double.TryParse(valuepart, out double displayNum))
+                    {
+                        double actualValue = displayNum;
+                        
+                        // แปลงค่าจากหน่วยที่แสดงกลับเป็นค่าดิบ
+                        if (unitpart.StartsWith("M"))
+                        {
+                            actualValue = displayNum * 1000000;
+                        }
+                        else if (unitpart.StartsWith("k"))
+                        {
+                            actualValue = displayNum * 1000;
+                        }
+                        else if (unitpart.StartsWith("m"))
+                        {
+                            actualValue = displayNum / 1000;
+                        }
+                        else if (unitpart.StartsWith("µ"))
+                        {
+                            actualValue = displayNum / 1000000;
+                        }
+                        
+                        return actualValue.ToString("F6", CultureInfo.InvariantCulture);
+                    }
+                }
+            }
+            
+            return displayValue;
+        }
+
+        private bool ValidateEditInput(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                MessageBox.Show("กรุณาใส่ค่า", "ค่าว่างเปล่า", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            
+            // อนุญาต OVERLOAD และ [OVER]
+            if (input.Equals("OVERLOAD", StringComparison.OrdinalIgnoreCase) || 
+                input.Contains("[OVER]"))
+            {
+                return true;
+            }
+            
+            // ตรวจสอบว่าเป็นตัวเลข
+            if (!double.TryParse(input.Replace(" [OVER]", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+            {
+                MessageBox.Show("กรุณาใส่ค่าตัวเลขที่ถูกต้อง หรือ 'OVERLOAD'", "ค่าไม่ถูกต้อง", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            
+            return true;
+        }
+
+        private void UpdateRecord(int rowIndex, string newValue)
+        {
+            try
+            {
+                // อัพเดตค่าใน DataTable
+                _recordsTable.Rows[rowIndex]["Measurement"] = newValue;
+                _recordsTable.AcceptChanges();
+                
+                // บันทึกลงไฟล์
+                SaveDataToFile();
+                
+                // Refresh การแสดงผล
+                dataGridViewRecords.InvalidateRow(rowIndex);
+                
+                // Log และเล่นเสียง
+                LogActivity($"แก้ไขค่าเสร็จสิ้น Row {rowIndex + 1}: {newValue}");
+                SoundUtil.Beep();
+                
+                // เลือกแถวที่แก้ไขไว้
+                dataGridViewRecords.Rows[rowIndex].Selected = true;
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการแก้ไข: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาดในการแก้ไข:\n{ex.Message}", 
+                    "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
+
         // *** เพิ่มการ select แถวล่าสุดหลังจากลบข้อมูล ***
         private async void buttonDeleteRecord_Click(object sender, EventArgs e)
         {

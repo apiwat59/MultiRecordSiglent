@@ -18,8 +18,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.panelChassis = new System.Windows.Forms.Panel();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
@@ -45,6 +45,7 @@
             this.groupBoxRecord = new System.Windows.Forms.GroupBox();
             this.buttonClearTable = new System.Windows.Forms.Button();
             this.buttonDeleteRecord = new System.Windows.Forms.Button();
+            this.buttonEditRecord = new System.Windows.Forms.Button();
             this.buttonCopyTable = new System.Windows.Forms.Button();
             this.buttonExportCsv = new System.Windows.Forms.Button();
             this.buttonRecord = new System.Windows.Forms.Button();
@@ -361,6 +362,7 @@
             // 
             this.groupBoxRecord.Controls.Add(this.buttonClearTable);
             this.groupBoxRecord.Controls.Add(this.buttonDeleteRecord);
+            this.groupBoxRecord.Controls.Add(this.buttonEditRecord);
             this.groupBoxRecord.Controls.Add(this.buttonCopyTable);
             this.groupBoxRecord.Controls.Add(this.buttonExportCsv);
             this.groupBoxRecord.Controls.Add(this.buttonRecord);
@@ -380,7 +382,7 @@
             this.buttonClearTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonClearTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonClearTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonClearTable.Location = new System.Drawing.Point(630, 22);
+            this.buttonClearTable.Location = new System.Drawing.Point(505, 22);
             this.buttonClearTable.Name = "buttonClearTable";
             this.buttonClearTable.Size = new System.Drawing.Size(124, 33);
             this.buttonClearTable.TabIndex = 4;
@@ -394,13 +396,27 @@
             this.buttonDeleteRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonDeleteRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonDeleteRecord.Location = new System.Drawing.Point(545, 22);
+            this.buttonDeleteRecord.Location = new System.Drawing.Point(420, 22);
             this.buttonDeleteRecord.Name = "buttonDeleteRecord";
             this.buttonDeleteRecord.Size = new System.Drawing.Size(79, 33);
             this.buttonDeleteRecord.TabIndex = 3;
             this.buttonDeleteRecord.Text = "ลบ";
             this.buttonDeleteRecord.UseVisualStyleBackColor = false;
             this.buttonDeleteRecord.Click += new System.EventHandler(this.buttonDeleteRecord_Click);
+            // 
+            // buttonEditRecord
+            // 
+            this.buttonEditRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
+            this.buttonEditRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonEditRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonEditRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonEditRecord.Location = new System.Drawing.Point(335, 22);
+            this.buttonEditRecord.Name = "buttonEditRecord";
+            this.buttonEditRecord.Size = new System.Drawing.Size(79, 33);
+            this.buttonEditRecord.TabIndex = 6;
+            this.buttonEditRecord.Text = "แก้ไข";
+            this.buttonEditRecord.UseVisualStyleBackColor = false;
+            this.buttonEditRecord.Click += new System.EventHandler(this.buttonEditRecord_Click);
             // 
             // buttonCopyTable
             // 
@@ -422,7 +438,7 @@
             this.buttonExportCsv.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonExportCsv.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExportCsv.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonExportCsv.Location = new System.Drawing.Point(420, 22);
+            this.buttonExportCsv.Location = new System.Drawing.Point(635, 22);
             this.buttonExportCsv.Name = "buttonExportCsv";
             this.buttonExportCsv.Size = new System.Drawing.Size(119, 33);
             this.buttonExportCsv.TabIndex = 2;
@@ -451,23 +467,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 61);
@@ -980,5 +996,6 @@
         private System.Windows.Forms.TextBox textBox2WTolerance;
         private System.Windows.Forms.CheckBox checkBoxIsPercent;
         private System.Windows.Forms.Button buttonCopyTable;
+        private System.Windows.Forms.Button buttonEditRecord;
     }
 }
