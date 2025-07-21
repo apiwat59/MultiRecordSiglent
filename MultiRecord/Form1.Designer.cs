@@ -18,8 +18,9 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.panelChassis = new System.Windows.Forms.Panel();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
@@ -57,8 +58,6 @@
             this.buttonGetIDN = new System.Windows.Forms.Button();
             this.groupBoxFunctions = new System.Windows.Forms.GroupBox();
             this.buttonMeasureDiode = new System.Windows.Forms.Button();
-            this.buttonMeasureTemp = new System.Windows.Forms.Button();
-            this.buttonMeasureFreq = new System.Windows.Forms.Button();
             this.buttonMeasureCap = new System.Windows.Forms.Button();
             this.buttonMeasureRes4W = new System.Windows.Forms.Button();
             this.buttonMeasureRes2W = new System.Windows.Forms.Button();
@@ -82,6 +81,7 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panelChassis.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -92,6 +92,7 @@
             this.panelScreen.SuspendLayout();
             this.groupBoxConnection.SuspendLayout();
             this.groupBoxLog.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // panelChassis
@@ -108,7 +109,7 @@
             this.panelChassis.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelChassis.Location = new System.Drawing.Point(0, 0);
             this.panelChassis.Name = "panelChassis";
-            this.panelChassis.Size = new System.Drawing.Size(1528, 624);
+            this.panelChassis.Size = new System.Drawing.Size(1528, 686);
             this.panelChassis.TabIndex = 0;
             // 
             // groupBoxTolerance
@@ -128,7 +129,7 @@
             this.groupBoxTolerance.Controls.Add(this.checkBoxEnableTolerance);
             this.groupBoxTolerance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxTolerance.ForeColor = System.Drawing.Color.White;
-            this.groupBoxTolerance.Location = new System.Drawing.Point(750, 490);
+            this.groupBoxTolerance.Location = new System.Drawing.Point(750, 558);
             this.groupBoxTolerance.Name = "groupBoxTolerance";
             this.groupBoxTolerance.Size = new System.Drawing.Size(766, 122);
             this.groupBoxTolerance.TabIndex = 6;
@@ -279,7 +280,7 @@
             this.panelParameters.Controls.Add(this.comboBoxRange);
             this.panelParameters.Controls.Add(this.labelRange);
             this.panelParameters.Controls.Add(this.labelRelativeState);
-            this.panelParameters.Location = new System.Drawing.Point(12, 344);
+            this.panelParameters.Location = new System.Drawing.Point(12, 422);
             this.panelParameters.Name = "panelParameters";
             this.panelParameters.Size = new System.Drawing.Size(721, 50);
             this.panelParameters.TabIndex = 6;
@@ -371,7 +372,7 @@
             this.groupBoxRecord.ForeColor = System.Drawing.Color.White;
             this.groupBoxRecord.Location = new System.Drawing.Point(751, 12);
             this.groupBoxRecord.Name = "groupBoxRecord";
-            this.groupBoxRecord.Size = new System.Drawing.Size(765, 472);
+            this.groupBoxRecord.Size = new System.Drawing.Size(765, 540);
             this.groupBoxRecord.TabIndex = 5;
             this.groupBoxRecord.TabStop = false;
             this.groupBoxRecord.Text = "Data Recording";
@@ -467,23 +468,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle5.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle5.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle5;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle6.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle6.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle6;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 61);
@@ -491,7 +492,7 @@
             this.dataGridViewRecords.ReadOnly = true;
             this.dataGridViewRecords.RowHeadersVisible = false;
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRecords.Size = new System.Drawing.Size(745, 405);
+            this.dataGridViewRecords.Size = new System.Drawing.Size(745, 473);
             this.dataGridViewRecords.TabIndex = 0;
             // 
             // groupBoxSystem
@@ -502,7 +503,7 @@
             this.groupBoxSystem.Controls.Add(this.buttonGetIDN);
             this.groupBoxSystem.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxSystem.ForeColor = System.Drawing.Color.White;
-            this.groupBoxSystem.Location = new System.Drawing.Point(12, 238);
+            this.groupBoxSystem.Location = new System.Drawing.Point(12, 315);
             this.groupBoxSystem.Name = "groupBoxSystem";
             this.groupBoxSystem.Size = new System.Drawing.Size(460, 100);
             this.groupBoxSystem.TabIndex = 4;
@@ -564,8 +565,6 @@
             // groupBoxFunctions
             // 
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureDiode);
-            this.groupBoxFunctions.Controls.Add(this.buttonMeasureTemp);
-            this.groupBoxFunctions.Controls.Add(this.buttonMeasureFreq);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureCap);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureRes4W);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureRes2W);
@@ -575,9 +574,9 @@
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureVDC);
             this.groupBoxFunctions.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxFunctions.ForeColor = System.Drawing.Color.White;
-            this.groupBoxFunctions.Location = new System.Drawing.Point(478, 12);
+            this.groupBoxFunctions.Location = new System.Drawing.Point(478, 205);
             this.groupBoxFunctions.Name = "groupBoxFunctions";
-            this.groupBoxFunctions.Size = new System.Drawing.Size(255, 326);
+            this.groupBoxFunctions.Size = new System.Drawing.Size(255, 210);
             this.groupBoxFunctions.TabIndex = 3;
             this.groupBoxFunctions.TabStop = false;
             this.groupBoxFunctions.Text = "Measurement Functions";
@@ -587,7 +586,7 @@
             this.buttonMeasureDiode.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureDiode.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureDiode.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureDiode.Location = new System.Drawing.Point(129, 185);
+            this.buttonMeasureDiode.Location = new System.Drawing.Point(129, 154);
             this.buttonMeasureDiode.Name = "buttonMeasureDiode";
             this.buttonMeasureDiode.Size = new System.Drawing.Size(104, 35);
             this.buttonMeasureDiode.TabIndex = 9;
@@ -595,38 +594,12 @@
             this.buttonMeasureDiode.UseVisualStyleBackColor = false;
             this.buttonMeasureDiode.Click += new System.EventHandler(this.buttonMeasureDiode_Click);
             // 
-            // buttonMeasureTemp
-            // 
-            this.buttonMeasureTemp.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.buttonMeasureTemp.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonMeasureTemp.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureTemp.Location = new System.Drawing.Point(15, 185);
-            this.buttonMeasureTemp.Name = "buttonMeasureTemp";
-            this.buttonMeasureTemp.Size = new System.Drawing.Size(108, 35);
-            this.buttonMeasureTemp.TabIndex = 8;
-            this.buttonMeasureTemp.Text = "Temperature";
-            this.buttonMeasureTemp.UseVisualStyleBackColor = false;
-            this.buttonMeasureTemp.Click += new System.EventHandler(this.buttonMeasureTemp_Click);
-            // 
-            // buttonMeasureFreq
-            // 
-            this.buttonMeasureFreq.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.buttonMeasureFreq.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonMeasureFreq.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureFreq.Location = new System.Drawing.Point(129, 144);
-            this.buttonMeasureFreq.Name = "buttonMeasureFreq";
-            this.buttonMeasureFreq.Size = new System.Drawing.Size(104, 35);
-            this.buttonMeasureFreq.TabIndex = 7;
-            this.buttonMeasureFreq.Text = "Frequency";
-            this.buttonMeasureFreq.UseVisualStyleBackColor = false;
-            this.buttonMeasureFreq.Click += new System.EventHandler(this.buttonMeasureFreq_Click);
-            // 
             // buttonMeasureCap
             // 
             this.buttonMeasureCap.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureCap.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureCap.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureCap.Location = new System.Drawing.Point(15, 144);
+            this.buttonMeasureCap.Location = new System.Drawing.Point(15, 154);
             this.buttonMeasureCap.Name = "buttonMeasureCap";
             this.buttonMeasureCap.Size = new System.Drawing.Size(108, 35);
             this.buttonMeasureCap.TabIndex = 6;
@@ -639,7 +612,7 @@
             this.buttonMeasureRes4W.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureRes4W.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureRes4W.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureRes4W.Location = new System.Drawing.Point(129, 103);
+            this.buttonMeasureRes4W.Location = new System.Drawing.Point(129, 113);
             this.buttonMeasureRes4W.Name = "buttonMeasureRes4W";
             this.buttonMeasureRes4W.Size = new System.Drawing.Size(104, 35);
             this.buttonMeasureRes4W.TabIndex = 5;
@@ -652,7 +625,7 @@
             this.buttonMeasureRes2W.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureRes2W.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureRes2W.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureRes2W.Location = new System.Drawing.Point(15, 103);
+            this.buttonMeasureRes2W.Location = new System.Drawing.Point(15, 113);
             this.buttonMeasureRes2W.Name = "buttonMeasureRes2W";
             this.buttonMeasureRes2W.Size = new System.Drawing.Size(108, 35);
             this.buttonMeasureRes2W.TabIndex = 4;
@@ -665,7 +638,7 @@
             this.buttonMeasureIAC.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureIAC.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureIAC.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureIAC.Location = new System.Drawing.Point(129, 62);
+            this.buttonMeasureIAC.Location = new System.Drawing.Point(129, 72);
             this.buttonMeasureIAC.Name = "buttonMeasureIAC";
             this.buttonMeasureIAC.Size = new System.Drawing.Size(104, 35);
             this.buttonMeasureIAC.TabIndex = 3;
@@ -678,7 +651,7 @@
             this.buttonMeasureIDC.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureIDC.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureIDC.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureIDC.Location = new System.Drawing.Point(15, 62);
+            this.buttonMeasureIDC.Location = new System.Drawing.Point(15, 72);
             this.buttonMeasureIDC.Name = "buttonMeasureIDC";
             this.buttonMeasureIDC.Size = new System.Drawing.Size(108, 35);
             this.buttonMeasureIDC.TabIndex = 2;
@@ -691,7 +664,7 @@
             this.buttonMeasureVAC.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureVAC.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureVAC.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureVAC.Location = new System.Drawing.Point(129, 22);
+            this.buttonMeasureVAC.Location = new System.Drawing.Point(129, 32);
             this.buttonMeasureVAC.Name = "buttonMeasureVAC";
             this.buttonMeasureVAC.Size = new System.Drawing.Size(104, 35);
             this.buttonMeasureVAC.TabIndex = 1;
@@ -704,7 +677,7 @@
             this.buttonMeasureVDC.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
             this.buttonMeasureVDC.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonMeasureVDC.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonMeasureVDC.Location = new System.Drawing.Point(15, 22);
+            this.buttonMeasureVDC.Location = new System.Drawing.Point(15, 32);
             this.buttonMeasureVDC.Name = "buttonMeasureVDC";
             this.buttonMeasureVDC.Size = new System.Drawing.Size(108, 35);
             this.buttonMeasureVDC.TabIndex = 0;
@@ -716,12 +689,13 @@
             // 
             this.panelScreen.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(62)))), ((int)(((byte)(76)))));
             this.panelScreen.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panelScreen.Controls.Add(this.pictureBox1);
             this.panelScreen.Controls.Add(this.lblMeasurementType);
             this.panelScreen.Controls.Add(this.lblUnit);
             this.panelScreen.Controls.Add(this.lblReading);
             this.panelScreen.Location = new System.Drawing.Point(12, 12);
             this.panelScreen.Name = "panelScreen";
-            this.panelScreen.Size = new System.Drawing.Size(460, 110);
+            this.panelScreen.Size = new System.Drawing.Size(721, 187);
             this.panelScreen.TabIndex = 2;
             // 
             // lblMeasurementType
@@ -729,7 +703,7 @@
             this.lblMeasurementType.AutoSize = true;
             this.lblMeasurementType.Font = new System.Drawing.Font("Segoe UI Semibold", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMeasurementType.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(170)))), ((int)(((byte)(214)))), ((int)(((byte)(233)))));
-            this.lblMeasurementType.Location = new System.Drawing.Point(10, 10);
+            this.lblMeasurementType.Location = new System.Drawing.Point(572, 20);
             this.lblMeasurementType.Name = "lblMeasurementType";
             this.lblMeasurementType.Size = new System.Drawing.Size(111, 20);
             this.lblMeasurementType.TabIndex = 2;
@@ -740,7 +714,7 @@
             this.lblUnit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblUnit.Font = new System.Drawing.Font("Consolas", 27.75F, System.Drawing.FontStyle.Bold);
             this.lblUnit.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
-            this.lblUnit.Location = new System.Drawing.Point(365, 40);
+            this.lblUnit.Location = new System.Drawing.Point(633, 107);
             this.lblUnit.Name = "lblUnit";
             this.lblUnit.Size = new System.Drawing.Size(84, 58);
             this.lblUnit.TabIndex = 1;
@@ -752,14 +726,14 @@
             this.lblReading.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblReading.Font = new System.Drawing.Font("Consolas", 48F, System.Drawing.FontStyle.Bold);
+            this.lblReading.Font = new System.Drawing.Font("Consolas", 72F, System.Drawing.FontStyle.Bold);
             this.lblReading.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
-            this.lblReading.Location = new System.Drawing.Point(3, 30);
+            this.lblReading.Location = new System.Drawing.Point(15, 58);
             this.lblReading.Name = "lblReading";
-            this.lblReading.Size = new System.Drawing.Size(370, 76);
+            this.lblReading.Size = new System.Drawing.Size(612, 114);
             this.lblReading.TabIndex = 0;
             this.lblReading.Text = "0.000000";
-            this.lblReading.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblReading.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             // 
             // groupBoxConnection
             // 
@@ -772,7 +746,7 @@
             this.groupBoxConnection.Controls.Add(this.labelIP);
             this.groupBoxConnection.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxConnection.ForeColor = System.Drawing.Color.White;
-            this.groupBoxConnection.Location = new System.Drawing.Point(12, 128);
+            this.groupBoxConnection.Location = new System.Drawing.Point(12, 205);
             this.groupBoxConnection.Name = "groupBoxConnection";
             this.groupBoxConnection.Size = new System.Drawing.Size(460, 104);
             this.groupBoxConnection.TabIndex = 1;
@@ -867,7 +841,7 @@
             this.groupBoxLog.Controls.Add(this.richTextBoxLog);
             this.groupBoxLog.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxLog.ForeColor = System.Drawing.Color.White;
-            this.groupBoxLog.Location = new System.Drawing.Point(12, 410);
+            this.groupBoxLog.Location = new System.Drawing.Point(12, 476);
             this.groupBoxLog.Name = "groupBoxLog";
             this.groupBoxLog.Size = new System.Drawing.Size(721, 202);
             this.groupBoxLog.TabIndex = 0;
@@ -900,17 +874,28 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.pictureBox1.Location = new System.Drawing.Point(7, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(127, 44);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox1.TabIndex = 10;
+            this.pictureBox1.TabStop = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1528, 624);
+            this.ClientSize = new System.Drawing.Size(1528, 686);
             this.Controls.Add(this.panelChassis);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "SIGLENT SDM3055 Remote Control";
+            this.Text = "QWAVE - SIGLENT SDM3055 Remote Control";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
@@ -929,6 +914,7 @@
             this.groupBoxConnection.ResumeLayout(false);
             this.groupBoxConnection.PerformLayout();
             this.groupBoxLog.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -955,8 +941,6 @@
         private System.Windows.Forms.Button buttonDisconnect;
         private System.Windows.Forms.Button buttonMeasureVDC;
         private System.Windows.Forms.Button buttonMeasureDiode;
-        private System.Windows.Forms.Button buttonMeasureTemp;
-        private System.Windows.Forms.Button buttonMeasureFreq;
         private System.Windows.Forms.Button buttonMeasureCap;
         private System.Windows.Forms.Button buttonMeasureRes4W;
         private System.Windows.Forms.Button buttonMeasureRes2W;
@@ -997,5 +981,6 @@
         private System.Windows.Forms.CheckBox checkBoxIsPercent;
         private System.Windows.Forms.Button buttonCopyTable;
         private System.Windows.Forms.Button buttonEditRecord;
+        private System.Windows.Forms.PictureBox pictureBox1;
     }
 }

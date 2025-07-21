@@ -56,7 +56,7 @@ namespace MultiRecord
 
         private void InitializeForm()
         {
-            lblReading.Font = new Font("Consolas", 48F, FontStyle.Bold);
+            lblReading.Font = new Font("Consolas", 72F, FontStyle.Bold);
             lblUnit.Font = new Font("Consolas", 28F, FontStyle.Bold);
 
             UpdateConnectionStatus(false);
