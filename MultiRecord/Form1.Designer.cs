@@ -18,8 +18,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             this.panelChassis = new System.Windows.Forms.Panel();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
@@ -31,6 +31,9 @@
             this.labelDCTolerance = new System.Windows.Forms.Label();
             this.textBoxTargetValue = new System.Windows.Forms.TextBox();
             this.labelTargetValue = new System.Windows.Forms.Label();
+            this.buttonSetTarget = new System.Windows.Forms.Button();
+            this.labelUpperLimit = new System.Windows.Forms.Label();
+            this.labelLowerLimit = new System.Windows.Forms.Label();
             this.checkBoxEnableTolerance = new System.Windows.Forms.CheckBox();
             this.panelParameters = new System.Windows.Forms.Panel();
             this.buttonSetRelative = new System.Windows.Forms.Button();
@@ -118,6 +121,9 @@
             this.groupBoxTolerance.Controls.Add(this.labelDCTolerance);
             this.groupBoxTolerance.Controls.Add(this.textBoxTargetValue);
             this.groupBoxTolerance.Controls.Add(this.labelTargetValue);
+            this.groupBoxTolerance.Controls.Add(this.buttonSetTarget);
+            this.groupBoxTolerance.Controls.Add(this.labelUpperLimit);
+            this.groupBoxTolerance.Controls.Add(this.labelLowerLimit);
             this.groupBoxTolerance.Controls.Add(this.checkBoxEnableTolerance);
             this.groupBoxTolerance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxTolerance.ForeColor = System.Drawing.Color.White;
@@ -133,7 +139,7 @@
             this.checkBoxIsPercent.Checked = true;
             this.checkBoxIsPercent.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxIsPercent.ForeColor = System.Drawing.Color.White;
-            this.checkBoxIsPercent.Location = new System.Drawing.Point(13, 94);
+            this.checkBoxIsPercent.Location = new System.Drawing.Point(13, 90);
             this.checkBoxIsPercent.Name = "checkBoxIsPercent";
             this.checkBoxIsPercent.Size = new System.Drawing.Size(120, 20);
             this.checkBoxIsPercent.TabIndex = 9;
@@ -145,7 +151,7 @@
             this.textBox2WTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBox2WTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBox2WTolerance.ForeColor = System.Drawing.Color.White;
-            this.textBox2WTolerance.Location = new System.Drawing.Point(250, 67);
+            this.textBox2WTolerance.Location = new System.Drawing.Point(250, 56);
             this.textBox2WTolerance.Name = "textBox2WTolerance";
             this.textBox2WTolerance.Size = new System.Drawing.Size(80, 23);
             this.textBox2WTolerance.TabIndex = 8;
@@ -154,7 +160,7 @@
             // label2WTolerance
             // 
             this.label2WTolerance.ForeColor = System.Drawing.Color.White;
-            this.label2WTolerance.Location = new System.Drawing.Point(213, 70);
+            this.label2WTolerance.Location = new System.Drawing.Point(213, 59);
             this.label2WTolerance.Name = "label2WTolerance";
             this.label2WTolerance.Size = new System.Drawing.Size(75, 20);
             this.label2WTolerance.TabIndex = 7;
@@ -165,7 +171,7 @@
             this.textBoxACTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBoxACTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxACTolerance.ForeColor = System.Drawing.Color.White;
-            this.textBoxACTolerance.Location = new System.Drawing.Point(250, 42);
+            this.textBoxACTolerance.Location = new System.Drawing.Point(250, 31);
             this.textBoxACTolerance.Name = "textBoxACTolerance";
             this.textBoxACTolerance.Size = new System.Drawing.Size(80, 23);
             this.textBoxACTolerance.TabIndex = 6;
@@ -174,7 +180,7 @@
             // labelACTolerance
             // 
             this.labelACTolerance.ForeColor = System.Drawing.Color.White;
-            this.labelACTolerance.Location = new System.Drawing.Point(213, 45);
+            this.labelACTolerance.Location = new System.Drawing.Point(213, 34);
             this.labelACTolerance.Name = "labelACTolerance";
             this.labelACTolerance.Size = new System.Drawing.Size(75, 20);
             this.labelACTolerance.TabIndex = 5;
@@ -185,7 +191,7 @@
             this.textBoxDCTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBoxDCTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxDCTolerance.ForeColor = System.Drawing.Color.White;
-            this.textBoxDCTolerance.Location = new System.Drawing.Point(93, 67);
+            this.textBoxDCTolerance.Location = new System.Drawing.Point(93, 56);
             this.textBoxDCTolerance.Name = "textBoxDCTolerance";
             this.textBoxDCTolerance.Size = new System.Drawing.Size(80, 23);
             this.textBoxDCTolerance.TabIndex = 4;
@@ -194,7 +200,7 @@
             // labelDCTolerance
             // 
             this.labelDCTolerance.ForeColor = System.Drawing.Color.White;
-            this.labelDCTolerance.Location = new System.Drawing.Point(12, 70);
+            this.labelDCTolerance.Location = new System.Drawing.Point(12, 59);
             this.labelDCTolerance.Name = "labelDCTolerance";
             this.labelDCTolerance.Size = new System.Drawing.Size(75, 20);
             this.labelDCTolerance.TabIndex = 3;
@@ -205,7 +211,7 @@
             this.textBoxTargetValue.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBoxTargetValue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxTargetValue.ForeColor = System.Drawing.Color.White;
-            this.textBoxTargetValue.Location = new System.Drawing.Point(93, 42);
+            this.textBoxTargetValue.Location = new System.Drawing.Point(93, 31);
             this.textBoxTargetValue.Name = "textBoxTargetValue";
             this.textBoxTargetValue.Size = new System.Drawing.Size(80, 23);
             this.textBoxTargetValue.TabIndex = 2;
@@ -214,19 +220,52 @@
             // labelTargetValue
             // 
             this.labelTargetValue.ForeColor = System.Drawing.Color.White;
-            this.labelTargetValue.Location = new System.Drawing.Point(12, 45);
+            this.labelTargetValue.Location = new System.Drawing.Point(12, 34);
             this.labelTargetValue.Name = "labelTargetValue";
             this.labelTargetValue.Size = new System.Drawing.Size(75, 20);
             this.labelTargetValue.TabIndex = 1;
             this.labelTargetValue.Text = "Target Value:";
             // 
+            // buttonSetTarget
+            // 
+            this.buttonSetTarget.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonSetTarget.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonSetTarget.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSetTarget.ForeColor = System.Drawing.Color.Gainsboro;
+            this.buttonSetTarget.Location = new System.Drawing.Point(549, 73);
+            this.buttonSetTarget.Name = "buttonSetTarget";
+            this.buttonSetTarget.Size = new System.Drawing.Size(180, 30);
+            this.buttonSetTarget.TabIndex = 0;
+            this.buttonSetTarget.Text = "Set as Target";
+            this.buttonSetTarget.UseVisualStyleBackColor = false;
+            // 
+            // labelUpperLimit
+            // 
+            this.labelUpperLimit.ForeColor = System.Drawing.Color.LightGreen;
+            this.labelUpperLimit.Location = new System.Drawing.Point(379, 34);
+            this.labelUpperLimit.Name = "labelUpperLimit";
+            this.labelUpperLimit.Size = new System.Drawing.Size(350, 20);
+            this.labelUpperLimit.TabIndex = 10;
+            this.labelUpperLimit.Text = "Upper Limit: ---";
+            this.labelUpperLimit.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // labelLowerLimit
+            // 
+            this.labelLowerLimit.ForeColor = System.Drawing.Color.LightCoral;
+            this.labelLowerLimit.Location = new System.Drawing.Point(379, 56);
+            this.labelLowerLimit.Name = "labelLowerLimit";
+            this.labelLowerLimit.Size = new System.Drawing.Size(350, 20);
+            this.labelLowerLimit.TabIndex = 11;
+            this.labelLowerLimit.Text = "Lower Limit: ---";
+            this.labelLowerLimit.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // checkBoxEnableTolerance
             // 
             this.checkBoxEnableTolerance.ForeColor = System.Drawing.Color.White;
-            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(9, 16);
+            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(549, 31);
             this.checkBoxEnableTolerance.Name = "checkBoxEnableTolerance";
-            this.checkBoxEnableTolerance.Size = new System.Drawing.Size(180, 20);
-            this.checkBoxEnableTolerance.TabIndex = 0;
+            this.checkBoxEnableTolerance.Size = new System.Drawing.Size(150, 20);
+            this.checkBoxEnableTolerance.TabIndex = 12;
             this.checkBoxEnableTolerance.Text = "Enable Tolerance Check";
             this.checkBoxEnableTolerance.UseVisualStyleBackColor = true;
             // 
@@ -412,23 +451,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 61);
@@ -927,6 +966,9 @@
         private System.Windows.Forms.Label labelRange;
         private System.Windows.Forms.Label labelRelativeState;
         private System.Windows.Forms.GroupBox groupBoxTolerance;
+        private System.Windows.Forms.Button buttonSetTarget;
+        private System.Windows.Forms.Label labelUpperLimit;
+        private System.Windows.Forms.Label labelLowerLimit;
         private System.Windows.Forms.CheckBox checkBoxEnableTolerance;
         private System.Windows.Forms.Label labelTargetValue;
         private System.Windows.Forms.TextBox textBoxTargetValue;

@@ -67,6 +67,7 @@ namespace MultiRecord
         private void InitializeToleranceControls()
         {
             // Wire up event handlers for Designer-created controls
+            buttonSetTarget.Click += ButtonSetTarget_Click;
             checkBoxEnableTolerance.CheckedChanged += CheckBoxEnableTolerance_CheckedChanged;
             textBoxTargetValue.TextChanged += TextBoxTargetValue_TextChanged;
             textBoxDCTolerance.TextChanged += TextBoxDCTolerance_TextChanged;
@@ -76,6 +77,7 @@ namespace MultiRecord
 
             // Load tolerance settings
             LoadToleranceSettings();
+            UpdateToleranceButtonAndLimits();
             LogActivity("เชื่อมต่อ Tolerance Controls สำเร็จ");
         }
 
@@ -685,12 +687,110 @@ namespace MultiRecord
 
         #region --- Tolerance Control Event Handlers ---
 
+        private void ButtonSetTarget_Click(object sender, EventArgs e)
+        {
+            if (_dmm == null || !_dmm.IsConnected || _isOverload)
+            {
+                LogActivity("ไม่สามารถตั้งค่า Target ได้: ไม่มีค่าที่วัดได้", true);
+                return;
+            }
+
+            // Set current reading as target value
+            _toleranceTargetValue = _lastReadingValue;
+            textBoxTargetValue.Text = _toleranceTargetValue.ToString("F4", CultureInfo.InvariantCulture);
+            _toleranceEnabled = true;
+            
+            LogActivity($"ตั้งค่า Target เป็น {_toleranceTargetValue:F4} {_lastReadingUnit}");
+            UpdateToleranceButtonAndLimits();
+            SaveToleranceSettings();
+            
+            // Visual feedback
+            SoundUtil.Beep();
+        }
+
+        private void UpdateToleranceButtonAndLimits()
+        {
+            if (_toleranceEnabled && _toleranceTargetValue != 0.0)
+            {
+                buttonSetTarget.BackColor = Color.FromArgb(0, 122, 204);
+                buttonSetTarget.ForeColor = Color.White;
+                buttonSetTarget.Text = $"Target: {FormatValueForDisplay(_toleranceTargetValue, _lastReadingUnit ?? "V")}";
+                
+                // Calculate and display limits
+                UpdateToleranceLimits();
+            }
+            else
+            {
+                buttonSetTarget.BackColor = Color.FromArgb(63, 63, 70);
+                buttonSetTarget.ForeColor = Color.Gainsboro;
+                buttonSetTarget.Text = "Set as Target";
+                
+                // Clear limits
+                labelUpperLimit.Text = "Upper Limit: ---";
+                labelLowerLimit.Text = "Lower Limit: ---";
+            }
+        }
+
+        private void UpdateToleranceLimits()
+        {
+            if (!_toleranceEnabled || _toleranceTargetValue == 0.0)
+            {
+                labelUpperLimit.Text = "Upper Limit: ---";
+                labelLowerLimit.Text = "Lower Limit: ---";
+                return;
+            }
+
+            double toleranceValue = GetCurrentToleranceValue();
+            double allowedDeviation;
+            
+            if (_toleranceIsPercent)
+            {
+                allowedDeviation = Math.Abs(_toleranceTargetValue * toleranceValue / 100.0);
+            }
+            else
+            {
+                allowedDeviation = toleranceValue;
+            }
+
+            double upperLimit = _toleranceTargetValue + allowedDeviation;
+            double lowerLimit = _toleranceTargetValue - allowedDeviation;
+
+            string unit = _lastReadingUnit ?? "V";
+            labelUpperLimit.Text = $"Upper Limit: {FormatValueForDisplay(upperLimit, unit)}";
+            labelLowerLimit.Text = $"Lower Limit: {FormatValueForDisplay(lowerLimit, unit)}";
+        }
+
+        private double GetCurrentToleranceValue()
+        {
+            // Get tolerance value based on current function
+            switch (_currentFunction)
+            {
+                case MeasurementFunction.VoltageDC:
+                case MeasurementFunction.CurrentDC:
+                    return _toleranceValueDC;
+                case MeasurementFunction.VoltageAC:
+                case MeasurementFunction.CurrentAC:
+                    return _toleranceValueAC;
+                case MeasurementFunction.Resistance2W:
+                    return _toleranceValue2W;
+                default:
+                    return _toleranceValueDC;
+            }
+        }
+
         private void CheckBoxEnableTolerance_CheckedChanged(object sender, EventArgs e)
         {
             var checkBox = sender as CheckBox;
-            _toleranceEnabled = checkBox.Checked;
-            LogActivity($"Tolerance Check: {(_toleranceEnabled ? "เปิด" : "ปิด")}");
-            SaveToleranceSettings();
+            bool newState = checkBox.Checked;
+            
+            // Only change if there's an actual change
+            if (newState != _toleranceEnabled)
+            {
+                _toleranceEnabled = newState;
+                LogActivity($"Tolerance Check: {(_toleranceEnabled ? "เปิด" : "ปิด")}");
+                UpdateToleranceButtonAndLimits();
+                SaveToleranceSettings();
+            }
         }
 
         private void TextBoxTargetValue_TextChanged(object sender, EventArgs e)
@@ -699,6 +799,7 @@ namespace MultiRecord
             if (double.TryParse(textBox.Text, out double value))
             {
                 _toleranceTargetValue = value;
+                UpdateToleranceLimits();
                 SaveToleranceSettings();
             }
         }
@@ -709,6 +810,7 @@ namespace MultiRecord
             if (double.TryParse(textBox.Text, out double value))
             {
                 _toleranceValueDC = value;
+                UpdateToleranceLimits();
                 SaveToleranceSettings();
             }
         }
@@ -719,6 +821,7 @@ namespace MultiRecord
             if (double.TryParse(textBox.Text, out double value))
             {
                 _toleranceValueAC = value;
+                UpdateToleranceLimits();
                 SaveToleranceSettings();
             }
         }
@@ -729,6 +832,7 @@ namespace MultiRecord
             if (double.TryParse(textBox.Text, out double value))
             {
                 _toleranceValue2W = value;
+                UpdateToleranceLimits();
                 SaveToleranceSettings();
             }
         }
@@ -738,6 +842,7 @@ namespace MultiRecord
             var checkBox = sender as CheckBox;
             _toleranceIsPercent = checkBox.Checked;
             LogActivity($"Tolerance Mode: {(_toleranceIsPercent ? "Percentage" : "Absolute")}");
+            UpdateToleranceLimits();
             SaveToleranceSettings();
         }
 
@@ -1005,45 +1110,16 @@ namespace MultiRecord
 
         private void UpdateToleranceControls()
         {
-            // Find and update tolerance controls
-            foreach (Control control in this.Controls)
-            {
-                if (control is GroupBox groupBox && groupBox.Text == "Tolerance Check")
-                {
-                    foreach (Control subControl in groupBox.Controls)
-                    {
-                        if (subControl is CheckBox checkBox)
-                        {
-                            if (checkBox.Text == "Enable Tolerance Check")
-                            {
-                                checkBox.Checked = _toleranceEnabled;
-                            }
-                            else if (checkBox.Text == "Use Percentage (%)")
-                            {
-                                checkBox.Checked = _toleranceIsPercent;
-                            }
-                        }
-                        else if (subControl is TextBox textBox)
-                        {
-                            switch (textBox.Name)
-                            {
-                                case "textBoxTargetValue":
-                                    textBox.Text = _toleranceTargetValue.ToString(CultureInfo.InvariantCulture);
-                                    break;
-                                case "textBoxDCTolerance":
-                                    textBox.Text = _toleranceValueDC.ToString(CultureInfo.InvariantCulture);
-                                    break;
-                                case "textBoxACTolerance":
-                                    textBox.Text = _toleranceValueAC.ToString(CultureInfo.InvariantCulture);
-                                    break;
-                                case "textBox2WTolerance":
-                                    textBox.Text = _toleranceValue2W.ToString(CultureInfo.InvariantCulture);
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
+            // Update text controls with loaded values
+            textBoxTargetValue.Text = _toleranceTargetValue.ToString(CultureInfo.InvariantCulture);
+            textBoxDCTolerance.Text = _toleranceValueDC.ToString(CultureInfo.InvariantCulture);
+            textBoxACTolerance.Text = _toleranceValueAC.ToString(CultureInfo.InvariantCulture);
+            textBox2WTolerance.Text = _toleranceValue2W.ToString(CultureInfo.InvariantCulture);
+            checkBoxIsPercent.Checked = _toleranceIsPercent;
+            checkBoxEnableTolerance.Checked = _toleranceEnabled;
+            
+            // Update button and limits
+            UpdateToleranceButtonAndLimits();
         }
 
         #endregion
@@ -1116,8 +1192,6 @@ namespace MultiRecord
                 return;
             }
 
-            SoundUtil.Beep(); // เล่นเสียงเตือนเมื่อบันทึก
-
             int newId = _recordsTable.Rows.Count + 1;
             string function = _currentFunction.ToString();
 
@@ -1135,6 +1209,16 @@ namespace MultiRecord
                 {
                     measurement += " [OVER]"; // เพิ่ม marker ถ้าเกิน tolerance
                 }
+            }
+
+            // เล่นเสียงตามสถานะ tolerance
+            if (!withinTolerance)
+            {
+                SoundUtil.Over(); // เล่น over.mp3 เมื่อเกิน tolerance
+            }
+            else
+            {
+                SoundUtil.Beep(); // เล่นเสียงปกติเมื่อบันทึก
             }
 
             _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp);
@@ -1190,8 +1274,7 @@ namespace MultiRecord
 
 
 
-        // *** เพิ่ม Event Handler ใหม่สำหรับการแสดงผล measurement + unit ***
-        // *** เพิ่ม Event Handler ใหม่สำหรับการแสดงผล measurement + unit ***
+        // Format measurement display for better readability while keeping original data
         private void DataGridViewRecords_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             if (dataGridViewRecords.Columns[e.ColumnIndex].Name == "Measurement")
@@ -1202,17 +1285,69 @@ namespace MultiRecord
                     string measurement = row.Cells["Measurement"].Value?.ToString() ?? "";
                     string unit = row.Cells["Unit"].Value?.ToString() ?? "";
 
-                    // แสดง measurement + unit รวมกัน (ถ้าไม่ใช่ OVERLOAD)
-                    if (measurement != "OVERLOAD" && !string.IsNullOrEmpty(unit))
+                    if (measurement == "OVERLOAD")
                     {
-                        e.Value = $"{measurement} {unit}";
+                        e.Value = "OVERLOAD";
+                        e.FormattingApplied = true;
+                        return;
+                    }
+
+                    // Check for tolerance marker
+                    bool hasToleranceMarker = measurement.Contains("[OVER]");
+                    string cleanMeasurement = measurement.Replace(" [OVER]", "");
+                    
+                    if (double.TryParse(cleanMeasurement, NumberStyles.Any, CultureInfo.InvariantCulture, out double value) && !string.IsNullOrEmpty(unit))
+                    {
+                        // Format for display readability
+                        string formattedValue = FormatValueForDisplay(value, unit);
+                        
+                        // Add tolerance marker back if present
+                        if (hasToleranceMarker)
+                        {
+                            formattedValue += " [OVER]";
+                        }
+                        
+                        e.Value = formattedValue;
+                        e.FormattingApplied = true;
                     }
                     else
                     {
-                        e.Value = measurement;
+                        // Fallback to original display
+                        e.Value = !string.IsNullOrEmpty(unit) ? $"{measurement} {unit}" : measurement;
+                        e.FormattingApplied = true;
                     }
-                    e.FormattingApplied = true;
                 }
+            }
+        }
+
+        // Helper method to format values for display (with k/M prefixes)
+        private string FormatValueForDisplay(double value, string unit)
+        {
+            double absValue = Math.Abs(value);
+            
+            if (absValue >= 1000000) // Mega
+            {
+                return $"{(value / 1000000):F3} M{unit}";
+            }
+            else if (absValue >= 1000) // Kilo
+            {
+                return $"{(value / 1000):F3} k{unit}";
+            }
+            else if (absValue >= 1) // Standard
+            {
+                return $"{value:F4} {unit}";
+            }
+            else if (absValue >= 0.001) // milli
+            {
+                return $"{(value * 1000):F3} m{unit}";
+            }
+            else if (absValue >= 0.000001) // micro
+            {
+                return $"{(value * 1000000):F3} µ{unit}";
+            }
+            else // nano or smaller
+            {
+                return $"{value:F6} {unit}";
             }
         }
         // *** เพิ่มการ select แถวล่าสุดหลังจากลบข้อมูล ***
