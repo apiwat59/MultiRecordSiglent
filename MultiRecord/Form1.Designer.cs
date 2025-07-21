@@ -233,7 +233,7 @@
             this.buttonSetTarget.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonSetTarget.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSetTarget.ForeColor = System.Drawing.Color.Gainsboro;
-            this.buttonSetTarget.Location = new System.Drawing.Point(549, 73);
+            this.buttonSetTarget.Location = new System.Drawing.Point(565, 52);
             this.buttonSetTarget.Name = "buttonSetTarget";
             this.buttonSetTarget.Size = new System.Drawing.Size(180, 30);
             this.buttonSetTarget.TabIndex = 0;
@@ -263,9 +263,9 @@
             // checkBoxEnableTolerance
             // 
             this.checkBoxEnableTolerance.ForeColor = System.Drawing.Color.White;
-            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(549, 31);
+            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(379, 90);
             this.checkBoxEnableTolerance.Name = "checkBoxEnableTolerance";
-            this.checkBoxEnableTolerance.Size = new System.Drawing.Size(150, 20);
+            this.checkBoxEnableTolerance.Size = new System.Drawing.Size(180, 20);
             this.checkBoxEnableTolerance.TabIndex = 12;
             this.checkBoxEnableTolerance.Text = "Enable Tolerance Check";
             this.checkBoxEnableTolerance.UseVisualStyleBackColor = true;

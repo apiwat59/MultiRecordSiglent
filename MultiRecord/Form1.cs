@@ -697,6 +697,12 @@ namespace MultiRecord
 
         private void ButtonSetTarget_Click(object sender, EventArgs e)
         {
+            if (!_toleranceEnabled)
+            {
+                LogActivity("ไม่สามารถตั้งค่า Target ได้: Tolerance Check ไม่ได้เปิดใช้งาน", true);
+                return;
+            }
+
             if (_dmm == null || !_dmm.IsConnected || _isOverload)
             {
                 LogActivity("ไม่สามารถตั้งค่า Target ได้: ไม่มีค่าที่วัดได้", true);
@@ -706,7 +712,6 @@ namespace MultiRecord
             // Set current reading as target value
             _toleranceTargetValue = _lastReadingValue;
             textBoxTargetValue.Text = _toleranceTargetValue.ToString("F4", CultureInfo.InvariantCulture);
-            _toleranceEnabled = true;
             
             LogActivity($"ตั้งค่า Target เป็น {_toleranceTargetValue:F4} {_lastReadingUnit}");
             UpdateToleranceButtonAndLimits();
@@ -718,6 +723,9 @@ namespace MultiRecord
 
         private void UpdateToleranceButtonAndLimits()
         {
+            // Update checkbox state
+            checkBoxEnableTolerance.Checked = _toleranceEnabled;
+            
             if (_toleranceEnabled && _toleranceTargetValue != 0.0)
             {
                 buttonSetTarget.BackColor = Color.FromArgb(0, 122, 204);
@@ -737,6 +745,14 @@ namespace MultiRecord
                 labelUpperLimit.Text = "Upper Limit: ---";
                 labelLowerLimit.Text = "Lower Limit: ---";
             }
+            
+            // Enable/disable tolerance controls based on checkbox
+            buttonSetTarget.Enabled = _toleranceEnabled;
+            textBoxTargetValue.Enabled = _toleranceEnabled;
+            textBoxDCTolerance.Enabled = _toleranceEnabled;
+            textBoxACTolerance.Enabled = _toleranceEnabled;
+            textBox2WTolerance.Enabled = _toleranceEnabled;
+            checkBoxIsPercent.Enabled = _toleranceEnabled;
         }
 
         private void UpdateToleranceLimits()
