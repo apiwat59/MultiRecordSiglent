@@ -82,17 +82,45 @@ namespace SIGLENT
         {
             if (IsConnected) return;
 
+            TcpClient tempClient = null;
             try
             {
-                _tcpClient = new TcpClient();
-                var connectTask = _tcpClient.ConnectAsync(_ipAddress, _port);
-                if (await Task.WhenAny(connectTask, Task.Delay(_connectTimeout)) != connectTask)
+                tempClient = new TcpClient();
+                
+                // Set connection timeout using Task.WhenAny with better error handling
+                var connectTask = tempClient.ConnectAsync(_ipAddress, _port);
+                var timeoutTask = Task.Delay(_connectTimeout);
+                
+                var completedTask = await Task.WhenAny(connectTask, timeoutTask);
+                
+                if (completedTask == timeoutTask)
                 {
-                    _tcpClient?.Close();
-                    throw new TimeoutException($"Connection to {_ipAddress}:{_port} timed out.");
+                    // Connection timed out
+                    tempClient?.Close();
+                    tempClient?.Dispose();
+                    throw new TimeoutException($"Connection to {_ipAddress}:{_port} timed out after {_connectTimeout}ms.");
+                }
+                
+                // Wait for the connection task to complete and check for exceptions
+                try
+                {
+                    await connectTask;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Connection failed: {ex.Message}", ex);
                 }
 
-                if (!_tcpClient.Connected) throw new Exception("Failed to connect to device");
+                // Check if connection was successful
+                if (!tempClient.Connected)
+                {
+                    tempClient?.Close();
+                    throw new Exception("Failed to establish connection to device");
+                }
+
+                // Connection successful, assign to class member
+                _tcpClient = tempClient;
+                tempClient = null; // Prevent disposal in catch block
 
                 _stream = _tcpClient.GetStream();
                 _stream.ReadTimeout = _readTimeout;
@@ -117,6 +145,11 @@ namespace SIGLENT
             }
             catch (Exception)
             {
+                // Clean up temp client if connection failed
+                tempClient?.Close();
+                tempClient?.Dispose();
+                
+                // Clean up class members if already assigned
                 Disconnect();
                 throw;
             }
@@ -125,15 +158,34 @@ namespace SIGLENT
         private async Task<bool> SendDataAsync(byte[] data, CancellationToken cancellationToken)
         {
             if (!IsConnected) return false;
+            
             try
             {
                 await _stream.WriteAsync(data, 0, data.Length, cancellationToken);
                 await _stream.FlushAsync(cancellationToken);
                 return true;
             }
+            catch (ObjectDisposedException ex)
+            {
+                Debug.WriteLine($"SendDataAsync - Connection disposed: {ex.Message}");
+                HandleConnectionLost();
+                return false;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine($"SendDataAsync - Invalid operation: {ex.Message}");
+                HandleConnectionLost();
+                return false;
+            }
+            catch (System.IO.IOException ex)
+            {
+                Debug.WriteLine($"SendDataAsync - IO error: {ex.Message}");
+                HandleConnectionLost();
+                return false;
+            }
             catch (Exception ex)
             {
-                Debug.WriteLine($"SendDataAsync error: {ex.Message}");
+                Debug.WriteLine($"SendDataAsync - Unexpected error: {ex.GetType().Name}: {ex.Message}");
                 HandleConnectionLost();
                 return false;
             }
@@ -142,23 +194,55 @@ namespace SIGLENT
         private async Task<string> ReadDataAsync(CancellationToken cancellationToken)
         {
             if (!IsConnected) return string.Empty;
+            
             try
             {
                 byte[] buffer = new byte[1024];
                 var readTask = _stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-                if (await Task.WhenAny(readTask, Task.Delay(_readTimeout, cancellationToken)) != readTask)
+                var timeoutTask = Task.Delay(_readTimeout, cancellationToken);
+                
+                var completedTask = await Task.WhenAny(readTask, timeoutTask);
+                
+                if (completedTask == timeoutTask)
                 {
-                    throw new TimeoutException("Read operation timed out");
+                    throw new TimeoutException($"Read operation timed out after {_readTimeout}ms");
                 }
 
                 int bytesRead = await readTask;
-                if (bytesRead == 0) throw new Exception("Connection closed by device");
+                if (bytesRead == 0) 
+                {
+                    throw new Exception("Connection closed by device - no data received");
+                }
 
                 return Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
             }
+            catch (ObjectDisposedException ex)
+            {
+                Debug.WriteLine($"ReadDataAsync - Connection disposed: {ex.Message}");
+                HandleConnectionLost();
+                throw new Exception("Connection was closed", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine($"ReadDataAsync - Invalid operation: {ex.Message}");
+                HandleConnectionLost();
+                throw new Exception("Invalid read operation", ex);
+            }
+            catch (System.IO.IOException ex)
+            {
+                Debug.WriteLine($"ReadDataAsync - IO error: {ex.Message}");
+                HandleConnectionLost();
+                throw new Exception("Network communication error", ex);
+            }
+            catch (TimeoutException)
+            {
+                Debug.WriteLine("ReadDataAsync - Timeout");
+                // Don't call HandleConnectionLost for timeout - device might just be slow
+                throw;
+            }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ReadDataAsync error: {ex.Message}");
+                Debug.WriteLine($"ReadDataAsync - Unexpected error: {ex.GetType().Name}: {ex.Message}");
                 HandleConnectionLost();
                 throw;
             }

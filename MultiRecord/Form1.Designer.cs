@@ -286,7 +286,6 @@
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewRecords.Size = new System.Drawing.Size(745, 520);
             this.dataGridViewRecords.TabIndex = 0;
-            
             // 
             // groupBoxSystem
             // 

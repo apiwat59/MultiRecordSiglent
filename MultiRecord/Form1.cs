@@ -30,6 +30,7 @@ namespace MultiRecord
 
         private readonly string _dataFilePath;
         private readonly string _appDataFolder;
+        private readonly string _settingsFilePath;
 
         public Form1()
         {
@@ -37,9 +38,11 @@ namespace MultiRecord
 
             _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MultiRecordApp");
             _dataFilePath = Path.Combine(_appDataFolder, "measurement_data.csv");
+            _settingsFilePath = Path.Combine(_appDataFolder, "settings.ini");
 
             InitializeForm();
             InitializeDataTableAndLoadData();
+            LoadLastSuccessfulConnection();
         }
 
         private void InitializeForm()
@@ -86,6 +89,10 @@ namespace MultiRecord
         // ========= Connection and Reconnection =========
         private async void buttonConnect_Click(object sender, EventArgs e)
         {
+            // Validate input first
+            if (!ValidateConnectionInput())
+                return;
+                
             buttonConnect.Enabled = false;
             buttonConnect.Text = "Connecting...";
             LogActivity($"พยายามเชื่อมต่อ {textBoxIP.Text}:{textBoxPort.Text}");
@@ -103,12 +110,26 @@ namespace MultiRecord
                 textBoxSystemInfo.Text = idn;
                 UpdateConnectionStatus(true);
 
+                // บันทึกการตั้งค่าการเชื่อมต่อที่สำเร็จ
+                SaveLastSuccessfulConnection(textBoxIP.Text, textBoxPort.Text);
+
                 await SetActiveMeasurementAsync(MeasurementFunction.VoltageDC, buttonMeasureVDC);
             }
             catch (Exception ex)
             {
                 LogActivity($"เชื่อมต่อล้มเหลว: {ex.Message}", true);
-                MessageBox.Show($"ไม่สามารถเชื่อมต่อได้:\n{ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
+                // Show detailed error message with suggestions
+                string errorMessage = $"ไม่สามารถเชื่อมต่อได้:\n{ex.Message}\n\n";
+                errorMessage += "กรุณาตรวจสอบ:\n";
+                errorMessage += "1. IP Address และ Port ถูกต้อง\n";
+                errorMessage += "2. เครื่องมือเปิดอยู่และเชื่อมต่อเครือข่าย\n";
+                errorMessage += "3. ไฟร์วอลล์ไม่ได้บล็อกการเชื่อมต่อ\n";
+                errorMessage += "4. เครื่องมือไม่ได้ถูกใช้งานโดยโปรแกรมอื่น";
+                
+                MessageBox.Show(errorMessage, "ข้อผิดพลาดการเชื่อมต่อ", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
                 UpdateConnectionStatus(false);
                 _dmm?.Dispose();
                 _dmm = null;
@@ -122,14 +143,51 @@ namespace MultiRecord
 
         private async void buttonDisconnect_Click(object sender, EventArgs e)
         {
-            if (_dmm != null)
+            // Disable button during disconnection
+            buttonDisconnect.Enabled = false;
+            buttonDisconnect.Text = "Disconnecting...";
+            
+            try
             {
-                await _dmm.StopContinuousReadingAsync();
-                _dmm.Dispose();
-                _dmm = null;
+                LogActivity("กำลังตัดการเชื่อมต่อ...");
+                
+                if (_dmm != null)
+                {
+                    // Stop continuous reading first
+                    await _dmm.StopContinuousReadingAsync();
+                    
+                    // Disconnect and dispose
+                    _dmm.Disconnect();
+                    _dmm.Dispose();
+                    _dmm = null;
+                }
+                
+                UpdateConnectionStatus(false);
+                LogActivity("ตัดการเชื่อมต่อแล้ว");
+                
+                // Show success message
+                MessageBox.Show("ตัดการเชื่อมต่อเรียบร้อยแล้ว", "สำเร็จ", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            UpdateConnectionStatus(false);
-            LogActivity("ตัดการเชื่อมต่อแล้ว");
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ:\n{ex.Message}", 
+                    "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
+                // Force cleanup anyway
+                if (_dmm != null)
+                {
+                    try { _dmm.Dispose(); } catch { }
+                    _dmm = null;
+                }
+                UpdateConnectionStatus(false);
+            }
+            finally
+            {
+                // Re-enable the button (but it should be disabled by UpdateConnectionStatus)
+                buttonDisconnect.Text = "Disconnect";
+            }
         }
 
         private void Dmm_ConnectionLost()
@@ -139,8 +197,30 @@ namespace MultiRecord
                 this.Invoke(new Action(Dmm_ConnectionLost));
                 return;
             }
+            
             LogActivity("การเชื่อมต่อขาดหาย!", true);
             UpdateConnectionStatus(false);
+            
+            // Show connection lost notification
+            MessageBox.Show("การเชื่อมต่อกับเครื่องมือขาดหาย!\nโปรดตรวจสอบการเชื่อมต่อและลองเชื่อมต่อใหม่", 
+                "การเชื่อมต่อขาดหาย", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            
+            // Clean up the connection object
+            if (_dmm != null)
+            {
+                try
+                {
+                    _dmm.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"ข้อผิดพลาดขณะล้างข้อมูลการเชื่อมต่อ: {ex.Message}", true);
+                }
+                finally
+                {
+                    _dmm = null;
+                }
+            }
         }
 
         // ========= Measurement and Parameter Control =========
@@ -543,6 +623,110 @@ namespace MultiRecord
             richTextBoxLog.AppendText(logEntry);
             richTextBoxLog.ScrollToCaret();
         }
+
+        #region --- Input Validation ---
+        
+        private bool ValidateConnectionInput()
+        {
+            // Validate IP address
+            if (string.IsNullOrWhiteSpace(textBoxIP.Text))
+            {
+                MessageBox.Show("กรุณาใส่ IP Address", "ข้อมูลไม่ครบ", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBoxIP.Focus();
+                return false;
+            }
+
+            if (!System.Net.IPAddress.TryParse(textBoxIP.Text.Trim(), out _))
+            {
+                MessageBox.Show("รูปแบบ IP Address ไม่ถูกต้อง\nตัวอย่าง: 192.168.1.100", 
+                    "ข้อมูลไม่ถูกต้อง", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBoxIP.Focus();
+                textBoxIP.SelectAll();
+                return false;
+            }
+
+            // Validate port
+            if (string.IsNullOrWhiteSpace(textBoxPort.Text))
+            {
+                MessageBox.Show("กรุณาใส่หมายเลข Port", "ข้อมูลไม่ครบ", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBoxPort.Focus();
+                return false;
+            }
+
+            if (!int.TryParse(textBoxPort.Text.Trim(), out int port) || port < 1 || port > 65535)
+            {
+                MessageBox.Show("หมายเลข Port ไม่ถูกต้อง\nต้องเป็นตัวเลขระหว่าง 1-65535", 
+                    "ข้อมูลไม่ถูกต้อง", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                textBoxPort.Focus();
+                textBoxPort.SelectAll();
+                return false;
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        #region --- Settings Management ---
+        
+        private void LoadLastSuccessfulConnection()
+        {
+            try
+            {
+                if (File.Exists(_settingsFilePath))
+                {
+                    var lines = File.ReadAllLines(_settingsFilePath);
+                    foreach (var line in lines)
+                    {
+                        if (line.StartsWith("LastSuccessfulIP="))
+                        {
+                            string savedIP = line.Substring("LastSuccessfulIP=".Length);
+                            if (!string.IsNullOrEmpty(savedIP))
+                            {
+                                textBoxIP.Text = savedIP;
+                                LogActivity($"โหลด IP ล่าสุดที่เชื่อมต่อสำเร็จ: {savedIP}");
+                            }
+                        }
+                        else if (line.StartsWith("LastSuccessfulPort="))
+                        {
+                            string savedPort = line.Substring("LastSuccessfulPort=".Length);
+                            if (!string.IsNullOrEmpty(savedPort))
+                            {
+                                textBoxPort.Text = savedPort;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลดการตั้งค่าล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void SaveLastSuccessfulConnection(string ip, string port)
+        {
+            try
+            {
+                Directory.CreateDirectory(_appDataFolder);
+                var settings = new List<string>
+                {
+                    $"LastSuccessfulIP={ip}",
+                    $"LastSuccessfulPort={port}",
+                    $"LastConnectionTime={DateTime.Now:yyyy-MM-dd HH:mm:ss}"
+                };
+                File.WriteAllLines(_settingsFilePath, settings, Encoding.UTF8);
+                LogActivity($"บันทึกการตั้งค่าการเชื่อมต่อ: {ip}:{port}");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"บันทึกการตั้งค่าล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        #endregion
 
         #region --- Data, System, and Closing Methods ---
 
