@@ -89,6 +89,9 @@ namespace SIGLENT
                 tempClient = new TcpClient();
                 tempClient.ReceiveTimeout = _readTimeout;
                 tempClient.SendTimeout = _readTimeout;
+                tempClient.NoDelay = true; // Disable Nagle's algorithm for faster response
+                tempClient.ReceiveBufferSize = 8192;
+                tempClient.SendBufferSize = 8192;
                 
                 // Use Task.Run with CancellationToken for timeout
                 using (var cts = new CancellationTokenSource(_connectTimeout))
@@ -207,7 +210,7 @@ namespace SIGLENT
             
             try
             {
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[2048]; // Larger buffer for better performance
                 var readTask = _stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                 var timeoutTask = Task.Delay(_readTimeout, cancellationToken);
                 
@@ -271,7 +274,7 @@ namespace SIGLENT
                 {
                     throw new Exception("Failed to send command");
                 }
-                await Task.Delay(50);
+                await Task.Delay(25); // Reduced delay for faster command execution
             }
             finally
             {
@@ -293,7 +296,7 @@ namespace SIGLENT
                     return string.Empty;
                 }
 
-                await Task.Delay(100);
+                await Task.Delay(50); // Reduced delay for faster query response
                 return await ReadDataAsync(CancellationToken.None);
             }
             catch (Exception ex)
@@ -391,7 +394,9 @@ namespace SIGLENT
                                     ReadingReceived?.Invoke(this, new MeasurementResult(value, unit, function));
                                 }
                             }
-                            await Task.Delay(200, token); // Delay between readings
+                            // Dynamic delay based on measurement type
+                            int delay = GetOptimalReadingDelay(function);
+                            await Task.Delay(delay, token);
                         }
                         catch (OperationCanceledException) { break; }
                         catch (Exception ex)
@@ -505,6 +510,32 @@ namespace SIGLENT
                 case MeasurementFunction.Frequency: return "Hz";
                 case MeasurementFunction.Temperature: return "°C";
                 default: return "";
+            }
+        }
+
+        private int GetOptimalReadingDelay(MeasurementFunction func)
+        {
+            // Optimize delay based on measurement type and typical settling time
+            switch (func)
+            {
+                case MeasurementFunction.VoltageDC:
+                case MeasurementFunction.CurrentDC:
+                    return 100; // DC measurements are faster
+                case MeasurementFunction.VoltageAC:
+                case MeasurementFunction.CurrentAC:
+                case MeasurementFunction.Frequency:
+                    return 150; // AC measurements need more time
+                case MeasurementFunction.Resistance2W:
+                case MeasurementFunction.Resistance4W:
+                    return 120; // Resistance measurements
+                case MeasurementFunction.Capacitance:
+                    return 200; // Capacitance takes longer
+                case MeasurementFunction.Temperature:
+                    return 300; // Temperature measurements are slowest
+                case MeasurementFunction.Diode:
+                    return 150; // Diode measurements
+                default:
+                    return 150; // Default delay
             }
         }
 

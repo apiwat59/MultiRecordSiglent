@@ -1748,6 +1748,45 @@ namespace MultiRecord
             }
         }
 
+        private void buttonCopyTableHorizontal_Click(object sender, EventArgs e)
+        {
+            if (_recordsTable.Rows.Count == 0)
+            {
+                MessageBox.Show("ไม่มีข้อมูลให้คัดลอก", "แจ้งเตือน", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                var measurementValues = new List<string>();
+
+                // เฉพาะค่า Measurement
+                foreach (DataRow row in _recordsTable.Rows)
+                {
+                    measurementValues.Add(row["Measurement"].ToString());
+                }
+
+                // Copy to clipboard horizontally with tab separation
+                string clipboardText = string.Join("\t", measurementValues);
+                
+                var dataObject = new DataObject();
+                dataObject.SetText(clipboardText, TextDataFormat.Text);
+                dataObject.SetText(clipboardText, TextDataFormat.UnicodeText);
+                
+                // For Excel compatibility, also set as CSV format with tab delimiter
+                dataObject.SetData(DataFormats.CommaSeparatedValue, clipboardText);
+                
+                Clipboard.SetDataObject(dataObject, true);
+
+                LogActivity($"คัดลอกข้อมูลแนวนอน {_recordsTable.Rows.Count} แถวไปยังคลิปบอร์ดแล้ว");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"คัดลอกข้อมูลแนวนอนล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private async void buttonGetIDN_Click(object sender, EventArgs e)
         {
             if (_dmm == null || !_dmm.IsConnected) return;
