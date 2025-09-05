@@ -8,6 +8,7 @@ namespace MultiRecord
     public static class SettingsManager
     {
         private static Dictionary<string, string> _soundPaths = new Dictionary<string, string>();
+        private static Dictionary<string, string> _settings = new Dictionary<string, string>();
         private static readonly string SettingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MultiRecordApp");
         private static readonly string SettingsFile = Path.Combine(SettingsFolder, "settings.ini");
 
@@ -42,6 +43,84 @@ namespace MultiRecord
             _soundPaths[soundType] = path;
         }
 
+        // General settings methods
+        public static string GetSetting(string key, string defaultValue = "")
+        {
+            return _settings.ContainsKey(key) ? _settings[key] : defaultValue;
+        }
+
+        public static void SetSetting(string key, string value)
+        {
+            _settings[key] = value;
+        }
+
+        // MySQL settings
+        public static string MySqlHost 
+        { 
+            get => GetSetting("MySqlHost", "100.76.203.31"); 
+            set => SetSetting("MySqlHost", value); 
+        }
+
+        public static int MySqlPort 
+        { 
+            get => int.TryParse(GetSetting("MySqlPort", "3306"), out int port) ? port : 3306; 
+            set => SetSetting("MySqlPort", value.ToString()); 
+        }
+
+        public static string MySqlUser 
+        { 
+            get => GetSetting("MySqlUser", "FootSwitch"); 
+            set => SetSetting("MySqlUser", value); 
+        }
+
+        public static string MySqlPassword 
+        { 
+            get => GetSetting("MySqlPassword", "Qwave@dmin020890751"); 
+            set => SetSetting("MySqlPassword", value); 
+        }
+
+        public static string MySqlDatabase 
+        { 
+            get => GetSetting("MySqlDatabase", "FootSwitch"); 
+            set => SetSetting("MySqlDatabase", value); 
+        }
+
+        public static bool MySqlEnabled 
+        { 
+            get => bool.TryParse(GetSetting("MySqlEnabled", "true"), out bool enabled) && enabled; 
+            set => SetSetting("MySqlEnabled", value.ToString()); 
+        }
+
+        // QW Record settings
+        public static string CurrentQWID 
+        { 
+            get => GetSetting("CurrentQWID", GenerateQWID()); 
+            set => SetSetting("CurrentQWID", value); 
+        }
+
+        public static string CurrentSection 
+        { 
+            get => GetSetting("CurrentSection", "BottomPCB"); 
+            set => SetSetting("CurrentSection", value); 
+        }
+
+        public static string InstrumentSerial 
+        { 
+            get => GetSetting("InstrumentSerial", "SDM35HBC900652"); 
+            set => SetSetting("InstrumentSerial", value); 
+        }
+
+        public static int OperatorID 
+        { 
+            get => int.TryParse(GetSetting("OperatorID", "1"), out int id) ? id : 1; 
+            set => SetSetting("OperatorID", value.ToString()); 
+        }
+
+        private static string GenerateQWID()
+        {
+            return $"QW{DateTime.Now:yyyyMMdd}{new Random().Next(10, 99)}";
+        }
+
         public static void LoadSettings()
         {
             try
@@ -68,6 +147,10 @@ namespace MultiRecord
                                 {
                                     string soundType = key.Substring(6); // Remove "Sound_" prefix
                                     _soundPaths[soundType] = value;
+                                }
+                                else
+                                {
+                                    _settings[key] = value;
                                 }
                             }
                         }
@@ -111,6 +194,13 @@ namespace MultiRecord
                     foreach (var kvp in _soundPaths)
                     {
                         writer.WriteLine($"Sound_{kvp.Key}={kvp.Value}");
+                    }
+
+                    writer.WriteLine();
+                    writer.WriteLine("# General Settings");
+                    foreach (var kvp in _settings)
+                    {
+                        writer.WriteLine($"{kvp.Key}={kvp.Value}");
                     }
                 }
             }

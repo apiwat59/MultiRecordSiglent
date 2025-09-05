@@ -53,6 +53,8 @@ namespace MultiRecord
             InitializeDataTableAndLoadData();
             LoadLastSuccessfulConnection();
             InitializeToleranceControls();
+            InitializeQWRecord();
+            InitializeMySQL();
         }
 
         private void InitializeForm()
@@ -1225,13 +1227,13 @@ namespace MultiRecord
             }
         }
 
-        private void buttonRecord_Click(object sender, EventArgs e)
+        private async void buttonRecord_Click(object sender, EventArgs e)
         {
-            saveRecord();
+            await saveRecord();
         }
 
         // *** ปรับปรุง saveRecord() ***
-        private void saveRecord()
+        private async Task saveRecord()
         {
             if (_dmm == null || !_dmm.IsConnected || lblReading.Text == "CONFIG..." || lblReading.Text == "ERROR")
             {
@@ -1297,6 +1299,12 @@ namespace MultiRecord
             LogActivity(logMessage, !withinTolerance);
             
             SaveDataToFile();
+
+            // Save to MySQL if enabled
+            if (_mysqlManager != null)
+            {
+                await SaveToMySQLAsync(newId, function, measurement, unit, DateTime.Now, toleranceStatus);
+            }
 
             // *** เพิ่มการ select แถวล่าสุด ***
             SelectLatestRow();
@@ -1856,6 +1864,7 @@ namespace MultiRecord
         }
 
         private PCBAnnotationForm pcbAnnotationForm = null;
+        private MySqlManager _mysqlManager = null;
 
         private void buttonPCBAnnotation_Click(object sender, EventArgs e)
         {
@@ -1871,6 +1880,71 @@ namespace MultiRecord
             }
         }
 
+        private void InitializeQWRecord()
+        {
+            textBoxQWID.Text = SettingsManager.CurrentQWID;
+            textBoxSection.Text = SettingsManager.CurrentSection;
+            
+            // Wire up event handlers
+            textBoxQWID.TextChanged += TextBoxQWID_TextChanged;
+            textBoxSection.TextChanged += TextBoxSection_TextChanged;
+        }
+
+        private async void InitializeMySQL()
+        {
+            if (SettingsManager.MySqlEnabled)
+            {
+                try
+                {
+                    _mysqlManager = new MySqlManager(
+                        SettingsManager.MySqlHost,
+                        SettingsManager.MySqlPort,
+                        SettingsManager.MySqlUser,
+                        SettingsManager.MySqlPassword,
+                        SettingsManager.MySqlDatabase
+                    );
+
+                    bool connected = await _mysqlManager.TestConnectionAsync();
+                    if (connected)
+                    {
+                        await _mysqlManager.InitializeDatabaseAsync();
+                        LogActivity("เชื่อมต่อ MySQL สำเร็จ");
+                    }
+                    else
+                    {
+                        LogActivity("เชื่อมต่อ MySQL ล้มเหลว", true);
+                        _mysqlManager?.Dispose();
+                        _mysqlManager = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"MySQL error: {ex.Message}", true);
+                    _mysqlManager?.Dispose();
+                    _mysqlManager = null;
+                }
+            }
+        }
+
+        private void TextBoxQWID_TextChanged(object sender, EventArgs e)
+        {
+            SettingsManager.CurrentQWID = textBoxQWID.Text;
+            SettingsManager.SaveSettings();
+        }
+
+        private void TextBoxSection_TextChanged(object sender, EventArgs e)
+        {
+            SettingsManager.CurrentSection = textBoxSection.Text;
+            SettingsManager.SaveSettings();
+        }
+
+        private void buttonNewQW_Click(object sender, EventArgs e)
+        {
+            string newQWID = $"QW{DateTime.Now:yyyyMMdd}{new Random().Next(10, 99)}";
+            textBoxQWID.Text = newQWID;
+            LogActivity($"สร้าง QW ID ใหม่: {newQWID}");
+        }
+
         private void buttonSettings_Click(object sender, EventArgs e)
         {
             using (SettingsForm settingsForm = new SettingsForm())
@@ -1878,7 +1952,67 @@ namespace MultiRecord
                 if (settingsForm.ShowDialog() == DialogResult.OK)
                 {
                     LogActivity("บันทึกการตั้งค่าเรียบร้อยแล้ว");
+                    
+                    // Reinitialize MySQL if settings changed
+                    _mysqlManager?.Dispose();
+                    _mysqlManager = null;
+                    InitializeMySQL();
                 }
+            }
+        }
+
+        private async Task SaveToMySQLAsync(int measurementIndex, string function, string measurement, string unit, DateTime timestamp, string toleranceStatus)
+        {
+            try
+            {
+                // Create or update QW Record
+                int qwRecordId = await _mysqlManager.CreateOrUpdateQWRecordAsync(
+                    SettingsManager.CurrentQWID,
+                    SettingsManager.CurrentSection,
+                    SettingsManager.InstrumentSerial,
+                    SettingsManager.OperatorID
+                );
+
+                // Parse measurement value
+                if (decimal.TryParse(measurement, out decimal measurementValue))
+                {
+                    // Create tolerance data
+                    ToleranceData toleranceData = null;
+                    if (_toleranceEnabled)
+                    {
+                        toleranceData = new ToleranceData
+                        {
+                            Mode = _toleranceIsPercent ? "percent" : "absolute",
+                            UpperPercent = _toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
+                            LowerPercent = _toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
+                            UpperAbs = !_toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
+                            LowerAbs = !_toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
+                            Enabled = true
+                        };
+                    }
+
+                    // Insert measurement
+                    int measurementId = await _mysqlManager.InsertMeasurementAsync(
+                        qwRecordId,
+                        measurementIndex,
+                        function,
+                        measurementValue,
+                        unit,
+                        timestamp,
+                        toleranceStatus,
+                        toleranceData
+                    );
+
+                    LogActivity($"บันทึกใน MySQL สำเร็จ: QW {SettingsManager.CurrentQWID}, Measurement #{measurementIndex}");
+                }
+                else
+                {
+                    LogActivity($"ไม่สามารถแปลงค่า measurement: {measurement}", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"MySQL บันทึกล้มเหลว: {ex.Message}", true);
             }
         }
 
@@ -1910,6 +2044,7 @@ namespace MultiRecord
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             _dmm?.Dispose();
+            _mysqlManager?.Dispose();
         }
 
         #endregion

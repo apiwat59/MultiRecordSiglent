@@ -18,13 +18,13 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.panelChassis = new System.Windows.Forms.Panel();
-            this.buttonPCBAnnotation = new System.Windows.Forms.Button();
             this.buttonSettings = new System.Windows.Forms.Button();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
+            this.buttonPCBAnnotation = new System.Windows.Forms.Button();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
             this.textBox2WTolerance = new System.Windows.Forms.TextBox();
             this.label2WTolerance = new System.Windows.Forms.Label();
@@ -76,6 +76,12 @@
             this.lblMeasurementType = new System.Windows.Forms.Label();
             this.lblUnit = new System.Windows.Forms.Label();
             this.lblReading = new System.Windows.Forms.Label();
+            this.groupBoxQWRecord = new System.Windows.Forms.GroupBox();
+            this.buttonNewQW = new System.Windows.Forms.Button();
+            this.textBoxSection = new System.Windows.Forms.TextBox();
+            this.labelSection = new System.Windows.Forms.Label();
+            this.textBoxQWID = new System.Windows.Forms.TextBox();
+            this.labelQWID = new System.Windows.Forms.Label();
             this.groupBoxConnection = new System.Windows.Forms.GroupBox();
             this.buttonDisconnect = new System.Windows.Forms.Button();
             this.buttonConnect = new System.Windows.Forms.Button();
@@ -88,6 +94,9 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.panelChassis.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -97,20 +106,23 @@
             this.groupBoxFunctions.SuspendLayout();
             this.panelScreen.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.groupBoxQWRecord.SuspendLayout();
             this.groupBoxConnection.SuspendLayout();
             this.groupBoxLog.SuspendLayout();
+            this.tabControl1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelChassis
             // 
             this.panelChassis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.panelChassis.Controls.Add(this.buttonSettings);
+            this.panelChassis.Controls.Add(this.tabControl1);
             this.panelChassis.Controls.Add(this.groupBoxTolerance);
             this.panelChassis.Controls.Add(this.panelParameters);
-            this.panelChassis.Controls.Add(this.groupBoxRecord);
             this.panelChassis.Controls.Add(this.groupBoxSystem);
             this.panelChassis.Controls.Add(this.groupBoxFunctions);
             this.panelChassis.Controls.Add(this.panelScreen);
+            this.panelChassis.Controls.Add(this.groupBoxQWRecord);
             this.panelChassis.Controls.Add(this.groupBoxConnection);
             this.panelChassis.Controls.Add(this.groupBoxLog);
             this.panelChassis.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -119,28 +131,13 @@
             this.panelChassis.Size = new System.Drawing.Size(1372, 686);
             this.panelChassis.TabIndex = 0;
             // 
-            // buttonPCBAnnotation
-            // 
-            this.buttonPCBAnnotation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(139)))), ((int)(((byte)(34)))));
-            this.buttonPCBAnnotation.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonPCBAnnotation.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonPCBAnnotation.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonPCBAnnotation.ForeColor = System.Drawing.Color.White;
-            this.buttonPCBAnnotation.Location = new System.Drawing.Point(475, 31);
-            this.buttonPCBAnnotation.Name = "buttonPCBAnnotation";
-            this.buttonPCBAnnotation.Size = new System.Drawing.Size(123, 33);
-            this.buttonPCBAnnotation.TabIndex = 5;
-            this.buttonPCBAnnotation.Text = "PCB Mark";
-            this.buttonPCBAnnotation.UseVisualStyleBackColor = false;
-            this.buttonPCBAnnotation.Click += new System.EventHandler(this.buttonPCBAnnotation_Click);
-            // 
             // buttonSettings
             // 
             this.buttonSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
             this.buttonSettings.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSettings.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonSettings.Location = new System.Drawing.Point(261, 260);
+            this.buttonSettings.Location = new System.Drawing.Point(259, 58);
             this.buttonSettings.Name = "buttonSettings";
             this.buttonSettings.Size = new System.Drawing.Size(85, 33);
             this.buttonSettings.TabIndex = 4;
@@ -172,6 +169,21 @@
             this.groupBoxTolerance.TabIndex = 6;
             this.groupBoxTolerance.TabStop = false;
             this.groupBoxTolerance.Text = "Tolerance Check";
+            // 
+            // buttonPCBAnnotation
+            // 
+            this.buttonPCBAnnotation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(139)))), ((int)(((byte)(34)))));
+            this.buttonPCBAnnotation.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonPCBAnnotation.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonPCBAnnotation.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonPCBAnnotation.ForeColor = System.Drawing.Color.White;
+            this.buttonPCBAnnotation.Location = new System.Drawing.Point(475, 31);
+            this.buttonPCBAnnotation.Name = "buttonPCBAnnotation";
+            this.buttonPCBAnnotation.Size = new System.Drawing.Size(123, 33);
+            this.buttonPCBAnnotation.TabIndex = 5;
+            this.buttonPCBAnnotation.Text = "PCB Mark";
+            this.buttonPCBAnnotation.UseVisualStyleBackColor = false;
+            this.buttonPCBAnnotation.Click += new System.EventHandler(this.buttonPCBAnnotation_Click);
             // 
             // checkBoxIsPercent
             // 
@@ -399,6 +411,7 @@
             // 
             // groupBoxRecord
             // 
+            this.groupBoxRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
             this.groupBoxRecord.Controls.Add(this.label2);
             this.groupBoxRecord.Controls.Add(this.lb_lates);
             this.groupBoxRecord.Controls.Add(this.buttonClearTable);
@@ -411,12 +424,11 @@
             this.groupBoxRecord.Controls.Add(this.dataGridViewRecords);
             this.groupBoxRecord.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.groupBoxRecord.ForeColor = System.Drawing.Color.White;
-            this.groupBoxRecord.Location = new System.Drawing.Point(751, 12);
+            this.groupBoxRecord.Location = new System.Drawing.Point(11, 6);
             this.groupBoxRecord.Name = "groupBoxRecord";
-            this.groupBoxRecord.Size = new System.Drawing.Size(616, 540);
+            this.groupBoxRecord.Size = new System.Drawing.Size(608, 537);
             this.groupBoxRecord.TabIndex = 5;
             this.groupBoxRecord.TabStop = false;
-            this.groupBoxRecord.Text = "Data Recording";
             // 
             // label2
             // 
@@ -427,7 +439,7 @@
             this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
             this.label2.Location = new System.Drawing.Point(198, 78);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(105, 37);
+            this.label2.Size = new System.Drawing.Size(97, 34);
             this.label2.TabIndex = 12;
             this.label2.Text = "ค่าล่าสุด :";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -441,7 +453,7 @@
             this.lb_lates.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
             this.lb_lates.Location = new System.Drawing.Point(309, 80);
             this.lb_lates.Name = "lb_lates";
-            this.lb_lates.Size = new System.Drawing.Size(292, 37);
+            this.lb_lates.Size = new System.Drawing.Size(284, 34);
             this.lb_lates.TabIndex = 11;
             this.lb_lates.Text = "0.000000";
             this.lb_lates.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -452,7 +464,7 @@
             this.buttonClearTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonClearTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonClearTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonClearTable.Location = new System.Drawing.Point(347, 22);
+            this.buttonClearTable.Location = new System.Drawing.Point(343, 22);
             this.buttonClearTable.Name = "buttonClearTable";
             this.buttonClearTable.Size = new System.Drawing.Size(124, 33);
             this.buttonClearTable.TabIndex = 4;
@@ -466,7 +478,7 @@
             this.buttonDeleteRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonDeleteRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonDeleteRecord.Location = new System.Drawing.Point(277, 22);
+            this.buttonDeleteRecord.Location = new System.Drawing.Point(273, 22);
             this.buttonDeleteRecord.Name = "buttonDeleteRecord";
             this.buttonDeleteRecord.Size = new System.Drawing.Size(64, 33);
             this.buttonDeleteRecord.TabIndex = 3;
@@ -480,7 +492,7 @@
             this.buttonEditRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonEditRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonEditRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonEditRecord.Location = new System.Drawing.Point(206, 22);
+            this.buttonEditRecord.Location = new System.Drawing.Point(202, 22);
             this.buttonEditRecord.Name = "buttonEditRecord";
             this.buttonEditRecord.Size = new System.Drawing.Size(65, 33);
             this.buttonEditRecord.TabIndex = 6;
@@ -522,7 +534,7 @@
             this.buttonExportCsv.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonExportCsv.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExportCsv.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonExportCsv.Location = new System.Drawing.Point(477, 22);
+            this.buttonExportCsv.Location = new System.Drawing.Point(473, 22);
             this.buttonExportCsv.Name = "buttonExportCsv";
             this.buttonExportCsv.Size = new System.Drawing.Size(124, 33);
             this.buttonExportCsv.TabIndex = 2;
@@ -551,23 +563,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 122);
@@ -575,7 +587,7 @@
             this.dataGridViewRecords.ReadOnly = true;
             this.dataGridViewRecords.RowHeadersVisible = false;
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRecords.Size = new System.Drawing.Size(601, 412);
+            this.dataGridViewRecords.Size = new System.Drawing.Size(588, 373);
             this.dataGridViewRecords.TabIndex = 0;
             // 
             // groupBoxSystem
@@ -842,8 +854,78 @@
             this.lblReading.Text = "0.000000";
             this.lblReading.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             // 
+            // groupBoxQWRecord
+            // 
+            this.groupBoxQWRecord.Controls.Add(this.buttonNewQW);
+            this.groupBoxQWRecord.Controls.Add(this.textBoxSection);
+            this.groupBoxQWRecord.Controls.Add(this.labelSection);
+            this.groupBoxQWRecord.Controls.Add(this.textBoxQWID);
+            this.groupBoxQWRecord.Controls.Add(this.labelQWID);
+            this.groupBoxQWRecord.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBoxQWRecord.ForeColor = System.Drawing.Color.White;
+            this.groupBoxQWRecord.Location = new System.Drawing.Point(12, 95);
+            this.groupBoxQWRecord.Name = "groupBoxQWRecord";
+            this.groupBoxQWRecord.Size = new System.Drawing.Size(460, 104);
+            this.groupBoxQWRecord.TabIndex = 0;
+            this.groupBoxQWRecord.TabStop = false;
+            this.groupBoxQWRecord.Text = "QW Record Information";
+            // 
+            // buttonNewQW
+            // 
+            this.buttonNewQW.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonNewQW.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonNewQW.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonNewQW.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonNewQW.ForeColor = System.Drawing.Color.White;
+            this.buttonNewQW.Location = new System.Drawing.Point(290, 30);
+            this.buttonNewQW.Name = "buttonNewQW";
+            this.buttonNewQW.Size = new System.Drawing.Size(80, 33);
+            this.buttonNewQW.TabIndex = 4;
+            this.buttonNewQW.Text = "New QW";
+            this.buttonNewQW.UseVisualStyleBackColor = false;
+            this.buttonNewQW.Click += new System.EventHandler(this.buttonNewQW_Click);
+            // 
+            // textBoxSection
+            // 
+            this.textBoxSection.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.textBoxSection.ForeColor = System.Drawing.Color.White;
+            this.textBoxSection.Location = new System.Drawing.Point(70, 52);
+            this.textBoxSection.Name = "textBoxSection";
+            this.textBoxSection.Size = new System.Drawing.Size(200, 23);
+            this.textBoxSection.TabIndex = 3;
+            // 
+            // labelSection
+            // 
+            this.labelSection.AutoSize = true;
+            this.labelSection.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelSection.Location = new System.Drawing.Point(15, 55);
+            this.labelSection.Name = "labelSection";
+            this.labelSection.Size = new System.Drawing.Size(49, 15);
+            this.labelSection.TabIndex = 2;
+            this.labelSection.Text = "Section:";
+            // 
+            // textBoxQWID
+            // 
+            this.textBoxQWID.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.textBoxQWID.ForeColor = System.Drawing.Color.White;
+            this.textBoxQWID.Location = new System.Drawing.Point(70, 22);
+            this.textBoxQWID.Name = "textBoxQWID";
+            this.textBoxQWID.Size = new System.Drawing.Size(200, 23);
+            this.textBoxQWID.TabIndex = 1;
+            // 
+            // labelQWID
+            // 
+            this.labelQWID.AutoSize = true;
+            this.labelQWID.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelQWID.Location = new System.Drawing.Point(15, 25);
+            this.labelQWID.Name = "labelQWID";
+            this.labelQWID.Size = new System.Drawing.Size(44, 15);
+            this.labelQWID.TabIndex = 0;
+            this.labelQWID.Text = "QW ID:";
+            // 
             // groupBoxConnection
             // 
+            this.groupBoxConnection.Controls.Add(this.buttonSettings);
             this.groupBoxConnection.Controls.Add(this.buttonDisconnect);
             this.groupBoxConnection.Controls.Add(this.buttonConnect);
             this.groupBoxConnection.Controls.Add(this.labelStatus);
@@ -853,7 +935,7 @@
             this.groupBoxConnection.Controls.Add(this.labelIP);
             this.groupBoxConnection.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBoxConnection.ForeColor = System.Drawing.Color.White;
-            this.groupBoxConnection.Location = new System.Drawing.Point(12, 205);
+            this.groupBoxConnection.Location = new System.Drawing.Point(12, 208);
             this.groupBoxConnection.Name = "groupBoxConnection";
             this.groupBoxConnection.Size = new System.Drawing.Size(460, 104);
             this.groupBoxConnection.TabIndex = 1;
@@ -981,6 +1063,37 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
+            // tabControl1
+            // 
+            this.tabControl1.Controls.Add(this.tabPage1);
+            this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Location = new System.Drawing.Point(750, 12);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(622, 533);
+            this.tabControl1.TabIndex = 7;
+            // 
+            // tabPage1
+            // 
+            this.tabPage1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tabPage1.Controls.Add(this.groupBoxRecord);
+            this.tabPage1.Location = new System.Drawing.Point(4, 22);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(614, 507);
+            this.tabPage1.TabIndex = 0;
+            this.tabPage1.Text = "Data Recording";
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Location = new System.Drawing.Point(4, 22);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(614, 507);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "Settings";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1009,9 +1122,13 @@
             this.panelScreen.ResumeLayout(false);
             this.panelScreen.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.groupBoxQWRecord.ResumeLayout(false);
+            this.groupBoxQWRecord.PerformLayout();
             this.groupBoxConnection.ResumeLayout(false);
             this.groupBoxConnection.PerformLayout();
             this.groupBoxLog.ResumeLayout(false);
+            this.tabControl1.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -1022,6 +1139,12 @@
         private System.Windows.Forms.GroupBox groupBoxLog;
         private System.Windows.Forms.RichTextBox richTextBoxLog;
         private System.Windows.Forms.Panel panelScreen;
+        private System.Windows.Forms.GroupBox groupBoxQWRecord;
+        private System.Windows.Forms.Button buttonNewQW;
+        private System.Windows.Forms.TextBox textBoxSection;
+        private System.Windows.Forms.Label labelSection;
+        private System.Windows.Forms.TextBox textBoxQWID;
+        private System.Windows.Forms.Label labelQWID;
         private System.Windows.Forms.GroupBox groupBoxConnection;
         private System.Windows.Forms.GroupBox groupBoxFunctions;
         private System.Windows.Forms.GroupBox groupBoxSystem;
@@ -1085,5 +1208,8 @@
         private System.Windows.Forms.Button buttonContinus;
         private System.Windows.Forms.Label lb_lates;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TabPage tabPage2;
     }
 }
