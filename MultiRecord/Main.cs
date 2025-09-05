@@ -1,4 +1,6 @@
-﻿using System;
+﻿using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
+using SIGLENT;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -9,7 +11,6 @@ using System.Media; // เพิ่ม namespace นี้
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using SIGLENT;
 
 
 namespace MultiRecord
@@ -1256,6 +1257,24 @@ namespace MultiRecord
             }
 
             _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp);
+
+            try
+            {
+                string formattedValue = FormatValueForDisplay(Convert.ToDouble(measurement), unit);
+                lb_lates.Text = $"{formattedValue}";
+            }
+            catch
+            {
+                if (lblMeasurementType.Text == "Continuous".ToUpper())
+                {
+                    lb_lates.Text = $"Open";
+                }
+                else
+                {
+                    lb_lates.Text = $"Overload";
+                }
+            }
+    
             
             string logMessage = $"บันทึกค่า No. {newId}: {function}, {measurement} {unit}";
             if (!withinTolerance)

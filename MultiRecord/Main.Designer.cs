@@ -18,8 +18,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.panelChassis = new System.Windows.Forms.Panel();
             this.buttonSettings = new System.Windows.Forms.Button();
@@ -59,6 +59,7 @@
             this.buttonReset = new System.Windows.Forms.Button();
             this.buttonGetIDN = new System.Windows.Forms.Button();
             this.groupBoxFunctions = new System.Windows.Forms.GroupBox();
+            this.buttonContinus = new System.Windows.Forms.Button();
             this.buttonMeasureDiode = new System.Windows.Forms.Button();
             this.buttonMeasureCap = new System.Windows.Forms.Button();
             this.buttonMeasureRes4W = new System.Windows.Forms.Button();
@@ -84,7 +85,8 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.buttonContinus = new System.Windows.Forms.Button();
+            this.lb_lates = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             this.panelChassis.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -113,7 +115,7 @@
             this.panelChassis.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelChassis.Location = new System.Drawing.Point(0, 0);
             this.panelChassis.Name = "panelChassis";
-            this.panelChassis.Size = new System.Drawing.Size(1567, 686);
+            this.panelChassis.Size = new System.Drawing.Size(1372, 686);
             this.panelChassis.TabIndex = 0;
             // 
             // buttonSettings
@@ -149,7 +151,7 @@
             this.groupBoxTolerance.ForeColor = System.Drawing.Color.White;
             this.groupBoxTolerance.Location = new System.Drawing.Point(750, 558);
             this.groupBoxTolerance.Name = "groupBoxTolerance";
-            this.groupBoxTolerance.Size = new System.Drawing.Size(805, 122);
+            this.groupBoxTolerance.Size = new System.Drawing.Size(617, 122);
             this.groupBoxTolerance.TabIndex = 6;
             this.groupBoxTolerance.TabStop = false;
             this.groupBoxTolerance.Text = "Tolerance Check";
@@ -172,7 +174,7 @@
             this.textBox2WTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBox2WTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBox2WTolerance.ForeColor = System.Drawing.Color.White;
-            this.textBox2WTolerance.Location = new System.Drawing.Point(250, 56);
+            this.textBox2WTolerance.Location = new System.Drawing.Point(224, 56);
             this.textBox2WTolerance.Name = "textBox2WTolerance";
             this.textBox2WTolerance.Size = new System.Drawing.Size(80, 23);
             this.textBox2WTolerance.TabIndex = 8;
@@ -181,7 +183,7 @@
             // label2WTolerance
             // 
             this.label2WTolerance.ForeColor = System.Drawing.Color.White;
-            this.label2WTolerance.Location = new System.Drawing.Point(213, 59);
+            this.label2WTolerance.Location = new System.Drawing.Point(187, 59);
             this.label2WTolerance.Name = "label2WTolerance";
             this.label2WTolerance.Size = new System.Drawing.Size(75, 20);
             this.label2WTolerance.TabIndex = 7;
@@ -192,7 +194,7 @@
             this.textBoxACTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.textBoxACTolerance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBoxACTolerance.ForeColor = System.Drawing.Color.White;
-            this.textBoxACTolerance.Location = new System.Drawing.Point(250, 31);
+            this.textBoxACTolerance.Location = new System.Drawing.Point(224, 31);
             this.textBoxACTolerance.Name = "textBoxACTolerance";
             this.textBoxACTolerance.Size = new System.Drawing.Size(80, 23);
             this.textBoxACTolerance.TabIndex = 6;
@@ -201,7 +203,7 @@
             // labelACTolerance
             // 
             this.labelACTolerance.ForeColor = System.Drawing.Color.White;
-            this.labelACTolerance.Location = new System.Drawing.Point(213, 34);
+            this.labelACTolerance.Location = new System.Drawing.Point(187, 34);
             this.labelACTolerance.Name = "labelACTolerance";
             this.labelACTolerance.Size = new System.Drawing.Size(75, 20);
             this.labelACTolerance.TabIndex = 5;
@@ -253,9 +255,9 @@
             this.buttonSetTarget.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonSetTarget.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSetTarget.ForeColor = System.Drawing.Color.Gainsboro;
-            this.buttonSetTarget.Location = new System.Drawing.Point(587, 51);
+            this.buttonSetTarget.Location = new System.Drawing.Point(475, 51);
             this.buttonSetTarget.Name = "buttonSetTarget";
-            this.buttonSetTarget.Size = new System.Drawing.Size(180, 30);
+            this.buttonSetTarget.Size = new System.Drawing.Size(123, 30);
             this.buttonSetTarget.TabIndex = 0;
             this.buttonSetTarget.Text = "Set as Target";
             this.buttonSetTarget.UseVisualStyleBackColor = false;
@@ -263,9 +265,9 @@
             // labelUpperLimit
             // 
             this.labelUpperLimit.ForeColor = System.Drawing.Color.LightGreen;
-            this.labelUpperLimit.Location = new System.Drawing.Point(379, 34);
+            this.labelUpperLimit.Location = new System.Drawing.Point(318, 34);
             this.labelUpperLimit.Name = "labelUpperLimit";
-            this.labelUpperLimit.Size = new System.Drawing.Size(350, 20);
+            this.labelUpperLimit.Size = new System.Drawing.Size(249, 20);
             this.labelUpperLimit.TabIndex = 10;
             this.labelUpperLimit.Text = "Upper Limit: ---";
             this.labelUpperLimit.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -273,9 +275,9 @@
             // labelLowerLimit
             // 
             this.labelLowerLimit.ForeColor = System.Drawing.Color.LightCoral;
-            this.labelLowerLimit.Location = new System.Drawing.Point(379, 56);
+            this.labelLowerLimit.Location = new System.Drawing.Point(318, 56);
             this.labelLowerLimit.Name = "labelLowerLimit";
-            this.labelLowerLimit.Size = new System.Drawing.Size(350, 20);
+            this.labelLowerLimit.Size = new System.Drawing.Size(202, 20);
             this.labelLowerLimit.TabIndex = 11;
             this.labelLowerLimit.Text = "Lower Limit: ---";
             this.labelLowerLimit.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -283,7 +285,7 @@
             // checkBoxEnableTolerance
             // 
             this.checkBoxEnableTolerance.ForeColor = System.Drawing.Color.White;
-            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(379, 90);
+            this.checkBoxEnableTolerance.Location = new System.Drawing.Point(318, 90);
             this.checkBoxEnableTolerance.Name = "checkBoxEnableTolerance";
             this.checkBoxEnableTolerance.Size = new System.Drawing.Size(180, 20);
             this.checkBoxEnableTolerance.TabIndex = 12;
@@ -380,6 +382,8 @@
             // 
             // groupBoxRecord
             // 
+            this.groupBoxRecord.Controls.Add(this.label2);
+            this.groupBoxRecord.Controls.Add(this.lb_lates);
             this.groupBoxRecord.Controls.Add(this.buttonClearTable);
             this.groupBoxRecord.Controls.Add(this.buttonDeleteRecord);
             this.groupBoxRecord.Controls.Add(this.buttonEditRecord);
@@ -392,7 +396,7 @@
             this.groupBoxRecord.ForeColor = System.Drawing.Color.White;
             this.groupBoxRecord.Location = new System.Drawing.Point(751, 12);
             this.groupBoxRecord.Name = "groupBoxRecord";
-            this.groupBoxRecord.Size = new System.Drawing.Size(804, 540);
+            this.groupBoxRecord.Size = new System.Drawing.Size(616, 540);
             this.groupBoxRecord.TabIndex = 5;
             this.groupBoxRecord.TabStop = false;
             this.groupBoxRecord.Text = "Data Recording";
@@ -403,7 +407,7 @@
             this.buttonClearTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonClearTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonClearTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonClearTable.Location = new System.Drawing.Point(550, 22);
+            this.buttonClearTable.Location = new System.Drawing.Point(347, 22);
             this.buttonClearTable.Name = "buttonClearTable";
             this.buttonClearTable.Size = new System.Drawing.Size(124, 33);
             this.buttonClearTable.TabIndex = 4;
@@ -417,7 +421,7 @@
             this.buttonDeleteRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonDeleteRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonDeleteRecord.Location = new System.Drawing.Point(480, 22);
+            this.buttonDeleteRecord.Location = new System.Drawing.Point(277, 22);
             this.buttonDeleteRecord.Name = "buttonDeleteRecord";
             this.buttonDeleteRecord.Size = new System.Drawing.Size(64, 33);
             this.buttonDeleteRecord.TabIndex = 3;
@@ -431,7 +435,7 @@
             this.buttonEditRecord.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonEditRecord.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonEditRecord.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonEditRecord.Location = new System.Drawing.Point(409, 22);
+            this.buttonEditRecord.Location = new System.Drawing.Point(206, 22);
             this.buttonEditRecord.Name = "buttonEditRecord";
             this.buttonEditRecord.Size = new System.Drawing.Size(65, 33);
             this.buttonEditRecord.TabIndex = 6;
@@ -444,10 +448,10 @@
             this.buttonCopyTable.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(122)))), ((int)(((byte)(183)))));
             this.buttonCopyTable.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonCopyTable.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonCopyTable.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCopyTable.Location = new System.Drawing.Point(135, 22);
+            this.buttonCopyTable.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonCopyTable.Location = new System.Drawing.Point(12, 61);
             this.buttonCopyTable.Name = "buttonCopyTable";
-            this.buttonCopyTable.Size = new System.Drawing.Size(119, 33);
+            this.buttonCopyTable.Size = new System.Drawing.Size(119, 24);
             this.buttonCopyTable.TabIndex = 5;
             this.buttonCopyTable.Text = "คัดลอกแนวตั้ง";
             this.buttonCopyTable.UseVisualStyleBackColor = false;
@@ -458,10 +462,10 @@
             this.buttonCopyTableHorizontal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(122)))), ((int)(((byte)(183)))));
             this.buttonCopyTableHorizontal.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonCopyTableHorizontal.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonCopyTableHorizontal.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCopyTableHorizontal.Location = new System.Drawing.Point(260, 22);
+            this.buttonCopyTableHorizontal.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonCopyTableHorizontal.Location = new System.Drawing.Point(12, 91);
             this.buttonCopyTableHorizontal.Name = "buttonCopyTableHorizontal";
-            this.buttonCopyTableHorizontal.Size = new System.Drawing.Size(131, 33);
+            this.buttonCopyTableHorizontal.Size = new System.Drawing.Size(119, 24);
             this.buttonCopyTableHorizontal.TabIndex = 6;
             this.buttonCopyTableHorizontal.Text = "คัดลอกแนวนอน";
             this.buttonCopyTableHorizontal.UseVisualStyleBackColor = false;
@@ -473,9 +477,9 @@
             this.buttonExportCsv.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonExportCsv.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExportCsv.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonExportCsv.Location = new System.Drawing.Point(680, 22);
+            this.buttonExportCsv.Location = new System.Drawing.Point(477, 22);
             this.buttonExportCsv.Name = "buttonExportCsv";
-            this.buttonExportCsv.Size = new System.Drawing.Size(119, 33);
+            this.buttonExportCsv.Size = new System.Drawing.Size(124, 33);
             this.buttonExportCsv.TabIndex = 2;
             this.buttonExportCsv.Text = "ส่งออกไฟล์ CSV";
             this.buttonExportCsv.UseVisualStyleBackColor = false;
@@ -502,31 +506,31 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.dataGridViewRecords.Location = new System.Drawing.Point(9, 61);
+            this.dataGridViewRecords.Location = new System.Drawing.Point(9, 122);
             this.dataGridViewRecords.Name = "dataGridViewRecords";
             this.dataGridViewRecords.ReadOnly = true;
             this.dataGridViewRecords.RowHeadersVisible = false;
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRecords.Size = new System.Drawing.Size(789, 473);
+            this.dataGridViewRecords.Size = new System.Drawing.Size(601, 412);
             this.dataGridViewRecords.TabIndex = 0;
             // 
             // groupBoxSystem
@@ -615,6 +619,19 @@
             this.groupBoxFunctions.TabIndex = 3;
             this.groupBoxFunctions.TabStop = false;
             this.groupBoxFunctions.Text = "Measurement Functions";
+            // 
+            // buttonContinus
+            // 
+            this.buttonContinus.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonContinus.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonContinus.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonContinus.Location = new System.Drawing.Point(129, 113);
+            this.buttonContinus.Name = "buttonContinus";
+            this.buttonContinus.Size = new System.Drawing.Size(104, 35);
+            this.buttonContinus.TabIndex = 10;
+            this.buttonContinus.Text = "Continueus";
+            this.buttonContinus.UseVisualStyleBackColor = false;
+            this.buttonContinus.Click += new System.EventHandler(this.buttonContinus_Click);
             // 
             // buttonMeasureDiode
             // 
@@ -919,24 +936,39 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
-            // buttonContinus
+            // lb_lates
             // 
-            this.buttonContinus.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.buttonContinus.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonContinus.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonContinus.Location = new System.Drawing.Point(129, 113);
-            this.buttonContinus.Name = "buttonContinus";
-            this.buttonContinus.Size = new System.Drawing.Size(104, 35);
-            this.buttonContinus.TabIndex = 10;
-            this.buttonContinus.Text = "Continueus";
-            this.buttonContinus.UseVisualStyleBackColor = false;
-            this.buttonContinus.Click += new System.EventHandler(this.buttonContinus_Click);
+            this.lb_lates.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lb_lates.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lb_lates.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
+            this.lb_lates.Location = new System.Drawing.Point(309, 80);
+            this.lb_lates.Name = "lb_lates";
+            this.lb_lates.Size = new System.Drawing.Size(292, 37);
+            this.lb_lates.TabIndex = 11;
+            this.lb_lates.Text = "0.000000";
+            this.lb_lates.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // label2
+            // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
+            this.label2.Location = new System.Drawing.Point(198, 78);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(105, 37);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "ค่าล่าสุด :";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1567, 686);
+            this.ClientSize = new System.Drawing.Size(1372, 686);
             this.Controls.Add(this.panelChassis);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -1033,5 +1065,7 @@
         private System.Windows.Forms.Button buttonEditRecord;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button buttonContinus;
+        private System.Windows.Forms.Label lb_lates;
+        private System.Windows.Forms.Label label2;
     }
 }
