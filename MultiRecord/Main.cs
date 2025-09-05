@@ -14,7 +14,7 @@ using SIGLENT;
 
 namespace MultiRecord
 {
-    public partial class Form1 : Form
+    public partial class Main : Form
     {
         private SDM3055 _dmm;
         private MeasurementFunction _currentFunction;
@@ -40,7 +40,7 @@ namespace MultiRecord
         private readonly string _appDataFolder;
         private readonly string _settingsFilePath;
 
-        public Form1()
+        public Main()
         {
             InitializeComponent();
 
@@ -569,8 +569,18 @@ namespace MultiRecord
 
             if (double.IsNaN(value) || value >= 9.9E37)
             {
-                lblReading.Text = "OVERLOAD";
-                lblUnit.Text = "";
+                Console.WriteLine(lblMeasurementType.Text);
+                if (lblMeasurementType.Text == "Continuous".ToUpper())
+                {
+                    lblReading.Text = "OPEN";
+                    lblUnit.Text = "";
+                }
+                else
+                {
+                    lblReading.Text = "OVERLOAD";
+                    lblUnit.Text = "";
+                }
+
                 _isOverload = true;
                 return;
             }
@@ -649,7 +659,7 @@ namespace MultiRecord
         private async void buttonMeasureFreq_Click(object sender, EventArgs e) => await SetActiveMeasurementAsync(MeasurementFunction.Frequency, (Button)sender);
         private async void buttonMeasureTemp_Click(object sender, EventArgs e) => await SetActiveMeasurementAsync(MeasurementFunction.Temperature, (Button)sender);
         private async void buttonMeasureDiode_Click(object sender, EventArgs e) => await SetActiveMeasurementAsync(MeasurementFunction.Diode, (Button)sender);
-
+        private async void buttonContinus_Click(object sender, EventArgs e) => await SetActiveMeasurementAsync(MeasurementFunction.Continuous, (Button)sender);
         private void SetFunctionButtonsEnabled(bool enabled)
         {
             foreach (Control c in groupBoxFunctions.Controls)
@@ -1793,6 +1803,17 @@ namespace MultiRecord
             textBoxSystemInfo.Text = await _dmm.QueryCommandAsync("*IDN?");
         }
 
+        private void buttonSettings_Click(object sender, EventArgs e)
+        {
+            using (SettingsForm settingsForm = new SettingsForm())
+            {
+                if (settingsForm.ShowDialog() == DialogResult.OK)
+                {
+                    LogActivity("บันทึกการตั้งค่าเรียบร้อยแล้ว");
+                }
+            }
+        }
+
         private async void buttonReset_Click(object sender, EventArgs e)
         {
             if (_dmm == null || !_dmm.IsConnected) return;
@@ -1914,6 +1935,9 @@ namespace MultiRecord
             this.KeyPreview = true; // ให้ Form รับ KeyDown ก่อน Control อื่น
         }
 
-       
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

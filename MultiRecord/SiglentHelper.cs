@@ -23,7 +23,8 @@ namespace SIGLENT
         Capacitance,
         Frequency,
         Temperature,
-        Diode
+        Diode,
+        Continuous
     }
 
     // Class to hold measurement results
@@ -356,6 +357,7 @@ namespace SIGLENT
                 case MeasurementFunction.Frequency: return "SENS:FREQ";
                 case MeasurementFunction.Diode: return "SENS:DIOD"; // Diode might not have all these settings
                 case MeasurementFunction.Temperature: return "SENS:TEMP";
+                case MeasurementFunction.Continuous: return "SENS:CONT";
                 default: throw new ArgumentException("Unsupported function for parameter setting");
             }
         }
@@ -488,6 +490,7 @@ namespace SIGLENT
                 case MeasurementFunction.Frequency: return "CONF:FREQ";
                 case MeasurementFunction.Temperature: return "CONF:TEMP";
                 case MeasurementFunction.Diode: return "CONF:DIOD";
+                case MeasurementFunction.Continuous: return "CONF:CONT";
                 default: throw new ArgumentException("Invalid measurement function");
             }
         }
@@ -505,6 +508,7 @@ namespace SIGLENT
                     return "A";
                 case MeasurementFunction.Resistance2W:
                 case MeasurementFunction.Resistance4W:
+                case MeasurementFunction.Continuous:
                     return "Ω";
                 case MeasurementFunction.Capacitance: return "F";
                 case MeasurementFunction.Frequency: return "Hz";
@@ -533,6 +537,8 @@ namespace SIGLENT
                 case MeasurementFunction.Temperature:
                     return 300; // Temperature measurements are slowest
                 case MeasurementFunction.Diode:
+                    return 150; // Diode measurements
+                case MeasurementFunction.Continuous:
                     return 150; // Diode measurements
                 default:
                     return 150; // Default delay

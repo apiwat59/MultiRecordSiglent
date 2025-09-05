@@ -1,74 +1,72 @@
 ﻿using NAudio.Wave;
 using System;
+using System.IO;
 
-public class SoundUtil
+namespace MultiRecord
 {
-    private static IWavePlayer waveOut;
-    private static AudioFileReader audioFile;
-
-    public static void Beep()
+    public class SoundUtil
     {
-        try
-        {
-            // กำจัด instance เก่าถ้ามี
-            waveOut?.Stop();
-            waveOut?.Dispose();
-            audioFile?.Dispose();
+        private static IWavePlayer waveOut;
+        private static AudioFileReader audioFile;
 
-            // โหลดและเล่นไฟล์เสียง
-            audioFile = new AudioFileReader("sound/beep.mp3");
-            waveOut = new WaveOutEvent();
-            waveOut.Init(audioFile);
-            waveOut.Play();
-        }
-        catch (Exception ex)
+        public static void Beep()
         {
-            // ถ้าไม่ต้องการ Error เด้ง ให้ log หรือเงียบไว้
-            Console.WriteLine("เล่นเสียงไม่สำเร็จ: " + ex.Message);
+            string soundPath = SettingsManager.GetSoundPath("Beep");
+            PlayCustomSound(soundPath);
         }
-    }
 
-    public static void Delete()
-    {
-        try
+        public static void Delete()
         {
-            // กำจัด instance เก่าถ้ามี
-            waveOut?.Stop();
-            waveOut?.Dispose();
-            audioFile?.Dispose();
-
-            // โหลดและเล่นไฟล์เสียง
-            audioFile = new AudioFileReader("sound/delete.mp3");
-            waveOut = new WaveOutEvent();
-            waveOut.Init(audioFile);
-            waveOut.Play();
+            string soundPath = SettingsManager.GetSoundPath("Delete");
+            PlayCustomSound(soundPath);
         }
-        catch (Exception ex)
-        {
-            // ถ้าไม่ต้องการ Error เด้ง ให้ log หรือเงียบไว้
-            Console.WriteLine("เล่นเสียงไม่สำเร็จ: " + ex.Message);
-        }
-    }
 
-    public static void Over()
-    {
-        try
+        public static void Over()
         {
-            // กำจัด instance เก่าถ้ามี
-            waveOut?.Stop();
-            waveOut?.Dispose();
-            audioFile?.Dispose();
-
-            // โหลดและเล่นไฟล์เสียง
-            audioFile = new AudioFileReader("sound/over.mp3");
-            waveOut = new WaveOutEvent();
-            waveOut.Init(audioFile);
-            waveOut.Play();
+            string soundPath = SettingsManager.GetSoundPath("Over");
+            PlayCustomSound(soundPath);
         }
-        catch (Exception ex)
+
+        public static void PlayCustomSound(string filePath)
         {
-            // ถ้าไม่ต้องการ Error เด้ง ให้ log หรือเงียบไว้
-            Console.WriteLine("เล่นเสียงไม่สำเร็จ: " + ex.Message);
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    Console.WriteLine($"ไม่พบไฟล์เสียง: {filePath}");
+                    return;
+                }
+
+                // กำจัด instance เก่าถ้ามี
+                waveOut?.Stop();
+                waveOut?.Dispose();
+                audioFile?.Dispose();
+
+                // โหลดและเล่นไฟล์เสียง
+                audioFile = new AudioFileReader(filePath);
+                waveOut = new WaveOutEvent();
+                waveOut.Init(audioFile);
+                waveOut.Play();
+            }
+            catch (Exception ex)
+            {
+                // ถ้าไม่ต้องการ Error เด้ง ให้ log หรือเงียบไว้
+                Console.WriteLine("เล่นเสียงไม่สำเร็จ: " + ex.Message);
+            }
+        }
+
+        public static void Dispose()
+        {
+            try
+            {
+                waveOut?.Stop();
+                waveOut?.Dispose();
+                audioFile?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ปิดการใช้งานเสียงไม่สำเร็จ: " + ex.Message);
+            }
         }
     }
 }

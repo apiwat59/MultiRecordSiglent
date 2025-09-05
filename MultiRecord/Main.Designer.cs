@@ -1,6 +1,6 @@
 ﻿namespace MultiRecord
 {
-    partial class Form1
+    partial class Main
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -18,10 +18,11 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.panelChassis = new System.Windows.Forms.Panel();
+            this.buttonSettings = new System.Windows.Forms.Button();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
             this.textBox2WTolerance = new System.Windows.Forms.TextBox();
@@ -83,6 +84,7 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.buttonContinus = new System.Windows.Forms.Button();
             this.panelChassis.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -99,6 +101,7 @@
             // panelChassis
             // 
             this.panelChassis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.panelChassis.Controls.Add(this.buttonSettings);
             this.panelChassis.Controls.Add(this.groupBoxTolerance);
             this.panelChassis.Controls.Add(this.panelParameters);
             this.panelChassis.Controls.Add(this.groupBoxRecord);
@@ -112,6 +115,20 @@
             this.panelChassis.Name = "panelChassis";
             this.panelChassis.Size = new System.Drawing.Size(1567, 686);
             this.panelChassis.TabIndex = 0;
+            // 
+            // buttonSettings
+            // 
+            this.buttonSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
+            this.buttonSettings.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSettings.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonSettings.Location = new System.Drawing.Point(261, 260);
+            this.buttonSettings.Name = "buttonSettings";
+            this.buttonSettings.Size = new System.Drawing.Size(85, 33);
+            this.buttonSettings.TabIndex = 4;
+            this.buttonSettings.Text = "ตั้งค่า";
+            this.buttonSettings.UseVisualStyleBackColor = false;
+            this.buttonSettings.Click += new System.EventHandler(this.buttonSettings_Click);
             // 
             // groupBoxTolerance
             // 
@@ -148,6 +165,7 @@
             this.checkBoxIsPercent.TabIndex = 9;
             this.checkBoxIsPercent.Text = "Percentage Mode";
             this.checkBoxIsPercent.UseVisualStyleBackColor = true;
+            this.checkBoxIsPercent.Visible = false;
             // 
             // textBox2WTolerance
             // 
@@ -484,23 +502,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 61);
@@ -580,6 +598,7 @@
             // 
             // groupBoxFunctions
             // 
+            this.groupBoxFunctions.Controls.Add(this.buttonContinus);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureDiode);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureCap);
             this.groupBoxFunctions.Controls.Add(this.buttonMeasureRes4W);
@@ -900,7 +919,20 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
-            // Form1
+            // buttonContinus
+            // 
+            this.buttonContinus.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonContinus.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonContinus.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonContinus.Location = new System.Drawing.Point(129, 113);
+            this.buttonContinus.Name = "buttonContinus";
+            this.buttonContinus.Size = new System.Drawing.Size(104, 35);
+            this.buttonContinus.TabIndex = 10;
+            this.buttonContinus.Text = "Continueus";
+            this.buttonContinus.UseVisualStyleBackColor = false;
+            this.buttonContinus.Click += new System.EventHandler(this.buttonContinus_Click);
+            // 
+            // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -909,7 +941,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "Main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "QWAVE - SIGLENT SDM3055 Remote Control";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
@@ -966,6 +998,7 @@
         private System.Windows.Forms.Button buttonGetError;
         private System.Windows.Forms.Button buttonReset;
         private System.Windows.Forms.Button buttonGetIDN;
+        private System.Windows.Forms.Button buttonSettings;
         private System.Windows.Forms.TextBox textBoxSystemInfo;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.GroupBox groupBoxRecord;
@@ -999,5 +1032,6 @@
         private System.Windows.Forms.Button buttonCopyTableHorizontal;
         private System.Windows.Forms.Button buttonEditRecord;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Button buttonContinus;
     }
 }
