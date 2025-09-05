@@ -91,6 +91,7 @@ namespace MultiRecord
             _recordsTable.Columns.Add("Measurement", typeof(string));
             _recordsTable.Columns.Add("Unit", typeof(string));
             _recordsTable.Columns.Add("Timestamp", typeof(string));
+            _recordsTable.Columns.Add("Tolerance", typeof(string));
 
             dataGridViewRecords.DataSource = _recordsTable;
 
@@ -100,6 +101,7 @@ namespace MultiRecord
             dataGridViewRecords.Columns["Measurement"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             dataGridViewRecords.Columns["Unit"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             dataGridViewRecords.Columns["Timestamp"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRecords.Columns["Tolerance"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
 
             // *** เพิ่มการตั้งค่า Selection Mode ***
             dataGridViewRecords.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -1171,11 +1173,21 @@ namespace MultiRecord
                 foreach (var line in lines)
                 {
                     var values = line.Split(',');
-                    if (values.Length == 5)
+                    if (values.Length == 6)
                     {
                         _recordsTable.Rows.Add(
                             int.Parse(values[0].Trim('"')), values[1].Trim('"'),
-                            values[2].Trim('"'), values[3].Trim('"'), values[4].Trim('"')
+                            values[2].Trim('"'), values[3].Trim('"'), values[4].Trim('"'),
+                            values[5].Trim('"')
+                        );
+                    }
+                    else if (values.Length == 5)
+                    {
+                        // Support old format without Tolerance column
+                        _recordsTable.Rows.Add(
+                            int.Parse(values[0].Trim('"')), values[1].Trim('"'),
+                            values[2].Trim('"'), values[3].Trim('"'), values[4].Trim('"'),
+                            "N/A"
                         );
                     }
                 }
@@ -1256,7 +1268,8 @@ namespace MultiRecord
                 SoundUtil.Beep(); // เล่นเสียงปกติเมื่อบันทึก
             }
 
-            _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp);
+            string toleranceStatus = withinTolerance ? "Pass" : "Fail";
+            _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp, toleranceStatus);
 
             try
             {
@@ -1330,7 +1343,27 @@ namespace MultiRecord
         // Format measurement display for better readability while keeping original data
         private void DataGridViewRecords_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (dataGridViewRecords.Columns[e.ColumnIndex].Name == "Measurement")
+            // Format Tolerance column with colors
+            if (dataGridViewRecords.Columns[e.ColumnIndex].Name == "Tolerance")
+            {
+                if (e.RowIndex >= 0 && e.RowIndex < dataGridViewRecords.Rows.Count)
+                {
+                    var row = dataGridViewRecords.Rows[e.RowIndex];
+                    string toleranceValue = row.Cells["Tolerance"].Value?.ToString() ?? "";
+                    
+                    if (toleranceValue == "Pass")
+                    {
+                        row.Cells["Tolerance"].Style.BackColor = Color.LightGreen;
+                        row.Cells["Tolerance"].Style.ForeColor = Color.DarkGreen;
+                    }
+                    else if (toleranceValue == "Fail")
+                    {
+                        row.Cells["Tolerance"].Style.BackColor = Color.LightPink;
+                        row.Cells["Tolerance"].Style.ForeColor = Color.DarkRed;
+                    }
+                }
+            }
+            else if (dataGridViewRecords.Columns[e.ColumnIndex].Name == "Measurement")
             {
                 if (e.RowIndex >= 0 && e.RowIndex < dataGridViewRecords.Rows.Count)
                 {
