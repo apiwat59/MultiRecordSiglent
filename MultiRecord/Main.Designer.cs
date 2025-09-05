@@ -18,10 +18,11 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.panelChassis = new System.Windows.Forms.Panel();
+            this.buttonPCBAnnotation = new System.Windows.Forms.Button();
             this.buttonSettings = new System.Windows.Forms.Button();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
@@ -45,6 +46,8 @@
             this.labelRange = new System.Windows.Forms.Label();
             this.labelRelativeState = new System.Windows.Forms.Label();
             this.groupBoxRecord = new System.Windows.Forms.GroupBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.lb_lates = new System.Windows.Forms.Label();
             this.buttonClearTable = new System.Windows.Forms.Button();
             this.buttonDeleteRecord = new System.Windows.Forms.Button();
             this.buttonEditRecord = new System.Windows.Forms.Button();
@@ -85,8 +88,6 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.lb_lates = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
             this.panelChassis.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -118,6 +119,21 @@
             this.panelChassis.Size = new System.Drawing.Size(1372, 686);
             this.panelChassis.TabIndex = 0;
             // 
+            // buttonPCBAnnotation
+            // 
+            this.buttonPCBAnnotation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(139)))), ((int)(((byte)(34)))));
+            this.buttonPCBAnnotation.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonPCBAnnotation.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonPCBAnnotation.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonPCBAnnotation.ForeColor = System.Drawing.Color.White;
+            this.buttonPCBAnnotation.Location = new System.Drawing.Point(475, 31);
+            this.buttonPCBAnnotation.Name = "buttonPCBAnnotation";
+            this.buttonPCBAnnotation.Size = new System.Drawing.Size(123, 33);
+            this.buttonPCBAnnotation.TabIndex = 5;
+            this.buttonPCBAnnotation.Text = "PCB Mark";
+            this.buttonPCBAnnotation.UseVisualStyleBackColor = false;
+            this.buttonPCBAnnotation.Click += new System.EventHandler(this.buttonPCBAnnotation_Click);
+            // 
             // buttonSettings
             // 
             this.buttonSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
@@ -134,6 +150,7 @@
             // 
             // groupBoxTolerance
             // 
+            this.groupBoxTolerance.Controls.Add(this.buttonPCBAnnotation);
             this.groupBoxTolerance.Controls.Add(this.checkBoxIsPercent);
             this.groupBoxTolerance.Controls.Add(this.textBox2WTolerance);
             this.groupBoxTolerance.Controls.Add(this.label2WTolerance);
@@ -255,7 +272,7 @@
             this.buttonSetTarget.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonSetTarget.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSetTarget.ForeColor = System.Drawing.Color.Gainsboro;
-            this.buttonSetTarget.Location = new System.Drawing.Point(475, 51);
+            this.buttonSetTarget.Location = new System.Drawing.Point(475, 70);
             this.buttonSetTarget.Name = "buttonSetTarget";
             this.buttonSetTarget.Size = new System.Drawing.Size(123, 30);
             this.buttonSetTarget.TabIndex = 0;
@@ -401,6 +418,34 @@
             this.groupBoxRecord.TabStop = false;
             this.groupBoxRecord.Text = "Data Recording";
             // 
+            // label2
+            // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
+            this.label2.Location = new System.Drawing.Point(198, 78);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(105, 37);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "ค่าล่าสุด :";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // lb_lates
+            // 
+            this.lb_lates.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lb_lates.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lb_lates.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
+            this.lb_lates.Location = new System.Drawing.Point(309, 80);
+            this.lb_lates.Name = "lb_lates";
+            this.lb_lates.Size = new System.Drawing.Size(292, 37);
+            this.lb_lates.TabIndex = 11;
+            this.lb_lates.Text = "0.000000";
+            this.lb_lates.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // buttonClearTable
             // 
             this.buttonClearTable.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
@@ -506,23 +551,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 122);
@@ -936,34 +981,6 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
-            // lb_lates
-            // 
-            this.lb_lates.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lb_lates.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lb_lates.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
-            this.lb_lates.Location = new System.Drawing.Point(309, 80);
-            this.lb_lates.Name = "lb_lates";
-            this.lb_lates.Size = new System.Drawing.Size(292, 37);
-            this.lb_lates.TabIndex = 11;
-            this.lb_lates.Text = "0.000000";
-            this.lb_lates.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // label2
-            // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Font = new System.Drawing.Font("Consolas", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(247)))), ((int)(((byte)(255)))));
-            this.label2.Location = new System.Drawing.Point(198, 78);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(105, 37);
-            this.label2.TabIndex = 12;
-            this.label2.Text = "ค่าล่าสุด :";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1031,6 +1048,7 @@
         private System.Windows.Forms.Button buttonReset;
         private System.Windows.Forms.Button buttonGetIDN;
         private System.Windows.Forms.Button buttonSettings;
+        private System.Windows.Forms.Button buttonPCBAnnotation;
         private System.Windows.Forms.TextBox textBoxSystemInfo;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.GroupBox groupBoxRecord;

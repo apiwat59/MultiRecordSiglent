@@ -1855,6 +1855,22 @@ namespace MultiRecord
             textBoxSystemInfo.Text = await _dmm.QueryCommandAsync("*IDN?");
         }
 
+        private PCBAnnotationForm pcbAnnotationForm = null;
+
+        private void buttonPCBAnnotation_Click(object sender, EventArgs e)
+        {
+            if (pcbAnnotationForm == null || pcbAnnotationForm.IsDisposed)
+            {
+                pcbAnnotationForm = new PCBAnnotationForm(_recordsTable);
+                pcbAnnotationForm.Show();
+            }
+            else
+            {
+                pcbAnnotationForm.BringToFront();
+                pcbAnnotationForm.RefreshMeasurementData();
+            }
+        }
+
         private void buttonSettings_Click(object sender, EventArgs e)
         {
             using (SettingsForm settingsForm = new SettingsForm())
