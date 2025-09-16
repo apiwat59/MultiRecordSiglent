@@ -16,7 +16,21 @@ namespace MultiRecord
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Main());
+            
+            // Show login form first
+            using (var loginForm = new LoginForm())
+            {
+                if (loginForm.ShowDialog() == DialogResult.OK && loginForm.LoginSuccessful)
+                {
+                    // If login successful, run main application
+                    Application.Run(new Main());
+                }
+                else
+                {
+                    // If login failed or cancelled, exit application
+                    return;
+                }
+            }
         }
     }
 }

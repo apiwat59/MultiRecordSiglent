@@ -1863,22 +1863,7 @@ namespace MultiRecord
             textBoxSystemInfo.Text = await _dmm.QueryCommandAsync("*IDN?");
         }
 
-        private PCBAnnotationForm pcbAnnotationForm = null;
         private MySqlManager _mysqlManager = null;
-
-        private void buttonPCBAnnotation_Click(object sender, EventArgs e)
-        {
-            if (pcbAnnotationForm == null || pcbAnnotationForm.IsDisposed)
-            {
-                pcbAnnotationForm = new PCBAnnotationForm(_recordsTable);
-                pcbAnnotationForm.Show();
-            }
-            else
-            {
-                pcbAnnotationForm.BringToFront();
-                pcbAnnotationForm.RefreshMeasurementData();
-            }
-        }
 
         private void InitializeQWRecord()
         {
@@ -2136,6 +2121,69 @@ namespace MultiRecord
         private void Form1_Load(object sender, EventArgs e)
         {
             this.KeyPreview = true; // ให้ Form รับ KeyDown ก่อน Control อื่น
+            InitializeMySQLSettings();
+        }
+
+        private void InitializeMySQLSettings()
+        {
+            // Load MySQL settings from SettingsManager
+            textBoxMySqlHost.Text = SettingsManager.MySqlHost;
+            textBoxMySqlPort.Text = SettingsManager.MySqlPort.ToString();
+            textBoxUser.Text = SettingsManager.MySqlUser;
+            textBoxPassword.Text = SettingsManager.MySqlPassword;
+            textBoxDatabase.Text = SettingsManager.MySqlDatabase;
+            checkBoxMySQLEnabled.Checked = SettingsManager.MySqlEnabled;
+            
+            // Add event handlers for settings changes
+            textBoxMySqlHost.TextChanged += (s, e) => { SettingsManager.MySqlHost = textBoxMySqlHost.Text; SettingsManager.SaveSettings(); };
+            textBoxMySqlPort.TextChanged += (s, e) => { if (int.TryParse(textBoxMySqlPort.Text, out int port)) { SettingsManager.MySqlPort = port; SettingsManager.SaveSettings(); } };
+            textBoxUser.TextChanged += (s, e) => { SettingsManager.MySqlUser = textBoxUser.Text; SettingsManager.SaveSettings(); };
+            textBoxPassword.TextChanged += (s, e) => { SettingsManager.MySqlPassword = textBoxPassword.Text; SettingsManager.SaveSettings(); };
+            textBoxDatabase.TextChanged += (s, e) => { SettingsManager.MySqlDatabase = textBoxDatabase.Text; SettingsManager.SaveSettings(); };
+            checkBoxMySQLEnabled.CheckedChanged += (s, e) => { SettingsManager.MySqlEnabled = checkBoxMySQLEnabled.Checked; SettingsManager.SaveSettings(); };
+            
+            // Add event handler for test connection button
+            buttonTestConnection.Click += buttonTestConnection_Click;
+            
+            labelConnectionStatus.Text = "Ready to test connection";
+        }
+
+        private async void buttonTestConnection_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                labelConnectionStatus.Text = "Testing connection...";
+                labelConnectionStatus.ForeColor = Color.Yellow;
+                
+                using (var mysqlManager = new MySqlManager(
+                    SettingsManager.MySqlHost,
+                    SettingsManager.MySqlPort,
+                    SettingsManager.MySqlUser,
+                    SettingsManager.MySqlPassword,
+                    SettingsManager.MySqlDatabase))
+                {
+                    bool success = await mysqlManager.TestConnectionAsync();
+                    
+                    if (success)
+                    {
+                        labelConnectionStatus.Text = "Connection successful!";
+                        labelConnectionStatus.ForeColor = Color.LightGreen;
+                        
+                        // Initialize database schema
+                        await mysqlManager.InitializeDatabaseAsync();
+                    }
+                    else
+                    {
+                        labelConnectionStatus.Text = "Connection failed!";
+                        labelConnectionStatus.ForeColor = Color.Red;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                labelConnectionStatus.Text = $"Error: {ex.Message}";
+                labelConnectionStatus.ForeColor = Color.Red;
+            }
         }
 
         private void label2_Click(object sender, EventArgs e)
