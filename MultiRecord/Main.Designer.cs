@@ -51,6 +51,7 @@
             this.textBoxMySqlHost = new System.Windows.Forms.TextBox();
             this.labelMySqlHost = new System.Windows.Forms.Label();
             this.groupBoxTolerance = new System.Windows.Forms.GroupBox();
+            this.buttonMeasurementMode = new System.Windows.Forms.Button();
             this.checkBoxIsPercent = new System.Windows.Forms.CheckBox();
             this.textBox2WTolerance = new System.Windows.Forms.TextBox();
             this.label2WTolerance = new System.Windows.Forms.Label();
@@ -518,6 +519,7 @@
             // 
             // groupBoxTolerance
             // 
+            this.groupBoxTolerance.Controls.Add(this.buttonMeasurementMode);
             this.groupBoxTolerance.Controls.Add(this.checkBoxIsPercent);
             this.groupBoxTolerance.Controls.Add(this.textBox2WTolerance);
             this.groupBoxTolerance.Controls.Add(this.label2WTolerance);
@@ -553,6 +555,21 @@
             this.checkBoxIsPercent.Text = "Percentage Mode";
             this.checkBoxIsPercent.UseVisualStyleBackColor = true;
             this.checkBoxIsPercent.Visible = false;
+            // 
+            // buttonMeasurementMode
+            // 
+            this.buttonMeasurementMode.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
+            this.buttonMeasurementMode.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonMeasurementMode.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonMeasurementMode.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonMeasurementMode.ForeColor = System.Drawing.Color.White;
+            this.buttonMeasurementMode.Location = new System.Drawing.Point(475, 31);
+            this.buttonMeasurementMode.Name = "buttonMeasurementMode";
+            this.buttonMeasurementMode.Size = new System.Drawing.Size(130, 33);
+            this.buttonMeasurementMode.TabIndex = 10;
+            this.buttonMeasurementMode.Text = "Measurement Mode";
+            this.buttonMeasurementMode.UseVisualStyleBackColor = false;
+            this.buttonMeasurementMode.Click += new System.EventHandler(this.buttonMeasurementMode_Click);
             // 
             // textBox2WTolerance
             // 
@@ -1385,5 +1402,6 @@
         private System.Windows.Forms.CheckBox checkBoxMySQLEnabled;
         private System.Windows.Forms.Button buttonTestConnection;
         private System.Windows.Forms.Label labelConnectionStatus;
+        private System.Windows.Forms.Button buttonMeasurementMode;
     }
 }

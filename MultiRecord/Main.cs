@@ -2190,5 +2190,21 @@ namespace MultiRecord
         {
 
         }
+
+        private void buttonMeasurementMode_Click(object sender, EventArgs e)
+        {
+            // ตรวจสอบการเชื่อมต่อ DMM ก่อน
+            if (_dmm == null || !_dmm.IsConnected)
+            {
+                MessageBox.Show("Please connect to DMM before opening Measurement Mode", 
+                              "DMM Not Connected", 
+                              MessageBoxButtons.OK, 
+                              MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var measurementMode = new MeasurementMode(_recordsTable, _dmm);
+            measurementMode.Show();
+        }
     }
 }
