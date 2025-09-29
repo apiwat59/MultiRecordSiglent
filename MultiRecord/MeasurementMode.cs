@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using SIGLENT;
 
@@ -18,6 +19,7 @@ namespace MultiRecord
         private SDM3055 _dmm;
         private System.Windows.Forms.Timer _measurementTimer;
         private string _currentSessionId;
+        private string _currentRepairId;
 
         public MeasurementMode(DataTable recordsTable, SDM3055 dmm)
         {
@@ -249,30 +251,30 @@ namespace MultiRecord
 
         private async System.Threading.Tasks.Task LoadMeasurementsFromDatabase(string sessionId)
         {
-            if (!SettingsManager.MySqlEnabled)
+            if (!AuthManager.IsLoggedIn())
             {
-                MessageBox.Show("MySQL is not enabled. Please configure MySQL settings first.", 
-                              "MySQL Not Enabled", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please login first to access Orbitz API.", 
+                              "Authentication Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            using (var mysqlManager = new MySqlManager(
-                SettingsManager.MySqlHost,
-                SettingsManager.MySqlPort,
-                SettingsManager.MySqlUser,
-                SettingsManager.MySqlPassword,
-                SettingsManager.MySqlDatabase))
+            try
             {
-                _pcbMeasurements = await mysqlManager.GetPCBMeasurementsBySessionAsync(sessionId);
+                // Get session details first to extract repair_id
+                var session = await OrbitzAPI.GetMeasurementSessionAsync(sessionId);
                 _currentSessionId = sessionId;
+                _currentRepairId = session.RepairId;
                 
-                // Convert PCBMeasurement to MeasurementPoint
-                ConvertPCBMeasurementsToPoints();
+                // Load measurement markers from Orbitz API
+                var markers = await OrbitzAPI.GetMeasurementMarkersAsync(sessionId);
+                
+                // Convert MeasurementMarker to MeasurementPoint
+                ConvertMarkersToPoints(markers);
                 
                 _currentIndex = 0;
                 foreach (var point in _measurementPoints)
                 {
-                    point.IsCompleted = false;
+                    point.IsCompleted = point.RecordValue.HasValue;
                 }
                 
                 LoadMeasurementPoints();
@@ -281,8 +283,35 @@ namespace MultiRecord
                     await UpdateCurrentPosition();
                 }
             }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to load session from Orbitz API: {ex.Message}");
+            }
         }
 
+        private void ConvertMarkersToPoints(List<MeasurementMarker> markers)
+        {
+            _measurementPoints.Clear();
+            
+            foreach (var marker in markers.OrderBy(m => m.SortOrder))
+            {
+                var measurementPoint = new MeasurementPoint
+                {
+                    Position = marker.DisplayName,
+                    MeasurementType = GetDMMFunctionFromMarkerType(marker.Type),
+                    TargetValue = GetTargetValueFromMarkerParameters(marker.Parameters, marker.Type),
+                    RecordValue = marker.MeasuredValue.HasValue ? (double?)marker.MeasuredValue.Value : null,
+                    Tolerance = (double)(marker.ToleranceUpper ?? 0m),
+                    IsPercent = marker.ToleranceUpperType == "percent",
+                    Description = $"{marker.DisplayName} ({marker.Type})",
+                    IsCompleted = marker.IsMeasured,
+                    Marker = marker
+                };
+                
+                _measurementPoints.Add(measurementPoint);
+            }
+        }
+        
         private void ConvertPCBMeasurementsToPoints()
         {
             _measurementPoints.Clear();
@@ -309,14 +338,80 @@ namespace MultiRecord
         {
             switch (markerType?.ToUpper())
             {
+                case "RES": return "RES2W";
+                case "CAP": return "CAP";
+                case "DIO": return "DIODE";
+                case "CON": return "RES2W"; // Continuity as resistance
+                case "VOL": return "VDC";
+                case "CUR": return "IDC";
                 case "DC": return "VDC";
                 case "AC": return "VAC";
                 case "2W": return "RES2W";
                 case "4W": return "RES4W";
-                case "CAP": return "CAP";
-                case "CON": return "RES2W"; // Continuity as resistance
-                case "DIO": return "DIODE";
                 default: return "VDC";
+            }
+        }
+        
+        private double GetTargetValueFromMarkerParameters(Dictionary<string, object> parameters, string markerType)
+        {
+            try
+            {
+                if (parameters == null) return 0.0;
+                
+                switch (markerType?.ToUpper())
+                {
+                    case "RES":
+                    case "2W":
+                    case "4W":
+                        if (parameters.ContainsKey("resistance"))
+                            return Convert.ToDouble(parameters["resistance"]);
+                        if (parameters.ContainsKey("nominal_value"))
+                            return Convert.ToDouble(parameters["nominal_value"]);
+                        break;
+                        
+                    case "CAP":
+                        if (parameters.ContainsKey("capacitance"))
+                            return Convert.ToDouble(parameters["capacitance"]);
+                        if (parameters.ContainsKey("nominal_value"))
+                            return Convert.ToDouble(parameters["nominal_value"]);
+                        break;
+                        
+                    case "DIO":
+                        if (parameters.ContainsKey("voltage"))
+                            return Convert.ToDouble(parameters["voltage"]);
+                        if (parameters.ContainsKey("forward_voltage"))
+                            return Convert.ToDouble(parameters["forward_voltage"]);
+                        break;
+                        
+                    case "CON":
+                        if (parameters.ContainsKey("ohms"))
+                            return Convert.ToDouble(parameters["ohms"]);
+                        if (parameters.ContainsKey("expected_resistance"))
+                            return Convert.ToDouble(parameters["expected_resistance"]);
+                        return 0.0; // Continuity usually expects near 0 ohms
+                        
+                    case "DC":
+                    case "AC":
+                    case "VOL":
+                        if (parameters.ContainsKey("voltage"))
+                            return Convert.ToDouble(parameters["voltage"]);
+                        if (parameters.ContainsKey("nominal_value"))
+                            return Convert.ToDouble(parameters["nominal_value"]);
+                        break;
+                        
+                    case "CUR":
+                        if (parameters.ContainsKey("current"))
+                            return Convert.ToDouble(parameters["current"]);
+                        if (parameters.ContainsKey("nominal_value"))
+                            return Convert.ToDouble(parameters["nominal_value"]);
+                        break;
+                }
+                
+                return 0.0;
+            }
+            catch
+            {
+                return 0.0;
             }
         }
 
@@ -432,18 +527,51 @@ namespace MultiRecord
             }
             
             // Calculate tolerance check
-            double toleranceRange;
-            if (currentPoint.IsPercent)
+            string toleranceStatus;
+            bool withinTolerance = false;
+            
+            // Special handling for Diode/Continuity markers with OPEN/OVERLOAD conditions
+            if (currentPoint.Marker != null && 
+                (currentPoint.Marker.Type.ToUpper() == "DIO" || currentPoint.Marker.Type.ToUpper() == "CON"))
             {
-                toleranceRange = Math.Abs(currentPoint.TargetValue * currentPoint.Tolerance / 100.0);
+                if (double.IsNaN(measuredValue) || measuredValue >= 9.9E37)
+                {
+                    toleranceStatus = "Open";
+                    // For open circuits, consider it as "completed" but not necessarily pass/fail
+                }
+                else
+                {
+                    // Normal tolerance check for closed circuit
+                    double toleranceRange;
+                    if (currentPoint.IsPercent)
+                    {
+                        toleranceRange = Math.Abs(currentPoint.TargetValue * currentPoint.Tolerance / 100.0);
+                    }
+                    else
+                    {
+                        toleranceRange = currentPoint.Tolerance;
+                    }
+                    
+                    withinTolerance = Math.Abs(measuredValue - currentPoint.TargetValue) <= toleranceRange;
+                    toleranceStatus = withinTolerance ? "Pass" : "Fail";
+                }
             }
             else
             {
-                toleranceRange = currentPoint.Tolerance;
+                // Normal tolerance check for other component types
+                double toleranceRange;
+                if (currentPoint.IsPercent)
+                {
+                    toleranceRange = Math.Abs(currentPoint.TargetValue * currentPoint.Tolerance / 100.0);
+                }
+                else
+                {
+                    toleranceRange = currentPoint.Tolerance;
+                }
+                
+                withinTolerance = Math.Abs(measuredValue - currentPoint.TargetValue) <= toleranceRange;
+                toleranceStatus = withinTolerance ? "Pass" : "Fail";
             }
-            
-            bool withinTolerance = Math.Abs(measuredValue - currentPoint.TargetValue) <= toleranceRange;
-            string toleranceStatus = withinTolerance ? "Pass" : "Fail";
             
             // Add to records table (same format as existing records)
             DataRow newRow = _recordsTable.NewRow();
@@ -461,6 +589,12 @@ namespace MultiRecord
             
             // Mark current point as completed
             currentPoint.IsCompleted = true;
+            
+            // Update measurement via Orbitz API
+            if (currentPoint.Marker != null)
+            {
+                UpdateMeasurementViaAPI(currentPoint, measuredValue, toleranceStatus);
+            }
             
             // Move to next position
             _currentIndex++;
@@ -625,6 +759,82 @@ namespace MultiRecord
                 System.Diagnostics.Debug.WriteLine($"Error in Dmm_ReadingReceived: {ex.Message}");
             }
         }
+        
+        private async void UpdateMeasurementViaAPI(MeasurementPoint point, double measuredValue, string toleranceStatus)
+        {
+            try
+            {
+                var marker = point.Marker;
+                var repairId = ExtractRepairIdFromSession(_currentSessionId); // You'll need to implement this
+                
+                var request = new MeasurementUpdateRequest
+                {
+                    MarkerId = marker.Id,
+                    MeasuredValue = (decimal)measuredValue,
+                    ToleranceStatus = toleranceStatus.ToLower(),
+                    MeasurementId = marker.MeasurementId,
+                    MarkerType = marker.Type,
+                    MarkerParameters = marker.Parameters,
+                    MarkerPositionX = marker.X,
+                    MarkerPositionY = marker.Y,
+                    MarkerDisplayName = marker.DisplayName,
+                    MarkerColor = marker.Color,
+                    ToleranceUpper = marker.ToleranceUpper,
+                    ToleranceLower = marker.ToleranceLower,
+                    ToleranceUpperType = marker.ToleranceUpperType,
+                    ToleranceLowerType = marker.ToleranceLowerType,
+                    ToleranceEnabled = marker.ToleranceEnabled,
+                    ToleranceUpperLimit = marker.ToleranceUpperLimit,
+                    ToleranceLowerLimit = marker.ToleranceLowerLimit,
+                    MeasurementUnit = marker.MeasurementUnit,
+                    Notes = marker.Notes
+                };
+                
+                // Handle special cases for Diode/Continuity
+                if (marker.Type.ToUpper() == "DIO" || marker.Type.ToUpper() == "CON")
+                {
+                    // Check if it's an open circuit condition
+                    bool isOpenCircuit = double.IsNaN(measuredValue) || measuredValue >= 9.9E37;
+                    
+                    if (isOpenCircuit)
+                    {
+                        request.MeasuredValue = null;
+                        request.ToleranceStatus = "open";
+                        request.Open = true;
+                    }
+                    else
+                    {
+                        request.Open = false;
+                    }
+                }
+                else
+                {
+                    request.Open = false;
+                }
+                
+                // Update measurement via API
+                await OrbitzAPI.UpdateMeasurementAsync(repairId, marker.MeasurementId, request);
+                
+                LogActivity($"Updated measurement for {marker.DisplayName}: {measuredValue} {marker.MeasurementUnit} ({toleranceStatus})");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Failed to update measurement via API: {ex.Message}");
+                // Don't throw - allow local recording to continue even if API fails
+            }
+        }
+        
+        private string ExtractRepairIdFromSession(string sessionId)
+        {
+            // Return the repair ID that we stored when loading the session
+            return _currentRepairId ?? "unknown-repair-id";
+        }
+        
+        private void LogActivity(string message)
+        {
+            // Add to debug output or activity log
+            System.Diagnostics.Debug.WriteLine($"[MeasurementMode] {DateTime.Now:HH:mm:ss} - {message}");
+        }
 
         private async System.Threading.Tasks.Task UpdateRealTimeDisplay()
         {
@@ -772,11 +982,19 @@ namespace MultiRecord
         public string Description { get; set; }
         public bool IsCompleted { get; set; }
         public PCBMeasurement PCBMeasurement { get; set; }
+        public MeasurementMarker Marker { get; set; }
         
         public string GetToleranceStatus()
         {
             if (!RecordValue.HasValue)
                 return "-";
+                
+            // Special handling for Diode/Continuity markers
+            if (Marker != null && (Marker.Type.ToUpper() == "DIO" || Marker.Type.ToUpper() == "CON"))
+            {
+                if (Marker.OpenCircuit)
+                    return "Open";
+            }
                 
             double toleranceRange;
             if (IsPercent)

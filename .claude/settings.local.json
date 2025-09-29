@@ -3,7 +3,8 @@
     "allow": [
       "Bash(msbuild:*)",
       "Bash(find:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(dotnet build:*)"
     ],
     "deny": []
   }
