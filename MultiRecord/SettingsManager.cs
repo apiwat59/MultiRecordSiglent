@@ -57,31 +57,31 @@ namespace MultiRecord
         // MySQL settings
         public static string MySqlHost 
         { 
-            get => GetSetting("MySqlHost", "100.76.203.31"); 
+            get => GetSetting("MySqlHost", "100.84.90.72"); 
             set => SetSetting("MySqlHost", value); 
         }
 
         public static int MySqlPort 
         { 
-            get => int.TryParse(GetSetting("MySqlPort", "3306"), out int port) ? port : 3306; 
+            get => int.TryParse(GetSetting("MySqlPort", "33306"), out int port) ? port : 33306; 
             set => SetSetting("MySqlPort", value.ToString()); 
         }
 
         public static string MySqlUser 
         { 
-            get => GetSetting("MySqlUser", "FootSwitch"); 
+            get => GetSetting("MySqlUser", "orbitz_portal"); 
             set => SetSetting("MySqlUser", value); 
         }
 
         public static string MySqlPassword 
         { 
-            get => GetSetting("MySqlPassword", "Qwave@dmin020890751"); 
+            get => GetSetting("MySqlPassword", "Qwaveadmin12."); 
             set => SetSetting("MySqlPassword", value); 
         }
 
         public static string MySqlDatabase 
         { 
-            get => GetSetting("MySqlDatabase", "FootSwitch"); 
+            get => GetSetting("MySqlDatabase", "Orbitz"); 
             set => SetSetting("MySqlDatabase", value); 
         }
 

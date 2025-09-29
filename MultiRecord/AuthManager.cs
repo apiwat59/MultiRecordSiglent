@@ -1,0 +1,280 @@
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace MultiRecord
+{
+    public class AuthManager
+    {
+        private static readonly HttpClient httpClient = new HttpClient();
+        private const string BASE_URL = "http://100.75.21.95:3001/api/auth";
+        
+        public static string CurrentToken { get; private set; }
+        public static OrbitzUser CurrentUser { get; private set; }
+        
+        static AuthManager()
+        {
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+        }
+        
+        public static async Task<AuthResult> LoginAsync(string email, string password)
+        {
+            try
+            {
+                var loginData = new
+                {
+                    email = email,
+                    password = password
+                };
+                
+                var json = JsonConvert.SerializeObject(loginData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await httpClient.PostAsync($"{BASE_URL}/login", content);
+                var responseText = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonConvert.DeserializeObject<JObject>(responseText);
+                
+                if (response.IsSuccessStatusCode && result["success"]?.Value<bool>() == true)
+                {
+                    CurrentToken = result["token"]?.Value<string>();
+                    var userObj = result["user"];
+                    
+                    if (userObj != null)
+                    {
+                        CurrentUser = new OrbitzUser
+                        {
+                            Id = userObj["id"]?.Value<int>() ?? 0,
+                            Email = userObj["email"]?.Value<string>(),
+                            Username = userObj["username"]?.Value<string>(),
+                            FullName = userObj["fullName"]?.Value<string>(),
+                            Role = userObj["role"]?.Value<string>(),
+                            RoleDisplayName = userObj["roleDisplayName"]?.Value<string>(),
+                            IsActive = userObj["isActive"]?.Value<bool>() ?? false,
+                            LastLoginAt = userObj["lastLoginAt"]?.Value<DateTime?>()
+                        };
+                    }
+                    
+                    return new AuthResult
+                    {
+                        Success = true,
+                        Message = result["message"]?.Value<string>() ?? "Login successful",
+                        User = CurrentUser,
+                        Token = CurrentToken
+                    };
+                }
+                else
+                {
+                    return new AuthResult
+                    {
+                        Success = false,
+                        Error = result["error"]?.Value<string>() ?? "Login failed",
+                        ErrorCode = result["code"]?.Value<string>()
+                    };
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                return new AuthResult
+                {
+                    Success = false,
+                    Error = $"Network error: {ex.Message}",
+                    ErrorCode = "NETWORK_ERROR"
+                };
+            }
+            catch (TaskCanceledException)
+            {
+                return new AuthResult
+                {
+                    Success = false,
+                    Error = "Request timeout. Please check your connection.",
+                    ErrorCode = "TIMEOUT"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResult
+                {
+                    Success = false,
+                    Error = $"Unexpected error: {ex.Message}",
+                    ErrorCode = "UNKNOWN_ERROR"
+                };
+            }
+        }
+        
+        public static async Task<bool> VerifyTokenAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentToken))
+                return false;
+                
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}/verify");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", CurrentToken);
+                
+                var response = await httpClient.SendAsync(request);
+                var responseText = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonConvert.DeserializeObject<JObject>(responseText);
+                
+                return response.IsSuccessStatusCode && result["success"]?.Value<bool>() == true && result["valid"]?.Value<bool>() == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        public static async Task<AuthResult> GetCurrentUserAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentToken))
+            {
+                return new AuthResult
+                {
+                    Success = false,
+                    Error = "No authentication token available",
+                    ErrorCode = "NO_TOKEN"
+                };
+            }
+                
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}/me");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", CurrentToken);
+                
+                var response = await httpClient.SendAsync(request);
+                var responseText = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonConvert.DeserializeObject<JObject>(responseText);
+                
+                if (response.IsSuccessStatusCode && result["success"]?.Value<bool>() == true)
+                {
+                    var userObj = result["user"];
+                    
+                    if (userObj != null)
+                    {
+                        CurrentUser = new OrbitzUser
+                        {
+                            Id = userObj["id"]?.Value<int>() ?? 0,
+                            Email = userObj["email"]?.Value<string>(),
+                            Username = userObj["username"]?.Value<string>(),
+                            FullName = userObj["fullName"]?.Value<string>(),
+                            Role = userObj["role"]?.Value<string>(),
+                            RoleDisplayName = userObj["roleDisplayName"]?.Value<string>(),
+                            IsActive = userObj["isActive"]?.Value<bool>() ?? false,
+                            Phone = userObj["phone"]?.Value<string>(),
+                            Address = userObj["address"]?.Value<string>(),
+                            City = userObj["city"]?.Value<string>(),
+                            Country = userObj["country"]?.Value<string>(),
+                            Timezone = userObj["timezone"]?.Value<string>(),
+                            Language = userObj["language"]?.Value<string>(),
+                            Theme = userObj["theme"]?.Value<string>(),
+                            LastLoginAt = userObj["lastLoginAt"]?.Value<DateTime?>(),
+                            LoginCount = userObj["loginCount"]?.Value<int>() ?? 0,
+                            CreatedAt = userObj["createdAt"]?.Value<DateTime?>(),
+                            UpdatedAt = userObj["updatedAt"]?.Value<DateTime?>()
+                        };
+                    }
+                    
+                    return new AuthResult
+                    {
+                        Success = true,
+                        User = CurrentUser
+                    };
+                }
+                else
+                {
+                    return new AuthResult
+                    {
+                        Success = false,
+                        Error = result["error"]?.Value<string>() ?? "Failed to get user info",
+                        ErrorCode = result["code"]?.Value<string>()
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new AuthResult
+                {
+                    Success = false,
+                    Error = $"Error getting user info: {ex.Message}",
+                    ErrorCode = "USER_INFO_ERROR"
+                };
+            }
+        }
+        
+        public static async Task<bool> LogoutAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentToken))
+                return true; // Already logged out
+                
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{BASE_URL}/logout");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", CurrentToken);
+                
+                var response = await httpClient.SendAsync(request);
+                
+                // Clear local session regardless of server response
+                CurrentToken = null;
+                CurrentUser = null;
+                
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                // Clear local session even if logout request fails
+                CurrentToken = null;
+                CurrentUser = null;
+                return false;
+            }
+        }
+        
+        public static bool IsLoggedIn()
+        {
+            return !string.IsNullOrEmpty(CurrentToken) && CurrentUser != null;
+        }
+        
+        public static void ClearSession()
+        {
+            CurrentToken = null;
+            CurrentUser = null;
+        }
+    }
+    
+    public class AuthResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public string Error { get; set; }
+        public string ErrorCode { get; set; }
+        public OrbitzUser User { get; set; }
+        public string Token { get; set; }
+    }
+    
+    public class OrbitzUser
+    {
+        public int Id { get; set; }
+        public string Email { get; set; }
+        public string Username { get; set; }
+        public string FullName { get; set; }
+        public string Role { get; set; }
+        public string RoleDisplayName { get; set; }
+        public bool IsActive { get; set; }
+        public string ProfilePicture { get; set; }
+        public string Phone { get; set; }
+        public string Address { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public string Timezone { get; set; }
+        public string Language { get; set; }
+        public string Theme { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public int LoginCount { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+}

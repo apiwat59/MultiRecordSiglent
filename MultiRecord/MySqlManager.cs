@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net.NetworkInformation;
 
 namespace MultiRecord
 {
@@ -23,27 +24,106 @@ namespace MultiRecord
                 UserID = username,
                 Password = password,
                 Database = database,
-                ConnectionTimeout = 30,
+                ConnectionTimeout = 10,
                 AllowUserVariables = true,
-                UseCompression = true,
-                CharacterSet = "utf8mb4"
+                UseCompression = false,
+                CharacterSet = "utf8mb4",
+                SslMode = MySqlSslMode.None
             };
             _connectionString = builder.ToString();
+        }
+
+        public async Task<bool> TestNetworkConnectivityAsync(string host, int timeoutMs = 5000)
+        {
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    var reply = await ping.SendPingAsync(host, timeoutMs);
+                    return reply.Status == IPStatus.Success;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<bool> TestConnectionAsync()
         {
             try
             {
+                // Extract host from connection string for ping test
+                var builder = new MySqlConnectionStringBuilder(_connectionString);
+                string host = builder.Server;
+                
+                // First test basic network connectivity
+                System.Diagnostics.Debug.WriteLine($"Testing network ping to {host}");
+                bool pingSuccess = await TestNetworkConnectivityAsync(host, 3000);
+                
+                if (!pingSuccess)
+                {
+                    throw new Exception($"Network ping to {host} failed. Server may be unreachable or blocking ICMP.");
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Ping successful. Testing MySQL connection to {_connectionString}");
+                
                 using (var connection = new MySqlConnection(_connectionString))
                 {
+                    
                     await connection.OpenAsync();
+                    
+                    // Test a simple query to ensure full connectivity
+                    using (var command = new MySqlCommand("SELECT 1", connection))
+                    {
+                        command.CommandTimeout = 5;
+                        await command.ExecuteScalarAsync();
+                    }
+                    
                     return true;
                 }
             }
-            catch (Exception)
+            catch (MySqlException mysqlEx)
             {
-                return false;
+                string errorMsg = $"MySQL Error {mysqlEx.Number}: {mysqlEx.Message}";
+                
+                // Provide specific error guidance
+                switch (mysqlEx.Number)
+                {
+                    case 1042: // Can't get hostname
+                        errorMsg += "\n\nSuggestion: Check if the server IP address is correct and reachable.";
+                        break;
+                    case 1045: // Access denied
+                        errorMsg += "\n\nSuggestion: Check username and password.";
+                        break;
+                    case 1049: // Unknown database
+                        errorMsg += "\n\nSuggestion: Check if the database name 'Orbitz' exists.";
+                        break;
+                    case 0: // Timeout or connection failed
+                        errorMsg += "\n\nSuggestion: Check firewall settings and network connectivity.";
+                        break;
+                }
+                
+                System.Diagnostics.Debug.WriteLine(errorMsg);
+                throw new Exception(errorMsg);
+            }
+            catch (System.Net.Sockets.SocketException socketEx)
+            {
+                string errorMsg = $"Network Error: {socketEx.Message}\n\nSuggestion: Check if port {_connectionString.Split(';')[1].Split('=')[1]} is open and accessible.";
+                System.Diagnostics.Debug.WriteLine(errorMsg);
+                throw new Exception(errorMsg);
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                string errorMsg = $"Connection Timeout: {timeoutEx.Message}\n\nSuggestion: The server may be unreachable or overloaded.";
+                System.Diagnostics.Debug.WriteLine(errorMsg);
+                throw new Exception(errorMsg);
+            }
+            catch (Exception ex)
+            {
+                string errorMsg = $"Connection Error: {ex.Message}\n\nType: {ex.GetType().Name}";
+                System.Diagnostics.Debug.WriteLine(errorMsg);
+                throw new Exception(errorMsg);
             }
         }
 
@@ -356,6 +436,69 @@ namespace MultiRecord
             }
         }
 
+        public async Task<List<PCBMeasurement>> GetPCBMeasurementsBySessionAsync(string sessionId)
+        {
+            var measurements = new List<PCBMeasurement>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    SELECT 
+                        id, measurement_session_id, marker_id, measurement_number,
+                        measured_value, tolerance_status, tolerance_upper, tolerance_lower,
+                        tolerance_upper_type, tolerance_lower_type, tolerance_enabled,
+                        marker_type, marker_parameters, marker_position_x, marker_position_y,
+                        marker_display_name, marker_color, notes, measurement_unit,
+                        tolerance_upper_limit, tolerance_lower_limit, open
+                    FROM pcb_measurements 
+                    WHERE measurement_session_id = @sessionId 
+                    ORDER BY measurement_number";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@sessionId", sessionId);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var measurement = new PCBMeasurement
+                            {
+                                Id = reader["id"].ToString(),
+                                MeasurementSessionId = reader["measurement_session_id"].ToString(),
+                                MarkerId = reader["marker_id"].ToString(),
+                                MeasurementNumber = Convert.ToInt32(reader["measurement_number"]),
+                                MeasuredValue = reader["measured_value"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["measured_value"]),
+                                ToleranceStatus = reader["tolerance_status"].ToString(),
+                                ToleranceUpper = Convert.ToDecimal(reader["tolerance_upper"]),
+                                ToleranceLower = Convert.ToDecimal(reader["tolerance_lower"]),
+                                ToleranceUpperType = reader["tolerance_upper_type"].ToString(),
+                                ToleranceLowerType = reader["tolerance_lower_type"].ToString(),
+                                ToleranceEnabled = Convert.ToBoolean(reader["tolerance_enabled"]),
+                                MarkerType = reader["marker_type"].ToString(),
+                                MarkerParameters = reader["marker_parameters"].ToString(),
+                                MarkerPositionX = Convert.ToDecimal(reader["marker_position_x"]),
+                                MarkerPositionY = Convert.ToDecimal(reader["marker_position_y"]),
+                                MarkerDisplayName = reader["marker_display_name"].ToString(),
+                                MarkerColor = reader["marker_color"].ToString(),
+                                Notes = reader["notes"]?.ToString(),
+                                MeasurementUnit = reader["measurement_unit"]?.ToString(),
+                                ToleranceUpperLimit = reader["tolerance_upper_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_upper_limit"]),
+                                ToleranceLowerLimit = reader["tolerance_lower_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_lower_limit"]),
+                                Open = reader["open"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["open"])
+                            };
+                            
+                            measurements.Add(measurement);
+                        }
+                    }
+                }
+            }
+            
+            return measurements;
+        }
+
         public void Dispose()
         {
             if (!_disposed)
@@ -364,6 +507,32 @@ namespace MultiRecord
                 _disposed = true;
             }
         }
+    }
+
+    public class PCBMeasurement
+    {
+        public string Id { get; set; }
+        public string MeasurementSessionId { get; set; }
+        public string MarkerId { get; set; }
+        public int MeasurementNumber { get; set; }
+        public decimal? MeasuredValue { get; set; }
+        public string ToleranceStatus { get; set; }
+        public decimal ToleranceUpper { get; set; }
+        public decimal ToleranceLower { get; set; }
+        public string ToleranceUpperType { get; set; }
+        public string ToleranceLowerType { get; set; }
+        public bool ToleranceEnabled { get; set; }
+        public string MarkerType { get; set; }
+        public string MarkerParameters { get; set; }
+        public decimal MarkerPositionX { get; set; }
+        public decimal MarkerPositionY { get; set; }
+        public string MarkerDisplayName { get; set; }
+        public string MarkerColor { get; set; }
+        public string Notes { get; set; }
+        public string MeasurementUnit { get; set; }
+        public decimal? ToleranceUpperLimit { get; set; }
+        public decimal? ToleranceLowerLimit { get; set; }
+        public bool? Open { get; set; }
     }
 
     public class ToleranceData

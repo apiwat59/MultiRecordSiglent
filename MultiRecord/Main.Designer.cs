@@ -18,8 +18,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.panelChassis = new System.Windows.Forms.Panel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -322,23 +322,23 @@
             this.dataGridViewRecords.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRecords.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.dataGridViewRecords.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewRecords.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dataGridViewRecords.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewRecords.DefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridViewRecords.EnableHeadersVisualStyles = false;
             this.dataGridViewRecords.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.dataGridViewRecords.Location = new System.Drawing.Point(9, 122);
@@ -429,7 +429,7 @@
             this.textBoxDatabase.Name = "textBoxDatabase";
             this.textBoxDatabase.Size = new System.Drawing.Size(200, 23);
             this.textBoxDatabase.TabIndex = 9;
-            this.textBoxDatabase.Text = "FootSwitch";
+            this.textBoxDatabase.Text = "Orbitz";
             // 
             // labelDatabase
             // 
@@ -449,7 +449,7 @@
             this.textBoxPassword.PasswordChar = '*';
             this.textBoxPassword.Size = new System.Drawing.Size(200, 23);
             this.textBoxPassword.TabIndex = 7;
-            this.textBoxPassword.Text = "Qwave@dmin020890751";
+            this.textBoxPassword.Text = "Qwaveadmin12.";
             // 
             // labelPassword
             // 
@@ -468,7 +468,7 @@
             this.textBoxUser.Name = "textBoxUser";
             this.textBoxUser.Size = new System.Drawing.Size(200, 23);
             this.textBoxUser.TabIndex = 5;
-            this.textBoxUser.Text = "FootSwitch";
+            this.textBoxUser.Text = "orbitz_portal";
             // 
             // labelUser
             // 
@@ -487,7 +487,7 @@
             this.textBoxMySqlPort.Name = "textBoxMySqlPort";
             this.textBoxMySqlPort.Size = new System.Drawing.Size(80, 23);
             this.textBoxMySqlPort.TabIndex = 3;
-            this.textBoxMySqlPort.Text = "3306";
+            this.textBoxMySqlPort.Text = "33306";
             // 
             // labelMySqlPort
             // 
@@ -506,7 +506,7 @@
             this.textBoxMySqlHost.Name = "textBoxMySqlHost";
             this.textBoxMySqlHost.Size = new System.Drawing.Size(200, 23);
             this.textBoxMySqlHost.TabIndex = 1;
-            this.textBoxMySqlHost.Text = "100.76.203.31";
+            this.textBoxMySqlHost.Text = "100.84.90.72";
             // 
             // labelMySqlHost
             // 
@@ -542,20 +542,6 @@
             this.groupBoxTolerance.TabStop = false;
             this.groupBoxTolerance.Text = "Tolerance Check";
             // 
-            // 
-            // checkBoxIsPercent
-            // 
-            this.checkBoxIsPercent.Checked = true;
-            this.checkBoxIsPercent.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxIsPercent.ForeColor = System.Drawing.Color.White;
-            this.checkBoxIsPercent.Location = new System.Drawing.Point(13, 90);
-            this.checkBoxIsPercent.Name = "checkBoxIsPercent";
-            this.checkBoxIsPercent.Size = new System.Drawing.Size(120, 20);
-            this.checkBoxIsPercent.TabIndex = 9;
-            this.checkBoxIsPercent.Text = "Percentage Mode";
-            this.checkBoxIsPercent.UseVisualStyleBackColor = true;
-            this.checkBoxIsPercent.Visible = false;
-            // 
             // buttonMeasurementMode
             // 
             this.buttonMeasurementMode.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(140)))), ((int)(((byte)(0)))));
@@ -570,6 +556,19 @@
             this.buttonMeasurementMode.Text = "Measurement Mode";
             this.buttonMeasurementMode.UseVisualStyleBackColor = false;
             this.buttonMeasurementMode.Click += new System.EventHandler(this.buttonMeasurementMode_Click);
+            // 
+            // checkBoxIsPercent
+            // 
+            this.checkBoxIsPercent.Checked = true;
+            this.checkBoxIsPercent.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxIsPercent.ForeColor = System.Drawing.Color.White;
+            this.checkBoxIsPercent.Location = new System.Drawing.Point(13, 90);
+            this.checkBoxIsPercent.Name = "checkBoxIsPercent";
+            this.checkBoxIsPercent.Size = new System.Drawing.Size(120, 20);
+            this.checkBoxIsPercent.TabIndex = 9;
+            this.checkBoxIsPercent.Text = "Percentage Mode";
+            this.checkBoxIsPercent.UseVisualStyleBackColor = true;
+            this.checkBoxIsPercent.Visible = false;
             // 
             // textBox2WTolerance
             // 

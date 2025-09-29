@@ -65,6 +65,44 @@ namespace MultiRecord
             UpdateConnectionStatus(false);
             panelParameters.Visible = false;
             LogActivity("แอปพลิเคชันเริ่มต้นแล้ว ยินดีต้อนรับ!");
+            
+            // Add logout button programmatically
+            InitializeLogoutButton();
+        }
+        
+        private void InitializeLogoutButton()
+        {
+            var logoutButton = new Button
+            {
+                Text = "Logout",
+                Name = "buttonLogout",
+                Size = new Size(80, 30),
+                Location = new Point(this.Width - 100, 10),
+                BackColor = Color.FromArgb(186, 0, 0),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+            
+            logoutButton.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 80);
+            logoutButton.Click += async (s, e) => await LogoutUser_Click();
+            
+            this.Controls.Add(logoutButton);
+            logoutButton.BringToFront();
+        }
+        
+        private async Task LogoutUser_Click()
+        {
+            var result = MessageBox.Show("คุณต้องการออกจากระบบหรือไม่?", 
+                                       "Logout Confirmation", 
+                                       MessageBoxButtons.YesNo, 
+                                       MessageBoxIcon.Question);
+            
+            if (result == DialogResult.Yes)
+            {
+                await LogoutUser();
+            }
         }
 
         private void InitializeToleranceControls()
@@ -2117,11 +2155,73 @@ namespace MultiRecord
             }
         }
 
+        private async Task<bool> PerformAuthentication()
+        {
+            try
+            {
+                using (var loginForm = new LoginForm())
+                {
+                    var result = loginForm.ShowDialog(this);
+                    
+                    if (result == DialogResult.OK && loginForm.LoginResult.Success)
+                    {
+                        LogActivity($"ผู้ใช้ {AuthManager.CurrentUser.FullName} เข้าสู่ระบบสำเร็จ");
+                        return true;
+                    }
+                    else
+                    {
+                        LogActivity("การเข้าสู่ระบบถูกยกเลิก");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"เกิดข้อผิดพลาดในการเข้าสู่ระบบ:\n{ex.Message}", 
+                              "Authentication Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void UpdateUserDisplay()
+        {
+            if (AuthManager.IsLoggedIn() && AuthManager.CurrentUser != null)
+            {
+                // Update status bar or add user info to title
+                this.Text = $"MultiRecord - {AuthManager.CurrentUser.FullName} ({AuthManager.CurrentUser.RoleDisplayName})";
+                LogActivity($"ยินดีต้อนรับ {AuthManager.CurrentUser.FullName} สู่ระบบ MultiRecord");
+            }
+        }
+
+        private async Task LogoutUser()
+        {
+            try
+            {
+                await AuthManager.LogoutAsync();
+                LogActivity("ออกจากระบบเรียบร้อยแล้ว");
+                
+                // Close the application or show login again
+                Application.Restart();
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการออกจากระบบ: {ex.Message}");
+            }
+        }
+
+        private async void Form1_Load(object sender, EventArgs e)
         {
             this.KeyPreview = true; // ให้ Form รับ KeyDown ก่อน Control อื่น
+            
+            // Show login form before initializing the application
+            if (!await PerformAuthentication())
+            {
+                this.Close();
+                return;
+            }
+            
             InitializeMySQLSettings();
+            UpdateUserDisplay();
         }
 
         private void InitializeMySQLSettings()
@@ -2155,6 +2255,18 @@ namespace MultiRecord
                 labelConnectionStatus.Text = "Testing connection...";
                 labelConnectionStatus.ForeColor = Color.Yellow;
                 
+                // Log connection details for debugging
+                string connectionDetails = $"Host: {SettingsManager.MySqlHost}:{SettingsManager.MySqlPort}, " +
+                                         $"User: {SettingsManager.MySqlUser}, " +
+                                         $"Database: {SettingsManager.MySqlDatabase}";
+                
+                richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Attempting MySQL connection - {connectionDetails}\n");
+                richTextBoxLog.ScrollToCaret();
+                
+                labelConnectionStatus.Text = "Testing network connectivity...";
+                richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Step 1: Testing network ping to {SettingsManager.MySqlHost}\n");
+                richTextBoxLog.ScrollToCaret();
+                
                 using (var mysqlManager = new MySqlManager(
                     SettingsManager.MySqlHost,
                     SettingsManager.MySqlPort,
@@ -2162,27 +2274,111 @@ namespace MultiRecord
                     SettingsManager.MySqlPassword,
                     SettingsManager.MySqlDatabase))
                 {
+                    labelConnectionStatus.Text = "Testing MySQL connection...";
+                    richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Step 2: Testing MySQL authentication and database access\n");
+                    richTextBoxLog.ScrollToCaret();
+                    
+                    // Test basic connection first
                     bool success = await mysqlManager.TestConnectionAsync();
                     
                     if (success)
                     {
                         labelConnectionStatus.Text = "Connection successful!";
                         labelConnectionStatus.ForeColor = Color.LightGreen;
+                        richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] MySQL connection successful!\n");
+                        richTextBoxLog.ScrollToCaret();
                         
-                        // Initialize database schema
-                        await mysqlManager.InitializeDatabaseAsync();
+                        // Ask user if they want to initialize database schema
+                        var result = MessageBox.Show("Connection successful!\n\nWould you like to initialize the database schema now?", 
+                                                    "Connection Successful", 
+                                                    MessageBoxButtons.YesNo, 
+                                                    MessageBoxIcon.Question);
+                        
+                        if (result == DialogResult.Yes)
+                        {
+                            try
+                            {
+                                labelConnectionStatus.Text = "Initializing schema...";
+                                labelConnectionStatus.ForeColor = Color.Orange;
+                                
+                                await mysqlManager.InitializeDatabaseAsync();
+                                
+                                labelConnectionStatus.Text = "Schema initialized!";
+                                labelConnectionStatus.ForeColor = Color.LightGreen;
+                                richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Database schema initialized successfully!\n");
+                                richTextBoxLog.ScrollToCaret();
+                                
+                                MessageBox.Show("Database schema initialized successfully!", 
+                                              "Schema Initialization", 
+                                              MessageBoxButtons.OK, 
+                                              MessageBoxIcon.Information);
+                            }
+                            catch (Exception initEx)
+                            {
+                                labelConnectionStatus.Text = "Schema init failed!";
+                                labelConnectionStatus.ForeColor = Color.Red;
+                                richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Database schema initialization failed: {initEx.Message}\n");
+                                richTextBoxLog.ScrollToCaret();
+                                MessageBox.Show($"Schema initialization failed:\n\n{initEx.Message}", 
+                                              "Schema Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
                     }
-                    else
-                    {
-                        labelConnectionStatus.Text = "Connection failed!";
-                        labelConnectionStatus.ForeColor = Color.Red;
-                    }
+                    // Note: If TestConnectionAsync throws an exception, it will be caught by the outer catch block
                 }
             }
             catch (Exception ex)
             {
-                labelConnectionStatus.Text = $"Error: {ex.Message}";
+                labelConnectionStatus.Text = "Connection failed";
                 labelConnectionStatus.ForeColor = Color.Red;
+                richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] MySQL connection failed: {ex.Message}\n");
+                richTextBoxLog.ScrollToCaret();
+                
+                // Provide specific guidance based on error type
+                string guidance = "";
+                if (ex.Message.Contains("ping") || ex.Message.Contains("unreachable"))
+                {
+                    guidance = "Network Issues:\n" +
+                              "• Check if server IP 100.84.90.72 is correct\n" +
+                              "• Verify network connectivity\n" +
+                              "• Check firewall settings\n" +
+                              "• Ensure VPN connection if required";
+                }
+                else if (ex.Message.Contains("timeout") || ex.Message.Contains("Timeout"))
+                {
+                    guidance = "Connection Timeout:\n" +
+                              "• Server may be overloaded\n" +
+                              "• Network latency issues\n" +
+                              "• Try again in a few moments\n" +
+                              "• Contact system administrator";
+                }
+                else if (ex.Message.Contains("1045") || ex.Message.Contains("Access denied"))
+                {
+                    guidance = "Authentication Error:\n" +
+                              "• Check username: orbitz_portal\n" +
+                              "• Verify password is correct\n" +
+                              "• Contact database administrator";
+                }
+                else if (ex.Message.Contains("1049") || ex.Message.Contains("Unknown database"))
+                {
+                    guidance = "Database Error:\n" +
+                              "• Database 'Orbitz' may not exist\n" +
+                              "• Contact database administrator\n" +
+                              "• Check database name spelling";
+                }
+                else
+                {
+                    guidance = "General Troubleshooting:\n" +
+                              "• Check all connection settings\n" +
+                              "• Verify server is running\n" +
+                              "• Contact system administrator";
+                }
+                
+                // Show detailed error message with guidance
+                MessageBox.Show($"MySQL Connection Failed\n\n" +
+                              $"Error Details:\n{ex.Message}\n\n" +
+                              $"{guidance}", 
+                              "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
