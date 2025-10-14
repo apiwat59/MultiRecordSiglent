@@ -1495,6 +1495,45 @@ namespace MultiRecord
             }
         }
 
+        // Helper method to format tolerance values based on type
+        private string FormatToleranceValue(double value, string toleranceType)
+        {
+            if (value == 0.0)
+            {
+                return toleranceType == "percent" ? "0%" : "0.00";
+            }
+            
+            if (toleranceType == "percent")
+            {
+                // Remove trailing zeros but keep at least one decimal place
+                string formatted = value.ToString("0.##########", CultureInfo.InvariantCulture);
+                return formatted + "%";
+            }
+            else // abs
+            {
+                return value.ToString("0.00", CultureInfo.InvariantCulture);
+            }
+        }
+
+        // Helper method to parse formatted tolerance value back to number
+        private decimal? ParseFormattedToleranceValue(string formattedValue)
+        {
+            if (string.IsNullOrWhiteSpace(formattedValue))
+            {
+                return null;
+            }
+            
+            // Remove % sign if present
+            string cleanValue = formattedValue.Replace("%", "").Trim();
+            
+            if (decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+            {
+                return result;
+            }
+            
+            return null;
+        }
+
         #region --- DataGridView Edit Panel Event Handlers ---
 
         private void DataGridViewRecords_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -2090,6 +2129,7 @@ namespace MultiRecord
             _rdRecordsTable.Columns.Add("Upper", typeof(string));
             _rdRecordsTable.Columns.Add("Lower", typeof(string));
             _rdRecordsTable.Columns.Add("Type", typeof(string)); // Percent or Absolute
+            _rdRecordsTable.Columns.Add("ToleranceEnable", typeof(bool)); // Tolerance Enable/Disable
             _rdRecordsTable.Columns.Add("Note", typeof(string)); // หมายเหตุ
             _rdRecordsTable.Columns.Add("ID", typeof(int)); // เก็บ measurement ID สำหรับอัพเดท
 
@@ -2335,7 +2375,7 @@ namespace MultiRecord
                 }
 
                 string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_name, sm.measurement_value, 
-                                      sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.note, sm.measured_at
+                                      sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.tolerance_enabled, sm.note, sm.measured_at
                                FROM software_measurements sm 
                                WHERE sm.serial_id = {_currentSerialId} 
                                ORDER BY sm.measured_at DESC";
@@ -2368,13 +2408,21 @@ namespace MultiRecord
                             newRow["Measurement"] = "0.0000";
                         }
                         
-                        newRow["Upper"] = row["upper_limit"] != DBNull.Value 
+                        string toleranceType = row["tolerance_type"]?.ToString() ?? "percent";
+                        double upperValue = row["upper_limit"] != DBNull.Value 
                             ? Convert.ToDouble(row["upper_limit"]) 
                             : 0.0;
-                        newRow["Lower"] = row["lower_limit"] != DBNull.Value 
+                        double lowerValue = row["lower_limit"] != DBNull.Value 
                             ? Convert.ToDouble(row["lower_limit"]) 
                             : 0.0;
-                        newRow["Type"] = row["tolerance_type"]?.ToString() ?? "percent";
+                        
+                        // Format Upper/Lower based on tolerance type
+                        newRow["Upper"] = FormatToleranceValue(upperValue, toleranceType);
+                        newRow["Lower"] = FormatToleranceValue(lowerValue, toleranceType);
+                        newRow["Type"] = toleranceType;
+                        newRow["ToleranceEnable"] = row["tolerance_enabled"] != DBNull.Value 
+                            ? Convert.ToBoolean(row["tolerance_enabled"]) 
+                            : false;
                         newRow["Note"] = row["note"]?.ToString() ?? "";
                         
                         _rdRecordsTable.Rows.Add(newRow);
@@ -2694,6 +2742,7 @@ namespace MultiRecord
                 newRow["Upper"] = "";
                 newRow["Lower"] = "";
                 newRow["Type"] = "percent"; // ค่าเริ่มต้น
+                newRow["ToleranceEnable"] = false; // ค่าเริ่มต้น
                 newRow["Note"] = "";
                 newRow["ID"] = 0; // จะอัพเดทหลังจากบันทึกลง database
                 _rdRecordsTable.Rows.Add(newRow);
@@ -2795,35 +2844,47 @@ namespace MultiRecord
                 string currentType = row.Cells["Type"].Value?.ToString() ?? "percent";
                 string currentNote = row.Cells["Note"].Value?.ToString() ?? "";
                 
-                // ดึงค่า Upper/Lower ปัจจุบัน
+                // ดึงค่า Upper/Lower ปัจจุบัน (parse from formatted string)
                 decimal? currentUpper = null;
                 decimal? currentLower = null;
                 
                 if (row.Cells["Upper"].Value != null && row.Cells["Upper"].Value != DBNull.Value)
                 {
-                    if (decimal.TryParse(row.Cells["Upper"].Value.ToString(), out decimal upperVal))
-                    {
-                        currentUpper = upperVal;
-                    }
+                    currentUpper = ParseFormattedToleranceValue(row.Cells["Upper"].Value.ToString());
                 }
                 
                 if (row.Cells["Lower"].Value != null && row.Cells["Lower"].Value != DBNull.Value)
                 {
-                    if (decimal.TryParse(row.Cells["Lower"].Value.ToString(), out decimal lowerVal))
-                    {
-                        currentLower = lowerVal;
-                    }
+                    currentLower = ParseFormattedToleranceValue(row.Cells["Lower"].Value.ToString());
                 }
 
                 using (RDEditDialog dialog = new RDEditDialog(currentName, currentType, currentUpper, currentLower, currentNote))
                 {
                     if (dialog.ShowDialog() == DialogResult.OK)
                     {
-                        // อัพเดทข้อมูลใน DataGridView
+                        // อัพเดทข้อมูลใน DataGridView with formatted values
                         row.Cells["Name"].Value = dialog.MeasurementName;
                         row.Cells["Type"].Value = dialog.ToleranceType;
-                        row.Cells["Upper"].Value = dialog.UpperLimit.HasValue ? (object)dialog.UpperLimit.Value : DBNull.Value;
-                        row.Cells["Lower"].Value = dialog.LowerLimit.HasValue ? (object)dialog.LowerLimit.Value : DBNull.Value;
+                        
+                        // Format Upper/Lower based on tolerance type
+                        if (dialog.UpperLimit.HasValue)
+                        {
+                            row.Cells["Upper"].Value = FormatToleranceValue((double)dialog.UpperLimit.Value, dialog.ToleranceType);
+                        }
+                        else
+                        {
+                            row.Cells["Upper"].Value = dialog.ToleranceType == "percent" ? "0%" : "0.00";
+                        }
+                        
+                        if (dialog.LowerLimit.HasValue)
+                        {
+                            row.Cells["Lower"].Value = FormatToleranceValue((double)dialog.LowerLimit.Value, dialog.ToleranceType);
+                        }
+                        else
+                        {
+                            row.Cells["Lower"].Value = dialog.ToleranceType == "percent" ? "0%" : "0.00";
+                        }
+                        
                         row.Cells["Note"].Value = dialog.Note;
 
                         // อัพเดทข้อมูลใน database

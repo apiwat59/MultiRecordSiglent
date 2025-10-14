@@ -264,10 +264,12 @@ namespace MultiRecord
         {
             textBoxMeasurementName.Text = MeasurementName;
             textBoxNote.Text = Note;
+            
+            // Display Upper/Lower values without formatting (just the number)
             textBoxUpperLimit.Text = UpperLimit.HasValue ? UpperLimit.Value.ToString() : "";
             textBoxLowerLimit.Text = LowerLimit.HasValue ? LowerLimit.Value.ToString() : "";
             
-            if (ToleranceType.ToLower() == "absolute")
+            if (ToleranceType.ToLower() == "absolute" || ToleranceType.ToLower() == "abs")
             {
                 radioButtonAbsolute.Checked = true;
             }

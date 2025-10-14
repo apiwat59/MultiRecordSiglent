@@ -39,9 +39,9 @@
             this.dataGridViewRecords = new System.Windows.Forms.DataGridView();
             this.tab_rd = new System.Windows.Forms.TabPage();
             this.groupBoxRDRecord = new System.Windows.Forms.GroupBox();
-            this.buttonBatchTolerance = new System.Windows.Forms.Button();
-            this.buttonSelectAll = new System.Windows.Forms.Button();
             this.buttonDeselectAll = new System.Windows.Forms.Button();
+            this.buttonSelectAll = new System.Windows.Forms.Button();
+            this.buttonBatchTolerance = new System.Windows.Forms.Button();
             this.buttonChangeModel = new System.Windows.Forms.Button();
             this.buttonClearRD = new System.Windows.Forms.Button();
             this.buttonExportRD = new System.Windows.Forms.Button();
@@ -399,83 +399,20 @@
             this.groupBoxRDRecord.TabStop = false;
             this.groupBoxRDRecord.Text = "R&D Measurements";
             // 
-            // buttonChangeModel
+            // buttonDeselectAll
             // 
-            this.buttonChangeModel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(156)))), ((int)(((byte)(39)))), ((int)(((byte)(176)))));
-            this.buttonChangeModel.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonChangeModel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonChangeModel.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonChangeModel.Location = new System.Drawing.Point(270, 61);
-            this.buttonChangeModel.Name = "buttonChangeModel";
-            this.buttonChangeModel.Size = new System.Drawing.Size(124, 33);
-            this.buttonChangeModel.TabIndex = 4;
-            this.buttonChangeModel.Text = "เปลี่ยนโมเดล";
-            this.buttonChangeModel.UseVisualStyleBackColor = false;
-            // 
-            // buttonClearRD
-            // 
-            this.buttonClearRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.buttonClearRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonClearRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonClearRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonClearRD.Location = new System.Drawing.Point(140, 61);
-            this.buttonClearRD.Name = "buttonClearRD";
-            this.buttonClearRD.Size = new System.Drawing.Size(124, 33);
-            this.buttonClearRD.TabIndex = 3;
-            this.buttonClearRD.Text = "ล้างข้อมูล R&D";
-            this.buttonClearRD.UseVisualStyleBackColor = false;
-            // 
-            // buttonExportRD
-            // 
-            this.buttonExportRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
-            this.buttonExportRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonExportRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonExportRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonExportRD.Location = new System.Drawing.Point(10, 61);
-            this.buttonExportRD.Name = "buttonExportRD";
-            this.buttonExportRD.Size = new System.Drawing.Size(124, 33);
-            this.buttonExportRD.TabIndex = 2;
-            this.buttonExportRD.Text = "ส่งออกไฟล์ CSV";
-            this.buttonExportRD.UseVisualStyleBackColor = false;
-            // 
-            // buttonRecordRD
-            // 
-            this.buttonRecordRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(151)))), ((int)(((byte)(234)))));
-            this.buttonRecordRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonRecordRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonRecordRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonRecordRD.Location = new System.Drawing.Point(10, 22);
-            this.buttonRecordRD.Name = "buttonRecordRD";
-            this.buttonRecordRD.Size = new System.Drawing.Size(119, 33);
-            this.buttonRecordRD.TabIndex = 1;
-            this.buttonRecordRD.Text = "บันทึกค่า R&D";
-            this.buttonRecordRD.UseVisualStyleBackColor = false;
-            // 
-            // buttonDeleteRD
-            // 
-            this.buttonDeleteRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
-            this.buttonDeleteRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonDeleteRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonDeleteRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonDeleteRD.Location = new System.Drawing.Point(135, 22);
-            this.buttonDeleteRD.Name = "buttonDeleteRD";
-            this.buttonDeleteRD.Size = new System.Drawing.Size(80, 33);
-            this.buttonDeleteRD.TabIndex = 4;
-            this.buttonDeleteRD.Text = "ลบ";
-            this.buttonDeleteRD.UseVisualStyleBackColor = false;
-            // 
-            // buttonBatchTolerance
-            // 
-            this.buttonBatchTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(152)))), ((int)(((byte)(0)))));
-            this.buttonBatchTolerance.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonBatchTolerance.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonBatchTolerance.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonBatchTolerance.Location = new System.Drawing.Point(221, 22);
-            this.buttonBatchTolerance.Name = "buttonBatchTolerance";
-            this.buttonBatchTolerance.Size = new System.Drawing.Size(150, 33);
-            this.buttonBatchTolerance.TabIndex = 5;
-            this.buttonBatchTolerance.Text = "Batch Tolerance";
-            this.buttonBatchTolerance.UseVisualStyleBackColor = false;
+            this.buttonDeselectAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonDeselectAll.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonDeselectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDeselectAll.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonDeselectAll.ForeColor = System.Drawing.Color.White;
+            this.buttonDeselectAll.Location = new System.Drawing.Point(100, 68);
+            this.buttonDeselectAll.Name = "buttonDeselectAll";
+            this.buttonDeselectAll.Size = new System.Drawing.Size(95, 26);
+            this.buttonDeselectAll.TabIndex = 7;
+            this.buttonDeselectAll.Text = "☐ Deselect All";
+            this.buttonDeselectAll.UseVisualStyleBackColor = false;
+            this.buttonDeselectAll.Click += new System.EventHandler(this.ButtonDeselectAll_Click);
             // 
             // buttonSelectAll
             // 
@@ -492,20 +429,83 @@
             this.buttonSelectAll.UseVisualStyleBackColor = false;
             this.buttonSelectAll.Click += new System.EventHandler(this.ButtonSelectAll_Click);
             // 
-            // buttonDeselectAll
+            // buttonBatchTolerance
             // 
-            this.buttonDeselectAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.buttonDeselectAll.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonDeselectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonDeselectAll.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.buttonDeselectAll.ForeColor = System.Drawing.Color.White;
-            this.buttonDeselectAll.Location = new System.Drawing.Point(100, 68);
-            this.buttonDeselectAll.Name = "buttonDeselectAll";
-            this.buttonDeselectAll.Size = new System.Drawing.Size(95, 26);
-            this.buttonDeselectAll.TabIndex = 7;
-            this.buttonDeselectAll.Text = "☐ Deselect All";
-            this.buttonDeselectAll.UseVisualStyleBackColor = false;
-            this.buttonDeselectAll.Click += new System.EventHandler(this.ButtonDeselectAll_Click);
+            this.buttonBatchTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(152)))), ((int)(((byte)(0)))));
+            this.buttonBatchTolerance.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonBatchTolerance.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBatchTolerance.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonBatchTolerance.Location = new System.Drawing.Point(221, 22);
+            this.buttonBatchTolerance.Name = "buttonBatchTolerance";
+            this.buttonBatchTolerance.Size = new System.Drawing.Size(150, 33);
+            this.buttonBatchTolerance.TabIndex = 5;
+            this.buttonBatchTolerance.Text = "Batch Tolerance";
+            this.buttonBatchTolerance.UseVisualStyleBackColor = false;
+            // 
+            // buttonChangeModel
+            // 
+            this.buttonChangeModel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(156)))), ((int)(((byte)(39)))), ((int)(((byte)(176)))));
+            this.buttonChangeModel.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonChangeModel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonChangeModel.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonChangeModel.Location = new System.Drawing.Point(459, 22);
+            this.buttonChangeModel.Name = "buttonChangeModel";
+            this.buttonChangeModel.Size = new System.Drawing.Size(124, 33);
+            this.buttonChangeModel.TabIndex = 4;
+            this.buttonChangeModel.Text = "เปลี่ยนโมเดล";
+            this.buttonChangeModel.UseVisualStyleBackColor = false;
+            // 
+            // buttonClearRD
+            // 
+            this.buttonClearRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.buttonClearRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonClearRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonClearRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonClearRD.Location = new System.Drawing.Point(459, 61);
+            this.buttonClearRD.Name = "buttonClearRD";
+            this.buttonClearRD.Size = new System.Drawing.Size(124, 33);
+            this.buttonClearRD.TabIndex = 3;
+            this.buttonClearRD.Text = "ล้างข้อมูล R&D";
+            this.buttonClearRD.UseVisualStyleBackColor = false;
+            // 
+            // buttonExportRD
+            // 
+            this.buttonExportRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
+            this.buttonExportRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonExportRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonExportRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonExportRD.Location = new System.Drawing.Point(433, 435);
+            this.buttonExportRD.Name = "buttonExportRD";
+            this.buttonExportRD.Size = new System.Drawing.Size(150, 33);
+            this.buttonExportRD.TabIndex = 2;
+            this.buttonExportRD.Text = "ส่งออกไฟล์ CSV";
+            this.buttonExportRD.UseVisualStyleBackColor = false;
+            // 
+            // buttonDeleteRD
+            // 
+            this.buttonDeleteRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
+            this.buttonDeleteRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonDeleteRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDeleteRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonDeleteRD.Location = new System.Drawing.Point(135, 22);
+            this.buttonDeleteRD.Name = "buttonDeleteRD";
+            this.buttonDeleteRD.Size = new System.Drawing.Size(80, 33);
+            this.buttonDeleteRD.TabIndex = 4;
+            this.buttonDeleteRD.Text = "ลบ";
+            this.buttonDeleteRD.UseVisualStyleBackColor = false;
+            // 
+            // buttonRecordRD
+            // 
+            this.buttonRecordRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(151)))), ((int)(((byte)(234)))));
+            this.buttonRecordRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonRecordRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonRecordRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonRecordRD.Location = new System.Drawing.Point(10, 22);
+            this.buttonRecordRD.Name = "buttonRecordRD";
+            this.buttonRecordRD.Size = new System.Drawing.Size(119, 33);
+            this.buttonRecordRD.TabIndex = 1;
+            this.buttonRecordRD.Text = "บันทึกค่า R&D";
+            this.buttonRecordRD.UseVisualStyleBackColor = false;
             // 
             // dataGridViewRD
             // 
@@ -537,7 +537,7 @@
             this.dataGridViewRD.Name = "dataGridViewRD";
             this.dataGridViewRD.RowHeadersVisible = false;
             this.dataGridViewRD.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewRD.Size = new System.Drawing.Size(578, 362);
+            this.dataGridViewRD.Size = new System.Drawing.Size(578, 327);
             this.dataGridViewRD.TabIndex = 0;
             // 
             // tab_tools
