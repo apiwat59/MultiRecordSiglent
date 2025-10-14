@@ -220,7 +220,8 @@ namespace MultiRecord
             {
                 await connection.OpenAsync();
                 
-                var sql = "SELECT id, model_name, description FROM software_models ORDER BY model_name";
+                // Query from spaze database, models table
+                var sql = "SELECT id, name, description FROM spaze.models ORDER BY name";
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
@@ -229,7 +230,7 @@ namespace MultiRecord
                         {
                             models.Add((
                                 Convert.ToInt32(reader["id"]),
-                                reader["model_name"].ToString(),
+                                reader["name"].ToString(),
                                 reader["description"]?.ToString() ?? ""
                             ));
                         }

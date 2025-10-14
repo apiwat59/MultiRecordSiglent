@@ -18,8 +18,9 @@ namespace MultiRecord
         private void InitializeComponent()
         {
             this.groupBoxModelSelection = new System.Windows.Forms.GroupBox();
+            this.listBoxModelResults = new System.Windows.Forms.ListBox();
             this.labelModel = new System.Windows.Forms.Label();
-            this.comboBoxModels = new System.Windows.Forms.ComboBox();
+            this.textBoxModelSearch = new System.Windows.Forms.TextBox();
             this.groupBoxAction = new System.Windows.Forms.GroupBox();
             this.buttonCreateNew = new System.Windows.Forms.Button();
             this.buttonLoadExisting = new System.Windows.Forms.Button();
@@ -36,15 +37,16 @@ namespace MultiRecord
             // 
             // groupBoxModelSelection
             // 
+            this.groupBoxModelSelection.Controls.Add(this.listBoxModelResults);
             this.groupBoxModelSelection.Controls.Add(this.labelModel);
-            this.groupBoxModelSelection.Controls.Add(this.comboBoxModels);
+            this.groupBoxModelSelection.Controls.Add(this.textBoxModelSearch);
             this.groupBoxModelSelection.ForeColor = System.Drawing.Color.White;
             this.groupBoxModelSelection.Location = new System.Drawing.Point(12, 50);
             this.groupBoxModelSelection.Name = "groupBoxModelSelection";
-            this.groupBoxModelSelection.Size = new System.Drawing.Size(460, 70);
+            this.groupBoxModelSelection.Size = new System.Drawing.Size(460, 180);
             this.groupBoxModelSelection.TabIndex = 0;
             this.groupBoxModelSelection.TabStop = false;
-            this.groupBoxModelSelection.Text = "เลือก Model";
+            this.groupBoxModelSelection.Text = "ค้นหา Model";
             // 
             // labelModel
             // 
@@ -56,23 +58,35 @@ namespace MultiRecord
             this.labelModel.TabIndex = 0;
             this.labelModel.Text = "Model:";
             // 
-            // comboBoxModels
+            // textBoxModelSearch
             // 
-            this.comboBoxModels.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
-            this.comboBoxModels.ForeColor = System.Drawing.Color.White;
-            this.comboBoxModels.FormattingEnabled = true;
-            this.comboBoxModels.Location = new System.Drawing.Point(70, 22);
-            this.comboBoxModels.Name = "comboBoxModels";
-            this.comboBoxModels.Size = new System.Drawing.Size(370, 21);
-            this.comboBoxModels.TabIndex = 1;
-            this.comboBoxModels.SelectedIndexChanged += new System.EventHandler(this.ComboBoxModels_SelectedIndexChanged);
+            this.textBoxModelSearch.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.textBoxModelSearch.ForeColor = System.Drawing.Color.White;
+            this.textBoxModelSearch.Location = new System.Drawing.Point(70, 22);
+            this.textBoxModelSearch.Name = "textBoxModelSearch";
+            this.textBoxModelSearch.Size = new System.Drawing.Size(370, 20);
+            this.textBoxModelSearch.TabIndex = 1;
+            this.textBoxModelSearch.TextChanged += new System.EventHandler(this.TextBoxModelSearch_TextChanged);
+            // 
+            // listBoxModelResults
+            // 
+            this.listBoxModelResults.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.listBoxModelResults.ForeColor = System.Drawing.Color.White;
+            this.listBoxModelResults.FormattingEnabled = true;
+            this.listBoxModelResults.Location = new System.Drawing.Point(70, 48);
+            this.listBoxModelResults.Name = "listBoxModelResults";
+            this.listBoxModelResults.Size = new System.Drawing.Size(370, 121);
+            this.listBoxModelResults.TabIndex = 2;
+            this.listBoxModelResults.Visible = false;
+            this.listBoxModelResults.SelectedIndexChanged += new System.EventHandler(this.ListBoxModelResults_SelectedIndexChanged);
+            this.listBoxModelResults.DoubleClick += new System.EventHandler(this.ListBoxModelResults_DoubleClick);
             // 
             // groupBoxAction
             // 
             this.groupBoxAction.Controls.Add(this.buttonCreateNew);
             this.groupBoxAction.Controls.Add(this.buttonLoadExisting);
             this.groupBoxAction.ForeColor = System.Drawing.Color.White;
-            this.groupBoxAction.Location = new System.Drawing.Point(12, 240);
+            this.groupBoxAction.Location = new System.Drawing.Point(12, 350);
             this.groupBoxAction.Name = "groupBoxAction";
             this.groupBoxAction.Size = new System.Drawing.Size(460, 80);
             this.groupBoxAction.TabIndex = 2;
@@ -114,7 +128,7 @@ namespace MultiRecord
             this.groupBoxExistingSerial.Controls.Add(this.comboBoxSerialNumbers);
             this.groupBoxExistingSerial.Controls.Add(this.labelSerialInfo);
             this.groupBoxExistingSerial.ForeColor = System.Drawing.Color.White;
-            this.groupBoxExistingSerial.Location = new System.Drawing.Point(12, 130);
+            this.groupBoxExistingSerial.Location = new System.Drawing.Point(12, 240);
             this.groupBoxExistingSerial.Name = "groupBoxExistingSerial";
             this.groupBoxExistingSerial.Size = new System.Drawing.Size(460, 100);
             this.groupBoxExistingSerial.TabIndex = 1;
@@ -158,7 +172,7 @@ namespace MultiRecord
             this.buttonCancel.FlatAppearance.BorderSize = 0;
             this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonCancel.ForeColor = System.Drawing.Color.White;
-            this.buttonCancel.Location = new System.Drawing.Point(397, 340);
+            this.buttonCancel.Location = new System.Drawing.Point(397, 450);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 30);
             this.buttonCancel.TabIndex = 3;
@@ -182,7 +196,7 @@ namespace MultiRecord
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.ClientSize = new System.Drawing.Size(484, 382);
+            this.ClientSize = new System.Drawing.Size(484, 492);
             this.Controls.Add(this.labelTitle);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.groupBoxExistingSerial);
@@ -208,7 +222,8 @@ namespace MultiRecord
 
         private System.Windows.Forms.GroupBox groupBoxModelSelection;
         private System.Windows.Forms.Label labelModel;
-        private System.Windows.Forms.ComboBox comboBoxModels;
+        private System.Windows.Forms.TextBox textBoxModelSearch;
+        private System.Windows.Forms.ListBox listBoxModelResults;
         private System.Windows.Forms.GroupBox groupBoxAction;
         private System.Windows.Forms.Button buttonCreateNew;
         private System.Windows.Forms.Button buttonLoadExisting;

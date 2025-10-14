@@ -101,7 +101,7 @@ namespace MultiRecord
             this.Controls.Add(logoutButton);
             logoutButton.BringToFront();
         }
-        
+
         private async Task LogoutUser_Click()
         {
             var result = MessageBox.Show("คุณต้องการออกจากระบบหรือไม่?", 
@@ -445,15 +445,15 @@ namespace MultiRecord
                 {
                     await _dmm.SetRelativeValueAutoAsync(_currentFunction);
                     LogActivity("เปิดใช้งาน Relative และใช้ค่าปัจจุบันเป็นค่าอ้างอิง");
-                }
-                else
-                {
+                    }
+                    else
+                    {
                     LogActivity("ปิดใช้งาน Relative");
-                }
+                    }
                 UpdateRelativeUI();
-            }
-            catch (Exception ex)
-            {
+                }
+                catch (Exception ex)
+                {
                 _isRelativeEnabled = !_isRelativeEnabled;
                 LogActivity($"ตั้งค่า Relative ล้มเหลว: {ex.Message}", true);
             }
@@ -1041,9 +1041,9 @@ namespace MultiRecord
                 {
                     // Try graceful disconnect first
                     _dmm.Disconnect();
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                     LogActivity($"Graceful disconnect ล้มเหลว: {ex.Message}");
                 }
                 
@@ -1055,9 +1055,9 @@ namespace MultiRecord
                 catch (Exception ex)
                 {
                     LogActivity($"Force dispose ล้มเหลว: {ex.Message}");
-                }
-                finally
-                {
+            }
+            finally
+            {
                     _dmm = null;
                 }
             }
@@ -1338,7 +1338,7 @@ namespace MultiRecord
                 }
             }
     
-            
+
             string logMessage = $"บันทึกค่า No. {newId}: {function}, {measurement} {unit}";
             if (!withinTolerance)
             {
