@@ -330,6 +330,53 @@ namespace MultiRecord
             return serialNumbers;
         }
 
+        // Get all serial numbers regardless of model_id (for cases where model_id comes from external system like Spaze)
+        public async Task<List<(int Id, string SerialNumber, DateTime CreatedAt)>> GetAllSoftwareSerialNumbersAsync()
+        {
+            var serialNumbers = new List<(int Id, string SerialNumber, DateTime CreatedAt)>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = "SELECT id, serial_number, created_at FROM software_serial_numbers ORDER BY created_at DESC";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            serialNumbers.Add((
+                                Convert.ToInt32(reader["id"]),
+                                reader["serial_number"].ToString(),
+                                Convert.ToDateTime(reader["created_at"])
+                            ));
+                        }
+                    }
+                }
+            }
+            
+            return serialNumbers;
+        }
+
+        // Get serial number ID by serial number only (ignore model_id)
+        public async Task<int?> GetSoftwareSerialNumberIdBySerialAsync(string serialNumber)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = "SELECT id FROM software_serial_numbers WHERE serial_number = @serialNumber AND status = 'active'";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@serialNumber", serialNumber);
+                    
+                    var result = await command.ExecuteScalarAsync();
+                    return result != null ? (int?)Convert.ToInt32(result) : null;
+                }
+            }
+        }
+
         // Software Measurements Management
         public async Task<int> InsertSoftwareMeasurementAsync(int serialId, int measurementNo, string functionName, 
             decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false)
@@ -426,29 +473,39 @@ namespace MultiRecord
         }
 
 
-        public async Task<(bool Success, DataTable Data)> ExecuteQuery(string sql)
+        public async Task<(bool Success, DataTable Data, string ErrorMessage)> ExecuteQuery(string sql)
         {
             try
             {
+                Console.WriteLine($"[MySqlManager.ExecuteQuery] Executing SQL: {sql}");
+                Console.WriteLine($"[MySqlManager.ExecuteQuery] Connection String: {_connectionString}");
+                
                 using (var connection = new MySqlConnection(_connectionString))
                 {
+                    Console.WriteLine($"[MySqlManager.ExecuteQuery] Opening connection...");
                     await connection.OpenAsync();
+                    Console.WriteLine($"[MySqlManager.ExecuteQuery] Connection opened successfully");
                     
                     using (var command = new MySqlCommand(sql, connection))
                     {
                         using (var adapter = new MySqlDataAdapter(command))
                         {
                             var dataTable = new DataTable();
+                            Console.WriteLine($"[MySqlManager.ExecuteQuery] Filling DataTable...");
                             adapter.Fill(dataTable);
-                            return (true, dataTable);
+                            Console.WriteLine($"[MySqlManager.ExecuteQuery] Query executed successfully, rows: {dataTable.Rows.Count}");
+                            return (true, dataTable, "Success");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SQL Query Error: {ex.Message}");
-                return (false, null);
+                string errorMsg = $"SQL Query Error: {ex.Message}";
+                Console.WriteLine($"[MySqlManager.ExecuteQuery] Exception: {errorMsg}");
+                Console.WriteLine($"[MySqlManager.ExecuteQuery] Stack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine(errorMsg);
+                return (false, null, errorMsg);
             }
         }
 

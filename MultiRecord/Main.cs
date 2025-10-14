@@ -2237,13 +2237,9 @@ namespace MultiRecord
         {
             try
             {
-                string sql = $"SELECT id FROM software_serial_numbers WHERE serial_number = '{serialNumber}' AND model_id = {modelId}";
-                var result = await ExecuteSQLQuery(sql);
-                
-                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
-                {
-                    return Convert.ToInt32(result.Data.Rows[0]["id"]);
-                }
+                // ใช้ฟังก์ชันใหม่ที่ไม่สนใจ model_id เพราะ Serial Number ไม่ซ้ำกันอยู่แล้ว
+                var serialId = await _mysqlManager.GetSoftwareSerialNumberIdBySerialAsync(serialNumber);
+                return serialId ?? -1;
             }
             catch (Exception ex)
             {
@@ -2278,7 +2274,8 @@ namespace MultiRecord
         {
             try
             {
-                string sql = $"SELECT name FROM models WHERE id = {modelId}";
+                // Query from Spaze database
+                string sql = $"SELECT name FROM spaze.models WHERE id = {modelId}";
                 var result = await ExecuteSQLQuery(sql);
                 
                 if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
@@ -2304,10 +2301,10 @@ namespace MultiRecord
                     return;
                 }
 
-                string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_value, sm.upper_limit, sm.lower_limit, sm.tolerance_enabled, sm.created_at
+                string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_value, sm.upper_limit, sm.lower_limit, sm.tolerance_enabled, sm.measured_at
                                FROM software_measurements sm 
                                WHERE sm.serial_id = {_currentSerialId} 
-                               ORDER BY sm.created_at DESC";
+                               ORDER BY sm.measured_at DESC";
                 
                 var result = await ExecuteSQLQuery(sql);
                 
@@ -2320,11 +2317,22 @@ namespace MultiRecord
                     {
                         var newRow = _rdRecordsTable.NewRow();
                         newRow["No"] = no++;
-                        newRow["Function"] = row["function_name"].ToString();
-                        newRow["Measurement"] = Convert.ToDouble(row["measurement_value"]);
-                        newRow["Upper"] = Convert.ToDouble(row["upper_limit"]);
-                        newRow["Lower"] = Convert.ToDouble(row["lower_limit"]);
-                        newRow["ToleranceEnable"] = Convert.ToBoolean(row["tolerance_enabled"]);
+                        newRow["Function"] = row["function_name"]?.ToString() ?? "";
+                        
+                        // จัดการกับค่า NULL และ DBNull
+                        newRow["Measurement"] = row["measurement_value"] != DBNull.Value 
+                            ? Convert.ToDouble(row["measurement_value"]) 
+                            : 0.0;
+                        newRow["Upper"] = row["upper_limit"] != DBNull.Value 
+                            ? Convert.ToDouble(row["upper_limit"]) 
+                            : 0.0;
+                        newRow["Lower"] = row["lower_limit"] != DBNull.Value 
+                            ? Convert.ToDouble(row["lower_limit"]) 
+                            : 0.0;
+                        newRow["ToleranceEnable"] = row["tolerance_enabled"] != DBNull.Value 
+                            ? Convert.ToBoolean(row["tolerance_enabled"]) 
+                            : false;
+                        
                         _rdRecordsTable.Rows.Add(newRow);
                     }
                     
@@ -2345,8 +2353,8 @@ namespace MultiRecord
         {
             try
             {
-                // ใช้ MCP เพื่อดึงข้อมูล models
-                var result = await ExecuteSQLQuery("SELECT id, model_name, description FROM software_models ORDER BY model_name");
+                // Query from Spaze database
+                var result = await ExecuteSQLQuery("SELECT id, name as model_name, description FROM spaze.models ORDER BY name");
                 
                 comboBoxModels.Items.Clear();
                 comboBoxModels.Items.Add(new { Id = -1, Name = "-- เลือก Model --" });
@@ -2368,7 +2376,7 @@ namespace MultiRecord
                 comboBoxModels.ValueMember = "Id";
                 comboBoxModels.SelectedIndex = 0;
                 
-                LogActivity($"โหลด Models จาก database สำเร็จ: {comboBoxModels.Items.Count - 1} รายการ");
+                LogActivity($"โหลด Models จาก Spaze สำเร็จ: {comboBoxModels.Items.Count - 1} รายการ");
             }
             catch (Exception ex)
             {
@@ -2376,66 +2384,50 @@ namespace MultiRecord
             }
         }
 
-        private async Task<(bool Success, DataTable Data)> ExecuteSQLQuery(string sql)
+        private async Task<(bool Success, DataTable Data, string Message)> ExecuteSQLQuery(string sql)
         {
             try
             {
-                // TODO: ใช้ MCP เพื่อ execute SQL จริง
-                // สำหรับตอนนี้ใช้ข้อมูลจำลองก่อน เพื่อให้ compile ได้
+                Console.WriteLine($"[ExecuteSQLQuery] SQL: {sql}");
                 
-                LogActivity($"Executing SQL: {sql.Substring(0, Math.Min(50, sql.Length))}...");
-                
-                // จำลองการหน่วงเวลาเหมือน database query จริง
-                await Task.Delay(100);
-                
-                var dataTable = new DataTable();
-                
-                // จำลองข้อมูล Models
-                if (sql.Contains("SELECT id, model_name, description FROM software_models"))
+                // ตรวจสอบว่ามี MySqlManager หรือไม่
+                if (_mysqlManager == null)
                 {
-                    dataTable.Columns.Add("id", typeof(int));
-                    dataTable.Columns.Add("model_name", typeof(string));
-                    dataTable.Columns.Add("description", typeof(string));
+                    Console.WriteLine("[ExecuteSQLQuery] MySqlManager is null, initializing...");
+                    InitializeMySQL();
                     
-                    dataTable.Rows.Add(1, "SDM3055", "Siglent Digital Multimeter 3055");
-                    dataTable.Rows.Add(2, "SDM3065X", "Siglent Digital Multimeter 3065X");
-                    dataTable.Rows.Add(3, "Test_Model_A", "Test Model for R&D Development");
-                    
-                    return (true, dataTable);
+                    if (_mysqlManager == null)
+                    {
+                        string errorMsg = "MySqlManager ยังไม่ได้เชื่อมต่อ";
+                        Console.WriteLine($"[ExecuteSQLQuery] Error: {errorMsg}");
+                        return (false, null, errorMsg);
+                    }
                 }
                 
-                // จำลองการสร้าง Serial Number
-                if (sql.Contains("INSERT INTO software_serial_numbers"))
+                // ใช้ MySqlManager จริง
+                var result = await _mysqlManager.ExecuteQuery(sql);
+                
+                Console.WriteLine($"[ExecuteSQLQuery] Result - Success: {result.Success}");
+                
+                if (result.Success)
                 {
-                    return (true, dataTable); // Empty DataTable
+                    Console.WriteLine($"[ExecuteSQLQuery] Data rows: {result.Data?.Rows?.Count ?? 0}");
+                    return (result.Success, result.Data, result.ErrorMessage ?? "Success");
                 }
-                
-                // จำลองการค้นหา Serial Number
-                if (sql.Contains("SELECT id FROM software_serial_numbers"))
+                else
                 {
-                    dataTable.Columns.Add("id", typeof(int));
-                    dataTable.Rows.Add(DateTime.Now.Millisecond);
-                    return (true, dataTable);
+                    string errorMsg = result.ErrorMessage ?? "Query execution failed";
+                    Console.WriteLine($"[ExecuteSQLQuery] Error: {errorMsg}");
+                    return (result.Success, result.Data, errorMsg);
                 }
-                
-                // จำลองการโหลด measurements
-                if (sql.Contains("SELECT measurement_no, function_name"))
-                {
-                    return (true, dataTable); // Empty DataTable
-                }
-                
-                // จำลองการ insert/update measurements
-                if (sql.Contains("INSERT INTO software_measurements") || sql.Contains("UPDATE software_measurements"))
-                {
-                    return (true, dataTable); // Empty DataTable
-                }
-                
-                return (true, dataTable); // Empty DataTable
             }
             catch (Exception ex)
             {
-                LogActivity($"SQL Query Error: {ex.Message}", true);
-                return (false, null);
+                string errorMsg = $"SQL Query Error: {ex.Message}";
+                Console.WriteLine($"[ExecuteSQLQuery] Exception: {errorMsg}");
+                Console.WriteLine($"[ExecuteSQLQuery] Stack Trace: {ex.StackTrace}");
+                LogActivity(errorMsg, true);
+                return (false, null, errorMsg);
             }
         }
 
@@ -2550,16 +2542,12 @@ namespace MultiRecord
 
             try
             {
-                // ค้นหา Serial Number ใน database
-                string searchSQL = $@"
-                    SELECT id FROM software_serial_numbers 
-                    WHERE model_id = {_currentModelId} AND serial_number = '{inputSN}' AND status = 'active'";
+                // ใช้ฟังก์ชันใหม่ที่ไม่สนใจ model_id เพราะ Serial Number ไม่ซ้ำกันอยู่แล้ว
+                var serialId = await _mysqlManager.GetSoftwareSerialNumberIdBySerialAsync(inputSN);
                 
-                var result = await ExecuteSQLQuery(searchSQL);
-                
-                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                if (serialId.HasValue)
                 {
-                    _currentSerialId = Convert.ToInt32(result.Data.Rows[0]["id"]);
+                    _currentSerialId = serialId.Value;
                     _currentSerialNumber = inputSN;
                     
                     // โหลดข้อมูล measurements ที่มีอยู่
@@ -2570,7 +2558,7 @@ namespace MultiRecord
                 }
                 else
                 {
-                    MessageBox.Show($"ไม่พบ Serial Number '{inputSN}' สำหรับ Model นี้", 
+                    MessageBox.Show($"ไม่พบ Serial Number '{inputSN}'", 
                                   "ไม่พบ SN", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
@@ -2675,10 +2663,26 @@ namespace MultiRecord
                     (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, measured_at)
                     VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, NOW())";
                 
-                await ExecuteSQLQuery(insertSQL);
+                Console.WriteLine($"[RD SAVE] SQL Query: {insertSQL}");
+                Console.WriteLine($"[RD SAVE] Parameters - SerialId: {_currentSerialId}, MeasurementNo: {measurementNo}, Function: {function}, Value: {value}");
+                
+                var result = await ExecuteSQLQuery(insertSQL);
+                
+                Console.WriteLine($"[RD SAVE] Query Result - Success: {result.Success}, Message: {result.Message}");
+                
+                if (!result.Success)
+                {
+                    LogActivity($"บันทึก measurement ล้มเหลว: {result.Message}", true);
+                }
+                else
+                {
+                    LogActivity($"บันทึก measurement สำเร็จ - No: {measurementNo}, Function: {function}, Value: {value}");
+                }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[RD SAVE] Exception: {ex.Message}");
+                Console.WriteLine($"[RD SAVE] Stack Trace: {ex.StackTrace}");
                 LogActivity($"บันทึก measurement ลง database ล้มเหลว: {ex.Message}", true);
             }
         }
@@ -2741,7 +2745,8 @@ namespace MultiRecord
                         tolerance_enabled = {toleranceEnabled}
                     WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
                 
-                await ExecuteSQLQuery(updateSQL);
+                var updateResult = await ExecuteSQLQuery(updateSQL);
+                Console.WriteLine($"[UPDATE MEASUREMENT] Success: {updateResult.Success}, Message: {updateResult.Message}");
             }
             catch (Exception ex)
             {
