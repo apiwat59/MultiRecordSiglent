@@ -2111,18 +2111,14 @@ namespace MultiRecord
             dataGridViewRD.CellValueChanged += DataGridViewRD_CellValueChanged;
         }
 
-        private async void InitializeRDTab()
+        private void InitializeRDTab()
         {
-            // โหลดรายการ Models จาก database
-            await LoadModelsFromDatabase();
-            
-            // เพิ่ม Event Handlers
-            comboBoxModels.SelectedIndexChanged += ComboBoxModels_SelectedIndexChanged;
-            buttonCreateSN.Click += ButtonCreateSN_Click;
-            buttonLoadSN.Click += ButtonLoadSN_Click;
+            // เพิ่ม Event Handlers สำหรับปุ่มต่างๆ
             buttonRecordRD.Click += ButtonRecordRD_Click;
+            buttonDeleteRD.Click += ButtonDeleteRD_Click;
             buttonExportRD.Click += ButtonExportRD_Click;
             buttonClearRD.Click += ButtonClearRD_Click;
+            buttonChangeModel.Click += ButtonChangeModel_Click;
             
             // เพิ่ม Tab Changed Event
             tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
@@ -2256,9 +2252,6 @@ namespace MultiRecord
                 // อัปเดต UI elements ใน R&D Tab
                 if (_currentModelId > 0 && _currentSerialId > 0)
                 {
-                    // ซ่อน Model Selection UI เนื่องจากเลือกแล้ว
-                    groupBoxModelSelection.Visible = false;
-                    
                     // แสดงข้อมูลที่เลือกไว้
                     string modelName = await GetModelNameById(_currentModelId);
                     LogActivity($"R&D Tab พร้อมใช้งาน - Model: {modelName}, SN: {_currentSerialNumber}");
@@ -2349,40 +2342,6 @@ namespace MultiRecord
             }
         }
 
-        private async Task LoadModelsFromDatabase()
-        {
-            try
-            {
-                // Query from Spaze database
-                var result = await ExecuteSQLQuery("SELECT id, name as model_name, description FROM spaze.models ORDER BY name");
-                
-                comboBoxModels.Items.Clear();
-                comboBoxModels.Items.Add(new { Id = -1, Name = "-- เลือก Model --" });
-                
-                if (result.Success && result.Data.Rows != null)
-                {
-                    foreach (DataRow row in result.Data.Rows)
-                    {
-                        var model = new { 
-                            Id = Convert.ToInt32(row["id"]), 
-                            Name = row["model_name"].ToString(),
-                            Description = row["description"]?.ToString() ?? ""
-                        };
-                        comboBoxModels.Items.Add(model);
-                    }
-                }
-                
-                comboBoxModels.DisplayMember = "Name";
-                comboBoxModels.ValueMember = "Id";
-                comboBoxModels.SelectedIndex = 0;
-                
-                LogActivity($"โหลด Models จาก Spaze สำเร็จ: {comboBoxModels.Items.Count - 1} รายการ");
-            }
-            catch (Exception ex)
-            {
-                LogActivity($"โหลด Models ล้มเหลว: {ex.Message}", true);
-            }
-        }
 
         private async Task<(bool Success, DataTable Data, string Message)> ExecuteSQLQuery(string sql)
         {
@@ -2450,163 +2409,6 @@ namespace MultiRecord
             }
         }
 
-        private void ComboBoxModels_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (comboBoxModels.SelectedItem != null)
-            {
-                dynamic selectedModel = comboBoxModels.SelectedItem;
-                _currentModelId = selectedModel.Id;
-                
-                if (_currentModelId > 0)
-                {
-                    LogActivity($"เลือก Model: {selectedModel.Name}");
-                    // ล้าง Serial Number เมื่อเปลี่ยน Model
-                    textBoxSerialNumber.Text = "";
-                    _currentSerialId = -1;
-                    _currentSerialNumber = "";
-                    _rdRecordsTable.Clear();
-                }
-            }
-        }
-
-        private async void ButtonCreateSN_Click(object sender, EventArgs e)
-        {
-            if (_currentModelId <= 0)
-            {
-                MessageBox.Show("กรุณาเลือก Model ก่อน", "ไม่ได้เลือก Model", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            try
-            {
-                // สร้าง Serial Number ใหม่
-                string newSN = $"SN{DateTime.Now:yyyyMMddHHmmss}";
-                
-                // บันทึกลง database ผ่าน MCP
-                string insertSQL = $@"
-                    INSERT INTO software_serial_numbers (model_id, serial_number, status) 
-                    VALUES ({_currentModelId}, '{newSN}', 'active')";
-                
-                var result = await ExecuteSQLQuery(insertSQL);
-                
-                if (result.Success)
-                {
-                    textBoxSerialNumber.Text = newSN;
-                    _currentSerialNumber = newSN;
-                    
-                    // ดึง ID ของ Serial Number ที่สร้างใหม่
-                    var getIdResult = await ExecuteSQLQuery($@"
-                        SELECT id FROM software_serial_numbers 
-                        WHERE model_id = {_currentModelId} AND serial_number = '{newSN}'");
-                    
-                    if (getIdResult.Success && getIdResult.Data != null && getIdResult.Data.Rows.Count > 0)
-                    {
-                        _currentSerialId = Convert.ToInt32(getIdResult.Data.Rows[0]["id"]);
-                    }
-                    
-                    LogActivity($"สร้าง Serial Number ใหม่: {newSN}");
-                    _rdRecordsTable.Clear();
-                    SoundUtil.Beep();
-                }
-                else
-                {
-                    MessageBox.Show("ไม่สามารถสร้าง Serial Number ได้", "ข้อผิดพลาด", 
-                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogActivity($"สร้าง SN ล้มเหลว: {ex.Message}", true);
-                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async void ButtonLoadSN_Click(object sender, EventArgs e)
-        {
-            if (_currentModelId <= 0)
-            {
-                MessageBox.Show("กรุณาเลือก Model ก่อน", "ไม่ได้เลือก Model", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string inputSN = textBoxSerialNumber.Text.Trim();
-            if (string.IsNullOrEmpty(inputSN))
-            {
-                MessageBox.Show("กรุณาใส่ Serial Number", "ไม่ได้ใส่ SN", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            try
-            {
-                // ใช้ฟังก์ชันใหม่ที่ไม่สนใจ model_id เพราะ Serial Number ไม่ซ้ำกันอยู่แล้ว
-                var serialId = await _mysqlManager.GetSoftwareSerialNumberIdBySerialAsync(inputSN);
-                
-                if (serialId.HasValue)
-                {
-                    _currentSerialId = serialId.Value;
-                    _currentSerialNumber = inputSN;
-                    
-                    // โหลดข้อมูล measurements ที่มีอยู่
-                    await LoadExistingMeasurements();
-                    
-                    LogActivity($"โหลด Serial Number: {inputSN} สำเร็จ");
-                    SoundUtil.Beep();
-                }
-                else
-                {
-                    MessageBox.Show($"ไม่พบ Serial Number '{inputSN}'", 
-                                  "ไม่พบ SN", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogActivity($"โหลด SN ล้มเหลว: {ex.Message}", true);
-                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
-                              MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async Task LoadExistingMeasurements()
-        {
-            try
-            {
-                string loadSQL = $@"
-                    SELECT measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled
-                    FROM software_measurements 
-                    WHERE serial_id = {_currentSerialId}
-                    ORDER BY measurement_no";
-                
-                var result = await ExecuteSQLQuery(loadSQL);
-                
-                _rdRecordsTable.Clear();
-                
-                if (result.Success && result.Data.Rows != null)
-                {
-                    foreach (DataRow row in result.Data.Rows)
-                    {
-                        _rdRecordsTable.Rows.Add(
-                            Convert.ToInt32(row["measurement_no"]),
-                            row["function_name"].ToString(),
-                            Convert.ToDouble(row["measurement_value"]).ToString("F4"),
-                            row["upper_limit"]?.ToString() ?? "",
-                            row["lower_limit"]?.ToString() ?? "",
-                            Convert.ToBoolean(row["tolerance_enabled"])
-                        );
-                    }
-                    
-                    LogActivity($"โหลดข้อมูล measurements: {_rdRecordsTable.Rows.Count} รายการ");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogActivity($"โหลด measurements ล้มเหลว: {ex.Message}", true);
-            }
-        }
-
         private async void ButtonRecordRD_Click(object sender, EventArgs e)
         {
             if (!_isRDTabActive)
@@ -2616,6 +2418,118 @@ namespace MultiRecord
             }
 
             await SaveRDRecord();
+        }
+
+        private async void ButtonDeleteRD_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // ตรวจสอบว่ามีแถวที่เลือกหรือไม่
+                if (dataGridViewRD.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("กรุณาเลือกแถวที่ต้องการลบ", "ไม่ได้เลือกแถว", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // ยืนยันการลบ
+                var result = MessageBox.Show(
+                    $"ต้องการลบแถวที่เลือก ({dataGridViewRD.SelectedRows.Count} แถว) หรือไม่?",
+                    "ยืนยันการลบ",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                    return;
+
+                // ลบแถวที่เลือก
+                var selectedRows = dataGridViewRD.SelectedRows.Cast<DataGridViewRow>().ToList();
+                
+                foreach (var row in selectedRows)
+                {
+                    if (row.IsNewRow) continue;
+                    
+                    // ดึงข้อมูลจากแถว
+                    int measurementNo = Convert.ToInt32(row.Cells["No"].Value);
+                    
+                    // ลบจาก database
+                    await DeleteRDMeasurementFromDatabase(measurementNo);
+                    
+                    // ลบจาก DataTable
+                    _rdRecordsTable.Rows.Remove(((DataRowView)row.DataBoundItem).Row);
+                }
+
+                // อัปเดตหมายเลข No. ใหม่
+                RenumberRDRecords();
+                
+                LogActivity($"ลบข้อมูล R&D สำเร็จ ({selectedRows.Count} แถว)");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"ลบข้อมูล R&D ล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาดในการลบข้อมูล: {ex.Message}", 
+                              "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task DeleteRDMeasurementFromDatabase(int measurementNo)
+        {
+            try
+            {
+                string deleteSQL = $@"
+                    DELETE FROM software_measurements 
+                    WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
+                
+                Console.WriteLine($"[RD DELETE] SQL Query: {deleteSQL}");
+                
+                var result = await ExecuteSQLQuery(deleteSQL);
+                
+                if (!result.Success)
+                {
+                    LogActivity($"ลบ measurement จาก database ล้มเหลว: {result.Message}", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RD DELETE] Exception: {ex.Message}");
+                LogActivity($"ลบ measurement จาก database ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void RenumberRDRecords()
+        {
+            // อัปเดตหมายเลข No. ให้เรียงลำดับใหม่
+            for (int i = 0; i < _rdRecordsTable.Rows.Count; i++)
+            {
+                _rdRecordsTable.Rows[i]["No"] = i + 1;
+            }
+            
+            // อัปเดต measurement_no ใน database
+            Task.Run(async () =>
+            {
+                try
+                {
+                    for (int i = 0; i < _rdRecordsTable.Rows.Count; i++)
+                    {
+                        int newNo = i + 1;
+                        string function = _rdRecordsTable.Rows[i]["Function"].ToString();
+                        
+                        string updateSQL = $@"
+                            UPDATE software_measurements 
+                            SET measurement_no = {newNo}
+                            WHERE serial_id = {_currentSerialId} 
+                            AND function_name = '{function}'
+                            AND measurement_no != {newNo}
+                            LIMIT 1";
+                        
+                        await ExecuteSQLQuery(updateSQL);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[RD RENUMBER] Exception: {ex.Message}");
+                }
+            });
         }
 
         private async Task SaveRDRecord()
@@ -2817,6 +2731,22 @@ namespace MultiRecord
             }
         }
 
+        private async void ButtonChangeModel_Click(object sender, EventArgs e)
+        {
+            // ล้าง datatable
+            _rdRecordsTable.Clear();
+            
+            // รีเซ็ตค่า Model และ Serial Number
+            _currentModelId = -1;
+            _currentSerialId = -1;
+            _currentSerialNumber = "";
+            
+            LogActivity("เปลี่ยนโมเดล: ล้างข้อมูลและเลือกใหม่");
+            
+            // เปิด RDSelectionDialog เพื่อเลือกใหม่
+            await ShowRDSelectionDialog();
+        }
+
         #endregion
 
         private bool isWaitingForSecondCtrlQ = false;
@@ -2902,7 +2832,7 @@ namespace MultiRecord
             }
         }
 
-        private async Task<bool> PerformAuthentication()
+        private Task<bool> PerformAuthentication()
         {
             try
             {
@@ -2913,12 +2843,12 @@ namespace MultiRecord
                     if (result == DialogResult.OK && loginForm.LoginResult.Success)
                     {
                         LogActivity($"ผู้ใช้ {AuthManager.CurrentUser.FullName} เข้าสู่ระบบสำเร็จ");
-                        return true;
+                        return Task.FromResult(true);
                     }
                     else
                     {
                         LogActivity("การเข้าสู่ระบบถูกยกเลิก");
-                        return false;
+                        return Task.FromResult(false);
                     }
                 }
             }
@@ -2926,7 +2856,7 @@ namespace MultiRecord
             {
                 MessageBox.Show($"เกิดข้อผิดพลาดในการเข้าสู่ระบบ:\n{ex.Message}", 
                               "Authentication Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
