@@ -379,7 +379,7 @@ namespace MultiRecord
 
         // Software Measurements Management
         public async Task<int> InsertSoftwareMeasurementAsync(int serialId, int measurementNo, string functionName, 
-            decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false)
+            decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false, string systemInfo = null)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -387,8 +387,8 @@ namespace MultiRecord
 
                 var sql = @"
                     INSERT INTO software_measurements 
-                    (serial_id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, measured_at) 
-                    VALUES (@serialId, @measurementNo, @functionName, @measurementValue, @upperLimit, @lowerLimit, @toleranceEnabled, NOW());
+                    (serial_id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, system_info, measured_at) 
+                    VALUES (@serialId, @measurementNo, @functionName, @measurementValue, @upperLimit, @lowerLimit, @toleranceEnabled, @systemInfo, NOW());
                     SELECT LAST_INSERT_ID();";
 
                 using (var command = new MySqlCommand(sql, connection))
@@ -400,6 +400,7 @@ namespace MultiRecord
                     command.Parameters.AddWithValue("@upperLimit", upperLimit.HasValue ? (object)upperLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@lowerLimit", lowerLimit.HasValue ? (object)lowerLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@toleranceEnabled", toleranceEnabled);
+                    command.Parameters.AddWithValue("@systemInfo", !string.IsNullOrEmpty(systemInfo) ? (object)systemInfo : DBNull.Value);
 
                     var result = await command.ExecuteScalarAsync();
                     return Convert.ToInt32(result);

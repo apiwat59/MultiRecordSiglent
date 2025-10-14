@@ -2082,33 +2082,67 @@ namespace MultiRecord
         private void InitializeRDDataTable()
         {
             _rdRecordsTable = new DataTable("RDMeasurementRecords");
+            _rdRecordsTable.Columns.Add("Select", typeof(bool)); // เพิ่ม checkbox column
             _rdRecordsTable.Columns.Add("No", typeof(int));
+            _rdRecordsTable.Columns.Add("Name", typeof(string)); // เพิ่มชื่อจุดวัด
             _rdRecordsTable.Columns.Add("Function", typeof(string));
             _rdRecordsTable.Columns.Add("Measurement", typeof(string));
             _rdRecordsTable.Columns.Add("Upper", typeof(string));
             _rdRecordsTable.Columns.Add("Lower", typeof(string));
-            _rdRecordsTable.Columns.Add("ToleranceEnable", typeof(bool));
+            _rdRecordsTable.Columns.Add("Type", typeof(string)); // Percent or Absolute
+            _rdRecordsTable.Columns.Add("Note", typeof(string)); // หมายเหตุ
+            _rdRecordsTable.Columns.Add("ID", typeof(int)); // เก็บ measurement ID สำหรับอัพเดท
 
             dataGridViewRD.DataSource = _rdRecordsTable;
 
-            // ตั้งค่า AutoSizeMode
-            dataGridViewRD.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRD.Columns["Function"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRD.Columns["Measurement"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            dataGridViewRD.Columns["Upper"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRD.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRD.Columns["ToleranceEnable"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            // เพิ่มคอลัมน์ปุ่ม Action
+            DataGridViewButtonColumn actionColumn = new DataGridViewButtonColumn();
+            actionColumn.Name = "Action";
+            actionColumn.HeaderText = "Action";
+            actionColumn.Text = "แก้ไข";
+            actionColumn.UseColumnTextForButtonValue = true;
+            actionColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns.Add(actionColumn);
 
-            // ตั้งค่า Selection Mode
+            // ตั้งค่า AutoSizeMode และ ReadOnly สำหรับแต่ละคอลัมน์
+            dataGridViewRD.Columns["Select"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Select"].HeaderText = "☐";
+            dataGridViewRD.Columns["Select"].ReadOnly = false;
+            
+            dataGridViewRD.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["No"].ReadOnly = true;
+            
+            dataGridViewRD.Columns["Name"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Name"].ReadOnly = true;
+            dataGridViewRD.Columns["Name"].HeaderText = "ชื่อจุดวัด";
+            
+            dataGridViewRD.Columns["Function"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Function"].ReadOnly = true;
+            
+            dataGridViewRD.Columns["Measurement"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewRD.Columns["Measurement"].ReadOnly = true;
+            
+            dataGridViewRD.Columns["Upper"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Upper"].ReadOnly = true;
+            
+            dataGridViewRD.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Lower"].ReadOnly = true;
+            
+            // ซ่อนคอลัมน์ Type, Note และ ID (เก็บไว้ใน data แต่ไม่แสดง)
+            dataGridViewRD.Columns["Type"].Visible = false;
+            dataGridViewRD.Columns["Note"].Visible = false;
+            dataGridViewRD.Columns["ID"].Visible = false;
+
+            // ตั้งค่า DataGridView
             dataGridViewRD.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridViewRD.MultiSelect = false;
-            dataGridViewRD.ReadOnly = false; // อนุญาตให้แก้ไขได้
+            dataGridViewRD.MultiSelect = true;
             dataGridViewRD.AllowUserToDeleteRows = false;
             dataGridViewRD.AllowUserToAddRows = false;
+            dataGridViewRD.ReadOnly = true; // ทำให้เป็น ReadOnly ทั้งหมด ยกเว้น checkbox
 
-            // เพิ่ม Event Handler สำหรับ Cell Click เพื่อแก้ไข tolerance
+            // เพิ่ม Event Handler
             dataGridViewRD.CellClick += DataGridViewRD_CellClick;
-            dataGridViewRD.CellValueChanged += DataGridViewRD_CellValueChanged;
+            dataGridViewRD.CurrentCellDirtyStateChanged += DataGridViewRD_CurrentCellDirtyStateChanged;
         }
 
         private void InitializeRDTab()
@@ -2117,8 +2151,14 @@ namespace MultiRecord
             buttonRecordRD.Click += ButtonRecordRD_Click;
             buttonDeleteRD.Click += ButtonDeleteRD_Click;
             buttonExportRD.Click += ButtonExportRD_Click;
+            buttonSelectAll.Click += ButtonSelectAll_Click;
+            buttonDeselectAll.Click += ButtonDeselectAll_Click;
             buttonClearRD.Click += ButtonClearRD_Click;
             buttonChangeModel.Click += ButtonChangeModel_Click;
+            buttonBatchTolerance.Click += ButtonBatchTolerance_Click;
+            
+            // เปิดใช้งาน MultiSelect สำหรับ DataGridView
+            dataGridViewRD.MultiSelect = true;
             
             // เพิ่ม Tab Changed Event
             tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
@@ -2294,7 +2334,8 @@ namespace MultiRecord
                     return;
                 }
 
-                string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_value, sm.upper_limit, sm.lower_limit, sm.tolerance_enabled, sm.measured_at
+                string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_name, sm.measurement_value, 
+                                      sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.note, sm.measured_at
                                FROM software_measurements sm 
                                WHERE sm.serial_id = {_currentSerialId} 
                                ORDER BY sm.measured_at DESC";
@@ -2309,22 +2350,32 @@ namespace MultiRecord
                     foreach (DataRow row in result.Data.Rows)
                     {
                         var newRow = _rdRecordsTable.NewRow();
+                        newRow["Select"] = false; // checkbox เริ่มต้นไม่ถูกเลือก
                         newRow["No"] = no++;
+                        newRow["ID"] = row["id"] != DBNull.Value ? Convert.ToInt32(row["id"]) : 0;
+                        newRow["Name"] = row["measurement_name"]?.ToString() ?? "";
                         newRow["Function"] = row["function_name"]?.ToString() ?? "";
                         
                         // จัดการกับค่า NULL และ DBNull
-                        newRow["Measurement"] = row["measurement_value"] != DBNull.Value 
-                            ? Convert.ToDouble(row["measurement_value"]) 
-                            : 0.0;
+                        // ถ้าค่าเป็นค่าพิเศษ (< -9E37) แสดงว่าเป็น OVERLOAD
+                        if (row["measurement_value"] != DBNull.Value)
+                        {
+                            double measurementValue = Convert.ToDouble(row["measurement_value"]);
+                            newRow["Measurement"] = measurementValue < -9E37 ? "OVERLOAD" : measurementValue.ToString("F4", CultureInfo.InvariantCulture);
+                        }
+                        else
+                        {
+                            newRow["Measurement"] = "0.0000";
+                        }
+                        
                         newRow["Upper"] = row["upper_limit"] != DBNull.Value 
                             ? Convert.ToDouble(row["upper_limit"]) 
                             : 0.0;
                         newRow["Lower"] = row["lower_limit"] != DBNull.Value 
                             ? Convert.ToDouble(row["lower_limit"]) 
                             : 0.0;
-                        newRow["ToleranceEnable"] = row["tolerance_enabled"] != DBNull.Value 
-                            ? Convert.ToBoolean(row["tolerance_enabled"]) 
-                            : false;
+                        newRow["Type"] = row["tolerance_type"]?.ToString() ?? "percent";
+                        newRow["Note"] = row["note"]?.ToString() ?? "";
                         
                         _rdRecordsTable.Rows.Add(newRow);
                     }
@@ -2424,51 +2475,102 @@ namespace MultiRecord
         {
             try
             {
-                // ตรวจสอบว่ามีแถวที่เลือกหรือไม่
-                if (dataGridViewRD.SelectedRows.Count == 0)
+                // ตรวจสอบว่ามี checkbox ที่เลือกหรือไม่
+                var selectedRows = GetSelectedRDRows();
+                
+                if (selectedRows.Count == 0)
                 {
-                    MessageBox.Show("กรุณาเลือกแถวที่ต้องการลบ", "ไม่ได้เลือกแถว", 
-                                  MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("กรุณาเลือกแถวที่ต้องการลบ\n\nคำแนะนำ:\n- ✓ ติ๊กถูกที่ช่อง checkbox หน้าแถวที่ต้องการลบ\n- ใช้ปุ่ม Select All เพื่อเลือกทั้งหมด\n- ใช้ปุ่ม Deselect All เพื่อยกเลิกการเลือกทั้งหมด", 
+                                  "ไม่ได้เลือกแถว", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
+                }
+
+                // สร้างข้อความยืนยันที่มีรายละเอียด
+                string confirmMessage = $"ต้องการลบแถวที่เลือก ({selectedRows.Count} แถว) หรือไม่?\n\n";
+                
+                int displayCount = Math.Min(5, selectedRows.Count);
+                confirmMessage += "แถวที่จะลบ:\n";
+                for (int i = 0; i < displayCount; i++)
+                {
+                    var row = selectedRows[i];
+                    int no = Convert.ToInt32(row["No"]);
+                    string function = row["Function"]?.ToString() ?? "";
+                    string measurement = row["Measurement"]?.ToString() ?? "";
+                    confirmMessage += $"  #{no}: {function} = {measurement}\n";
+                }
+                
+                if (selectedRows.Count > displayCount)
+                {
+                    confirmMessage += $"  ... และอีก {selectedRows.Count - displayCount} แถว\n";
                 }
 
                 // ยืนยันการลบ
                 var result = MessageBox.Show(
-                    $"ต้องการลบแถวที่เลือก ({dataGridViewRD.SelectedRows.Count} แถว) หรือไม่?",
+                    confirmMessage,
                     "ยืนยันการลบ",
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+                    MessageBoxIcon.Warning);
 
                 if (result != DialogResult.Yes)
                     return;
 
-                // ลบแถวที่เลือก
-                var selectedRows = dataGridViewRD.SelectedRows.Cast<DataGridViewRow>().ToList();
+                // แสดง progress
+                buttonDeleteRD.Enabled = false;
+                buttonDeleteRD.Text = "กำลังลบ...";
                 
-                foreach (var row in selectedRows)
+                int deletedCount = 0;
+                int failedCount = 0;
+                
+                // สร้าง list ของแถวที่ต้องลบ (ลบจากท้ายไปหน้าเพื่อไม่ให้ index เปลี่ยน)
+                var rowsToDelete = selectedRows.OrderByDescending(r => Convert.ToInt32(r["No"])).ToList();
+                
+                foreach (var row in rowsToDelete)
                 {
-                    if (row.IsNewRow) continue;
-                    
-                    // ดึงข้อมูลจากแถว
-                    int measurementNo = Convert.ToInt32(row.Cells["No"].Value);
-                    
-                    // ลบจาก database
-                    await DeleteRDMeasurementFromDatabase(measurementNo);
-                    
-                    // ลบจาก DataTable
-                    _rdRecordsTable.Rows.Remove(((DataRowView)row.DataBoundItem).Row);
+                    try
+                    {
+                        // ดึงข้อมูลจากแถว
+                        int measurementNo = Convert.ToInt32(row["No"]);
+                        
+                        // ลบจาก database
+                        await DeleteRDMeasurementFromDatabase(measurementNo);
+                        
+                        // ลบจาก DataTable
+                        _rdRecordsTable.Rows.Remove(row);
+                        
+                        deletedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        failedCount++;
+                        LogActivity($"ลบแถว #{row["No"]} ล้มเหลว: {ex.Message}", true);
+                    }
                 }
 
                 // อัปเดตหมายเลข No. ใหม่
                 RenumberRDRecords();
                 
-                LogActivity($"ลบข้อมูล R&D สำเร็จ ({selectedRows.Count} แถว)");
+                // แสดงผลลัพธ์
+                string resultMessage = $"ลบข้อมูล R&D เสร็จสิ้น\n\nสำเร็จ: {deletedCount} แถว";
+                if (failedCount > 0)
+                {
+                    resultMessage += $"\nล้มเหลว: {failedCount} แถว";
+                }
+                
+                LogActivity($"ลบข้อมูล R&D: สำเร็จ {deletedCount} แถว, ล้มเหลว {failedCount} แถว");
+                MessageBox.Show(resultMessage, "ผลการลบ", MessageBoxButtons.OK, 
+                              failedCount > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 LogActivity($"ลบข้อมูล R&D ล้มเหลว: {ex.Message}", true);
                 MessageBox.Show($"เกิดข้อผิดพลาดในการลบข้อมูล: {ex.Message}", 
                               "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                buttonDeleteRD.Enabled = true;
+                buttonDeleteRD.Text = "ลบ";
             }
         }
 
@@ -2494,6 +2596,29 @@ namespace MultiRecord
                 Console.WriteLine($"[RD DELETE] Exception: {ex.Message}");
                 LogActivity($"ลบ measurement จาก database ล้มเหลว: {ex.Message}", true);
             }
+        }
+
+        private void ButtonSelectAll_Click(object sender, EventArgs e)
+        {
+            foreach (DataRow row in _rdRecordsTable.Rows)
+            {
+                row["Select"] = true;
+            }
+        }
+
+        private void ButtonDeselectAll_Click(object sender, EventArgs e)
+        {
+            foreach (DataRow row in _rdRecordsTable.Rows)
+            {
+                row["Select"] = false;
+            }
+        }
+
+        private List<DataRow> GetSelectedRDRows()
+        {
+            return _rdRecordsTable.Rows.Cast<DataRow>()
+                .Where(row => row["Select"] != DBNull.Value && Convert.ToBoolean(row["Select"]))
+                .ToList();
         }
 
         private void RenumberRDRecords()
@@ -2553,11 +2678,34 @@ namespace MultiRecord
                 string function = _currentFunction.ToString();
                 string measurement = _isOverload ? "OVERLOAD" : _lastReadingValue.ToString("F4", CultureInfo.InvariantCulture);
                 
-                // เพิ่มข้อมูลใน DataTable
-                _rdRecordsTable.Rows.Add(newNo, function, measurement, "", "", false);
+                // สำหรับ OVERLOAD ใช้ค่าพิเศษ -9.99E37 (ค่าต่ำสุดของ DECIMAL ที่เป็นไปได้)
+                double valueToSave = _isOverload ? -9.99E37 : _lastReadingValue;
                 
-                // บันทึกลง database
-                await SaveRDMeasurementToDatabase(newNo, function, _lastReadingValue);
+                // ดึงข้อมูล system_info จาก textBoxSystemInfo
+                string systemInfo = textBoxSystemInfo.Text ?? "";
+                
+                // เพิ่มข้อมูลใน DataTable (อัพเดทให้ตรงกับ columns ใหม่)
+                var newRow = _rdRecordsTable.NewRow();
+                newRow["Select"] = false;
+                newRow["No"] = newNo;
+                newRow["Name"] = ""; // ยังไม่ได้ตั้งชื่อ
+                newRow["Function"] = function;
+                newRow["Measurement"] = measurement;
+                newRow["Upper"] = "";
+                newRow["Lower"] = "";
+                newRow["Type"] = "percent"; // ค่าเริ่มต้น
+                newRow["Note"] = "";
+                newRow["ID"] = 0; // จะอัพเดทหลังจากบันทึกลง database
+                _rdRecordsTable.Rows.Add(newRow);
+                
+                // บันทึกลง database พร้อม system_info (ส่งค่าพิเศษสำหรับ OVERLOAD)
+                int newId = await SaveRDMeasurementToDatabase(newNo, function, valueToSave, systemInfo);
+                
+                // อัพเดท ID ใน DataTable
+                if (newId > 0)
+                {
+                    newRow["ID"] = newId;
+                }
                 
                 LogActivity($"บันทึกค่า R&D No. {newNo}: {function}, {measurement}");
                 SoundUtil.Beep();
@@ -2568,14 +2716,17 @@ namespace MultiRecord
             }
         }
 
-        private async Task SaveRDMeasurementToDatabase(int measurementNo, string function, double value)
+        private async Task<int> SaveRDMeasurementToDatabase(int measurementNo, string function, double value, string systemInfo = "")
         {
             try
             {
+                // Escape string สำหรับ system_info
+                string escapedSystemInfo = MySqlHelper.EscapeString(systemInfo);
+                
                 string insertSQL = $@"
                     INSERT INTO software_measurements 
-                    (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, measured_at)
-                    VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, NOW())";
+                    (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, system_info, measured_at)
+                    VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, '{escapedSystemInfo}', NOW())";
                 
                 Console.WriteLine($"[RD SAVE] SQL Query: {insertSQL}");
                 Console.WriteLine($"[RD SAVE] Parameters - SerialId: {_currentSerialId}, MeasurementNo: {measurementNo}, Function: {function}, Value: {value}");
@@ -2587,10 +2738,20 @@ namespace MultiRecord
                 if (!result.Success)
                 {
                     LogActivity($"บันทึก measurement ล้มเหลว: {result.Message}", true);
+                    return 0;
                 }
                 else
                 {
                     LogActivity($"บันทึก measurement สำเร็จ - No: {measurementNo}, Function: {function}, Value: {value}");
+                    
+                    // ดึง ID ของ record ที่เพิ่งบันทึก
+                    string getIdSQL = "SELECT LAST_INSERT_ID() as id";
+                    var idResult = await ExecuteSQLQuery(getIdSQL);
+                    if (idResult.Success && idResult.Data != null && idResult.Data.Rows.Count > 0)
+                    {
+                        return Convert.ToInt32(idResult.Data.Rows[0]["id"]);
+                    }
+                    return 0;
                 }
             }
             catch (Exception ex)
@@ -2598,6 +2759,7 @@ namespace MultiRecord
                 Console.WriteLine($"[RD SAVE] Exception: {ex.Message}");
                 Console.WriteLine($"[RD SAVE] Stack Trace: {ex.StackTrace}");
                 LogActivity($"บันทึก measurement ลง database ล้มเหลว: {ex.Message}", true);
+                return 0;
             }
         }
 
@@ -2607,39 +2769,115 @@ namespace MultiRecord
             {
                 string columnName = dataGridViewRD.Columns[e.ColumnIndex].Name;
                 
-                // อนุญาตให้แก้ไขได้เฉพาะคอลัมน์ Upper, Lower, ToleranceEnable
-                if (columnName == "Upper" || columnName == "Lower" || columnName == "ToleranceEnable")
+                // Handle checkbox click
+                if (columnName == "Select")
                 {
-                    dataGridViewRD.ReadOnly = false;
-                    dataGridViewRD.BeginEdit(true);
+                    // Toggle checkbox value
+                    var currentValue = dataGridViewRD.Rows[e.RowIndex].Cells["Select"].Value;
+                    dataGridViewRD.Rows[e.RowIndex].Cells["Select"].Value = !(bool)(currentValue ?? false);
+                    dataGridViewRD.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 }
-                else
+                // Handle Action button click
+                else if (columnName == "Action")
                 {
-                    dataGridViewRD.ReadOnly = true;
+                    OpenEditDialog(e.RowIndex);
                 }
             }
         }
 
-        private void DataGridViewRD_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private async void OpenEditDialog(int rowIndex)
         {
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            try
             {
-                try
+                var row = dataGridViewRD.Rows[rowIndex];
+                int measurementId = Convert.ToInt32(row.Cells["ID"].Value);
+                string currentName = row.Cells["Name"].Value?.ToString() ?? "";
+                string currentType = row.Cells["Type"].Value?.ToString() ?? "percent";
+                string currentNote = row.Cells["Note"].Value?.ToString() ?? "";
+                
+                // ดึงค่า Upper/Lower ปัจจุบัน
+                decimal? currentUpper = null;
+                decimal? currentLower = null;
+                
+                if (row.Cells["Upper"].Value != null && row.Cells["Upper"].Value != DBNull.Value)
                 {
-                    var row = dataGridViewRD.Rows[e.RowIndex];
-                    int measurementNo = Convert.ToInt32(row.Cells["No"].Value);
-                    string columnName = dataGridViewRD.Columns[e.ColumnIndex].Name;
-                    
-                    // อัพเดต database เมื่อมีการเปลี่ยนแปลง tolerance settings
-                    if (columnName == "Upper" || columnName == "Lower" || columnName == "ToleranceEnable")
+                    if (decimal.TryParse(row.Cells["Upper"].Value.ToString(), out decimal upperVal))
                     {
-                        _ = UpdateToleranceInDatabase(measurementNo, row);
-                        LogActivity($"อัพเดต tolerance สำหรับ measurement #{measurementNo}");
+                        currentUpper = upperVal;
                     }
                 }
-                catch (Exception ex)
+                
+                if (row.Cells["Lower"].Value != null && row.Cells["Lower"].Value != DBNull.Value)
                 {
-                    LogActivity($"อัพเดต tolerance ล้มเหลว: {ex.Message}", true);
+                    if (decimal.TryParse(row.Cells["Lower"].Value.ToString(), out decimal lowerVal))
+                    {
+                        currentLower = lowerVal;
+                    }
+                }
+
+                using (RDEditDialog dialog = new RDEditDialog(currentName, currentType, currentUpper, currentLower, currentNote))
+                {
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // อัพเดทข้อมูลใน DataGridView
+                        row.Cells["Name"].Value = dialog.MeasurementName;
+                        row.Cells["Type"].Value = dialog.ToleranceType;
+                        row.Cells["Upper"].Value = dialog.UpperLimit.HasValue ? (object)dialog.UpperLimit.Value : DBNull.Value;
+                        row.Cells["Lower"].Value = dialog.LowerLimit.HasValue ? (object)dialog.LowerLimit.Value : DBNull.Value;
+                        row.Cells["Note"].Value = dialog.Note;
+
+                        // อัพเดทข้อมูลใน database
+                        await UpdateMeasurementDetails(measurementId, dialog.MeasurementName, dialog.ToleranceType, 
+                            dialog.UpperLimit, dialog.LowerLimit, dialog.Note);
+                        
+                        LogActivity($"อัพเดทข้อมูลจุดวัด ID: {measurementId} สำเร็จ");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการแก้ไขข้อมูล: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task UpdateMeasurementDetails(int measurementId, string name, string type, decimal? upperLimit, decimal? lowerLimit, string note)
+        {
+            try
+            {
+                string upperValue = upperLimit.HasValue ? upperLimit.Value.ToString() : "NULL";
+                string lowerValue = lowerLimit.HasValue ? lowerLimit.Value.ToString() : "NULL";
+                
+                string sql = $@"UPDATE software_measurements 
+                               SET measurement_name = '{MySqlHelper.EscapeString(name)}',
+                                   tolerance_type = '{type}',
+                                   upper_limit = {upperValue},
+                                   lower_limit = {lowerValue},
+                                   note = '{MySqlHelper.EscapeString(note)}'
+                               WHERE id = {measurementId}";
+
+                var result = await ExecuteSQLQuery(sql);
+                
+                if (!result.Success)
+                {
+                    throw new Exception(result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"อัพเดทข้อมูลจุดวัดล้มเหลว: {ex.Message}", true);
+                throw;
+            }
+        }
+
+        private void DataGridViewRD_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            // สำหรับ checkbox columns ให้ commit การเปลี่ยนแปลงทันที
+            if (dataGridViewRD.IsCurrentCellDirty)
+            {
+                if (dataGridViewRD.CurrentCell.OwningColumn.Name == "Select")
+                {
+                    dataGridViewRD.CommitEdit(DataGridViewDataErrorContexts.Commit);
                 }
             }
         }
@@ -2648,19 +2886,23 @@ namespace MultiRecord
         {
             try
             {
-                string upperLimit = row.Cells["Upper"].Value?.ToString() ?? "";
-                string lowerLimit = row.Cells["Lower"].Value?.ToString() ?? "";
+                double upperLimit = 0;
+                double lowerLimit = 0;
                 bool toleranceEnabled = Convert.ToBoolean(row.Cells["ToleranceEnable"].Value ?? false);
                 
-                string updateSQL = $@"
-                    UPDATE software_measurements 
-                    SET upper_limit = {(string.IsNullOrEmpty(upperLimit) ? "NULL" : upperLimit)},
-                        lower_limit = {(string.IsNullOrEmpty(lowerLimit) ? "NULL" : lowerLimit)},
-                        tolerance_enabled = {toleranceEnabled}
-                    WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
+                // แปลงค่า Upper และ Lower
+                if (row.Cells["Upper"].Value != null && !string.IsNullOrEmpty(row.Cells["Upper"].Value.ToString()))
+                {
+                    double.TryParse(row.Cells["Upper"].Value.ToString(), out upperLimit);
+                }
                 
-                var updateResult = await ExecuteSQLQuery(updateSQL);
-                Console.WriteLine($"[UPDATE MEASUREMENT] Success: {updateResult.Success}, Message: {updateResult.Message}");
+                if (row.Cells["Lower"].Value != null && !string.IsNullOrEmpty(row.Cells["Lower"].Value.ToString()))
+                {
+                    double.TryParse(row.Cells["Lower"].Value.ToString(), out lowerLimit);
+                }
+                
+                // เรียกใช้ฟังก์ชันใหม่
+                await UpdateToleranceInDatabase(measurementNo, upperLimit, lowerLimit, toleranceEnabled);
             }
             catch (Exception ex)
             {
@@ -2745,6 +2987,143 @@ namespace MultiRecord
             
             // เปิด RDSelectionDialog เพื่อเลือกใหม่
             await ShowRDSelectionDialog();
+        }
+
+        private async void ButtonBatchTolerance_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_rdRecordsTable.Rows.Count == 0)
+                {
+                    MessageBox.Show("ไม่มีข้อมูลในตาราง", "ไม่มีข้อมูล", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // ตรวจสอบจำนวนแถวที่เลือกผ่าน checkbox
+                var selectedRows = GetSelectedRDRows();
+                int selectedCount = selectedRows.Count;
+                int totalCount = _rdRecordsTable.Rows.Count;
+
+                if (selectedCount == 0)
+                {
+                    MessageBox.Show("กรุณาเลือกแถวที่ต้องการตั้งค่า tolerance\n\nคำแนะนำ:\n- ✓ ติ๊กถูกที่ช่อง checkbox หน้าแถวที่ต้องการ\n- ใช้ปุ่ม Select All เพื่อเลือกทั้งหมด", 
+                                  "ไม่ได้เลือกแถว", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                using (var dialog = new BatchToleranceDialog(selectedCount, totalCount))
+                {
+                    if (dialog.ShowDialog(this) == DialogResult.OK)
+                    {
+                        await ApplyBatchTolerance(
+                            dialog.UpperLimit, 
+                            dialog.LowerLimit, 
+                            dialog.ToleranceEnabled, 
+                            dialog.ApplyToSelected,
+                            dialog.ToleranceType
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Batch Tolerance ล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task ApplyBatchTolerance(double upperLimit, double lowerLimit, bool toleranceEnabled, bool applyToSelected, string toleranceType)
+        {
+            try
+            {
+                List<DataRow> rowsToUpdate = new List<DataRow>();
+
+                if (applyToSelected)
+                {
+                    // ใช้กับแถวที่เลือก (ผ่าน checkbox)
+                    rowsToUpdate = GetSelectedRDRows();
+                }
+                else
+                {
+                    // ใช้กับทุกแถว
+                    rowsToUpdate = _rdRecordsTable.Rows.Cast<DataRow>().ToList();
+                }
+
+                int updateCount = 0;
+                foreach (var dataRow in rowsToUpdate)
+                {
+                    int measurementNo = Convert.ToInt32(dataRow["No"]);
+                    
+                    // อัปเดตค่าใน DataTable
+                    dataRow["Upper"] = upperLimit;
+                    dataRow["Lower"] = lowerLimit;
+                    dataRow["ToleranceEnable"] = toleranceEnabled;
+
+                    // อัปเดตใน database (รวมทั้ง tolerance_type)
+                    await UpdateToleranceInDatabase(measurementNo, upperLimit, lowerLimit, toleranceEnabled, toleranceType);
+                    updateCount++;
+                }
+
+                LogActivity($"อัปเดต Tolerance แบบ Batch สำเร็จ ({updateCount} แถว, Type: {toleranceType})");
+                MessageBox.Show($"อัปเดต Tolerance สำเร็จ\nจำนวน: {updateCount} แถว\nType: {toleranceType}", 
+                              "สำเร็จ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"อัปเดต Batch Tolerance ล้มเหลว: {ex.Message}", true);
+                throw;
+            }
+        }
+
+        private async Task UpdateToleranceInDatabase(int measurementNo, double upperLimit, double lowerLimit, bool toleranceEnabled)
+        {
+            // Overload: เรียกใช้ฟังก์ชันหลักโดยไม่อัพเดท tolerance_type
+            await UpdateToleranceInDatabase(measurementNo, upperLimit, lowerLimit, toleranceEnabled, null);
+        }
+
+        private async Task UpdateToleranceInDatabase(int measurementNo, double upperLimit, double lowerLimit, bool toleranceEnabled, string toleranceType)
+        {
+            try
+            {
+                string updateSQL;
+                
+                if (!string.IsNullOrEmpty(toleranceType))
+                {
+                    // อัพเดตทั้ง limits, enable และ type
+                    updateSQL = $@"
+                        UPDATE software_measurements 
+                        SET upper_limit = {upperLimit},
+                            lower_limit = {lowerLimit},
+                            tolerance_enabled = {toleranceEnabled},
+                            tolerance_type = '{toleranceType}'
+                        WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
+                }
+                else
+                {
+                    // อัพเดตเฉพาะ limits และ enable (ไม่แก้ type)
+                    updateSQL = $@"
+                        UPDATE software_measurements 
+                        SET upper_limit = {upperLimit},
+                            lower_limit = {lowerLimit},
+                            tolerance_enabled = {toleranceEnabled}
+                        WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
+                }
+                
+                var updateResult = await ExecuteSQLQuery(updateSQL);
+                
+                if (!updateResult.Success)
+                {
+                    LogActivity($"อัพเดต tolerance ใน database ล้มเหลว: {updateResult.Message}", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"อัพเดต tolerance ใน database ล้มเหลว: {ex.Message}", true);
+                throw;
+            }
         }
 
         #endregion

@@ -131,6 +131,16 @@
     <Compile Include="CreateSerialDialog.Designer.cs">
       <DependentUpon>CreateSerialDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="BatchToleranceDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BatchToleranceDialog.Designer.cs">
+      <DependentUpon>BatchToleranceDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RDEditDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MySqlHelper.cs" />
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
     </EmbeddedResource>

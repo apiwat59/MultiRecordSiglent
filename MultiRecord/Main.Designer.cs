@@ -39,6 +39,9 @@
             this.dataGridViewRecords = new System.Windows.Forms.DataGridView();
             this.tab_rd = new System.Windows.Forms.TabPage();
             this.groupBoxRDRecord = new System.Windows.Forms.GroupBox();
+            this.buttonBatchTolerance = new System.Windows.Forms.Button();
+            this.buttonSelectAll = new System.Windows.Forms.Button();
+            this.buttonDeselectAll = new System.Windows.Forms.Button();
             this.buttonChangeModel = new System.Windows.Forms.Button();
             this.buttonClearRD = new System.Windows.Forms.Button();
             this.buttonExportRD = new System.Windows.Forms.Button();
@@ -378,6 +381,9 @@
             // groupBoxRDRecord
             // 
             this.groupBoxRDRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.groupBoxRDRecord.Controls.Add(this.buttonDeselectAll);
+            this.groupBoxRDRecord.Controls.Add(this.buttonSelectAll);
+            this.groupBoxRDRecord.Controls.Add(this.buttonBatchTolerance);
             this.groupBoxRDRecord.Controls.Add(this.buttonChangeModel);
             this.groupBoxRDRecord.Controls.Add(this.buttonClearRD);
             this.groupBoxRDRecord.Controls.Add(this.buttonExportRD);
@@ -399,7 +405,7 @@
             this.buttonChangeModel.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonChangeModel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonChangeModel.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonChangeModel.Location = new System.Drawing.Point(459, 22);
+            this.buttonChangeModel.Location = new System.Drawing.Point(270, 61);
             this.buttonChangeModel.Name = "buttonChangeModel";
             this.buttonChangeModel.Size = new System.Drawing.Size(124, 33);
             this.buttonChangeModel.TabIndex = 4;
@@ -412,7 +418,7 @@
             this.buttonClearRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonClearRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonClearRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonClearRD.Location = new System.Drawing.Point(275, 22);
+            this.buttonClearRD.Location = new System.Drawing.Point(140, 61);
             this.buttonClearRD.Name = "buttonClearRD";
             this.buttonClearRD.Size = new System.Drawing.Size(124, 33);
             this.buttonClearRD.TabIndex = 3;
@@ -425,7 +431,7 @@
             this.buttonExportRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonExportRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExportRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonExportRD.Location = new System.Drawing.Point(140, 22);
+            this.buttonExportRD.Location = new System.Drawing.Point(10, 61);
             this.buttonExportRD.Name = "buttonExportRD";
             this.buttonExportRD.Size = new System.Drawing.Size(124, 33);
             this.buttonExportRD.TabIndex = 2;
@@ -458,6 +464,49 @@
             this.buttonDeleteRD.Text = "ลบ";
             this.buttonDeleteRD.UseVisualStyleBackColor = false;
             // 
+            // buttonBatchTolerance
+            // 
+            this.buttonBatchTolerance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(152)))), ((int)(((byte)(0)))));
+            this.buttonBatchTolerance.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonBatchTolerance.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBatchTolerance.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonBatchTolerance.Location = new System.Drawing.Point(221, 22);
+            this.buttonBatchTolerance.Name = "buttonBatchTolerance";
+            this.buttonBatchTolerance.Size = new System.Drawing.Size(150, 33);
+            this.buttonBatchTolerance.TabIndex = 5;
+            this.buttonBatchTolerance.Text = "Batch Tolerance";
+            this.buttonBatchTolerance.UseVisualStyleBackColor = false;
+            // 
+            // buttonSelectAll
+            // 
+            this.buttonSelectAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonSelectAll.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonSelectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSelectAll.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonSelectAll.ForeColor = System.Drawing.Color.White;
+            this.buttonSelectAll.Location = new System.Drawing.Point(9, 68);
+            this.buttonSelectAll.Name = "buttonSelectAll";
+            this.buttonSelectAll.Size = new System.Drawing.Size(85, 26);
+            this.buttonSelectAll.TabIndex = 6;
+            this.buttonSelectAll.Text = "☑ Select All";
+            this.buttonSelectAll.UseVisualStyleBackColor = false;
+            this.buttonSelectAll.Click += new System.EventHandler(this.ButtonSelectAll_Click);
+            // 
+            // buttonDeselectAll
+            // 
+            this.buttonDeselectAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonDeselectAll.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonDeselectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDeselectAll.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonDeselectAll.ForeColor = System.Drawing.Color.White;
+            this.buttonDeselectAll.Location = new System.Drawing.Point(100, 68);
+            this.buttonDeselectAll.Name = "buttonDeselectAll";
+            this.buttonDeselectAll.Size = new System.Drawing.Size(95, 26);
+            this.buttonDeselectAll.TabIndex = 7;
+            this.buttonDeselectAll.Text = "☐ Deselect All";
+            this.buttonDeselectAll.UseVisualStyleBackColor = false;
+            this.buttonDeselectAll.Click += new System.EventHandler(this.ButtonDeselectAll_Click);
+            // 
             // dataGridViewRD
             // 
             this.dataGridViewRD.AllowUserToAddRows = false;
@@ -484,9 +533,8 @@
             this.dataGridViewRD.DefaultCellStyle = dataGridViewCellStyle4;
             this.dataGridViewRD.EnableHeadersVisualStyles = false;
             this.dataGridViewRD.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.dataGridViewRD.Location = new System.Drawing.Point(9, 65);
+            this.dataGridViewRD.Location = new System.Drawing.Point(9, 100);
             this.dataGridViewRD.Name = "dataGridViewRD";
-            this.dataGridViewRD.ReadOnly = true;
             this.dataGridViewRD.RowHeadersVisible = false;
             this.dataGridViewRD.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewRD.Size = new System.Drawing.Size(578, 362);
@@ -1567,5 +1615,8 @@
         private System.Windows.Forms.Button buttonExportRD;
         private System.Windows.Forms.Button buttonClearRD;
         private System.Windows.Forms.Button buttonChangeModel;
+        private System.Windows.Forms.Button buttonBatchTolerance;
+        private System.Windows.Forms.Button buttonSelectAll;
+        private System.Windows.Forms.Button buttonDeselectAll;
     }
 }
