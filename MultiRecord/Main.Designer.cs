@@ -111,6 +111,7 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.tab_tools = new System.Windows.Forms.TabPage();
             this.panelChassis.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tab_datarecording.SuspendLayout();
@@ -150,6 +151,7 @@
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tab_datarecording);
+            this.tabControl1.Controls.Add(this.tab_tools);
             this.tabControl1.Controls.Add(this.tab_settings);
             this.tabControl1.Location = new System.Drawing.Point(750, 12);
             this.tabControl1.Name = "tabControl1";
@@ -166,7 +168,7 @@
             this.tab_datarecording.Padding = new System.Windows.Forms.Padding(3);
             this.tab_datarecording.Size = new System.Drawing.Size(614, 507);
             this.tab_datarecording.TabIndex = 0;
-            this.tab_datarecording.Text = "Data Recording";
+            this.tab_datarecording.Text = "หน้าหลัก";
             // 
             // groupBoxRecord
             // 
@@ -358,7 +360,7 @@
             this.tab_settings.Padding = new System.Windows.Forms.Padding(3);
             this.tab_settings.Size = new System.Drawing.Size(614, 507);
             this.tab_settings.TabIndex = 1;
-            this.tab_settings.Text = "Settings";
+            this.tab_settings.Text = "ตั้งค่า";
             // 
             // groupBoxMySQL
             // 
@@ -1268,6 +1270,15 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
+            // tab_tools
+            // 
+            this.tab_tools.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tab_tools.Location = new System.Drawing.Point(4, 22);
+            this.tab_tools.Name = "tab_tools";
+            this.tab_tools.Size = new System.Drawing.Size(614, 507);
+            this.tab_tools.TabIndex = 2;
+            this.tab_tools.Text = "เครื่องมือ";
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1402,5 +1413,6 @@
         private System.Windows.Forms.Button buttonTestConnection;
         private System.Windows.Forms.Label labelConnectionStatus;
         private System.Windows.Forms.Button buttonMeasurementMode;
+        private System.Windows.Forms.TabPage tab_tools;
     }
 }

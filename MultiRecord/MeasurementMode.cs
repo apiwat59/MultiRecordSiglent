@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Diagnostics;
 using SIGLENT;
 
 namespace MultiRecord
@@ -20,6 +21,9 @@ namespace MultiRecord
         private System.Windows.Forms.Timer _measurementTimer;
         private string _currentSessionId;
         private string _currentRepairId;
+        private string _currentTestGroupId;
+        private string _currentAnnotationId;
+        private string _lastError = "";
 
         public MeasurementMode(DataTable recordsTable, SDM3055 dmm)
         {
@@ -29,14 +33,24 @@ namespace MultiRecord
             _measurementPoints = new List<MeasurementPoint>();
             _pcbMeasurements = new List<PCBMeasurement>();
             InitializeMeasurementPoints();
-            LoadMeasurementPoints();
-            InitializeRealTimeDisplay();
+            
+            // Add DataGridView event handler for marker navigation
+            dataGridViewPoints.CellClick += DataGridViewPoints_CellClick;
+            
+            // Add context menu for marker navigation
+            InitializeMarkerNavigationContextMenu();
             
             // Initialize position after form is loaded
             this.Load += async (s, e) => 
             {
                 try 
                 { 
+                    // Small delay to ensure all controls are fully initialized
+                    await Task.Delay(100);
+                    
+                    // Load measurement points after form is fully loaded
+                    LoadMeasurementPoints();
+                    InitializeRealTimeDisplay();
                     await UpdateCurrentPosition(); 
                 }
                 catch (Exception ex) 
@@ -101,48 +115,301 @@ namespace MultiRecord
 
         private void LoadMeasurementPoints()
         {
-            dataGridViewPoints.Rows.Clear();
-            
-            for (int i = 0; i < _measurementPoints.Count; i++)
+            // Check if DataGridView is initialized and accessible
+            if (dataGridViewPoints == null || dataGridViewPoints.IsDisposed || !dataGridViewPoints.IsHandleCreated)
             {
-                var point = _measurementPoints[i];
-                int rowIndex = dataGridViewPoints.Rows.Add();
+                LogActivity("DataGridView not ready for loading points");
+                return;
+            }
+
+            // Check if we're on the UI thread
+            if (dataGridViewPoints.InvokeRequired)
+            {
+                dataGridViewPoints.Invoke(new Action(LoadMeasurementPoints));
+                return;
+            }
+
+            try
+            {
+                dataGridViewRowsClearSafely();
+
+                for (int i = 0; i < _measurementPoints.Count; i++)
+                {
+                    var point = _measurementPoints[i];
+                    
+                    // Add row safely
+                    int rowIndex = dataGridViewPoints.Rows.Add();
+                    var row = dataGridViewPoints.Rows[rowIndex];
+
+                    // Set cell values safely with null checks
+                    SetCellValueSafely(row, "Position", point.Position);
+                    SetCellValueSafely(row, "MeasurementType", point.MeasurementType);
+                    SetCellValueSafely(row, "TargetValue", FormatValue(point.TargetValue, point.MeasurementType));
+                    SetCellValueSafely(row, "RecordValue", point.RecordValue.HasValue ? FormatValue(point.RecordValue.Value, point.MeasurementType) : "-");
+                    SetCellValueSafely(row, "Tolerance", $"±{point.Tolerance}{(point.IsPercent ? "%" : "")}");
+                    SetCellValueSafely(row, "Description", point.Description);
+                    SetCellValueSafely(row, "Status", point.GetToleranceStatusDisplay());
+                    SetCellValueSafely(row, "ApiResponse", GetApiResponseDisplay(point));
+
+                    // Highlight current row
+                    if (i == _currentIndex)
+                    {
+                        row.DefaultCellStyle.BackColor = Color.LightBlue;
+                        row.DefaultCellStyle.ForeColor = Color.Black;
+                    }
+                    else if (point.IsCompleted)
+                    {
+                        // Color based on tolerance status
+                        string toleranceStatus = point.GetToleranceStatusDisplay();
+                        Color bgColor, textColor;
+                        GetStatusColors(toleranceStatus, out bgColor, out textColor);
+                        row.DefaultCellStyle.BackColor = bgColor;
+                        row.DefaultCellStyle.ForeColor = textColor;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error loading measurement points to DataGridView: {ex.Message}");
+                _lastError = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - DataGridView Error: {ex.Message}\n\n{ex.StackTrace}";
+            }
+            
+            // Scroll to current row after loading
+            if (_measurementPoints.Count > 0)
+            {
+                ScrollToCurrentRow();
+            }
+        }
+
+        private void dataGridViewRowsClearSafely()
+        {
+            try
+            {
+                if (dataGridViewPoints.Rows != null)
+                {
+                    dataGridViewPoints.Rows.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error clearing DataGridView rows: {ex.Message}");
+            }
+        }
+
+        private void SetCellValueSafely(DataGridViewRow row, string columnName, object value)
+        {
+            try
+            {
+                if (row?.Cells[columnName] != null)
+                {
+                    row.Cells[columnName].Value = value ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error setting cell {columnName}: {ex.Message}");
+            }
+        }
+
+        private void RefreshDataGridViewSafely()
+        {
+            try
+            {
+                if (dataGridViewPoints != null && dataGridViewPoints.IsHandleCreated && !dataGridViewPoints.InvokeRequired)
+                {
+                    dataGridViewPoints.Refresh();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error refreshing DataGridView: {ex.Message}");
+            }
+        }
+
+        private void ScrollToCurrentRow()
+        {
+            try
+            {
+                if (dataGridViewPoints == null || dataGridViewPoints.Rows.Count == 0 || _currentIndex < 0 || _currentIndex >= dataGridViewPoints.Rows.Count)
+                {
+                    return;
+                }
+
+                // Check if we need to invoke
+                if (dataGridViewPoints.InvokeRequired)
+                {
+                    dataGridViewPoints.Invoke(new Action(ScrollToCurrentRow));
+                    return;
+                }
+
+                // Select the current row
+                dataGridViewPoints.ClearSelection();
+                dataGridViewPoints.Rows[_currentIndex].Selected = true;
+
+                // Scroll to make the current row visible
+                dataGridViewPoints.FirstDisplayedScrollingRowIndex = _currentIndex;
+
+                // Ensure the row is visible by accounting for row height
+                var visibleRowsCount = dataGridViewPoints.DisplayedRowCount(false);
+                
+                if (_currentIndex >= dataGridViewPoints.FirstDisplayedScrollingRowIndex + visibleRowsCount)
+                {
+                    // Scroll down to show the row
+                    dataGridViewPoints.FirstDisplayedScrollingRowIndex = Math.Max(0, _currentIndex - visibleRowsCount + 1);
+                }
+                else if (_currentIndex < dataGridViewPoints.FirstDisplayedScrollingRowIndex)
+                {
+                    // Scroll up to show the row
+                    dataGridViewPoints.FirstDisplayedScrollingRowIndex = _currentIndex;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error scrolling to current row: {ex.Message}");
+            }
+        }
+
+        private void UpdateDataGridViewRecordValue(int rowIndex, double measuredValue, string toleranceStatus)
+        {
+            try
+            {
+                if (dataGridViewPoints == null || dataGridViewPoints.IsDisposed || !dataGridViewPoints.IsHandleCreated)
+                {
+                    return;
+                }
+
+                if (rowIndex < 0 || rowIndex >= dataGridViewPoints.Rows.Count || rowIndex >= _measurementPoints.Count)
+                {
+                    return;
+                }
+
+                // Check if we need to invoke
+                if (dataGridViewPoints.InvokeRequired)
+                {
+                    dataGridViewPoints.Invoke(new Action(() => UpdateDataGridViewRecordValue(rowIndex, measuredValue, toleranceStatus)));
+                    return;
+                }
+
+                var point = _measurementPoints[rowIndex];
                 var row = dataGridViewPoints.Rows[rowIndex];
                 
-                row.Cells["Position"].Value = point.Position;
-                row.Cells["MeasurementType"].Value = point.MeasurementType;
-                row.Cells["TargetValue"].Value = FormatValue(point.TargetValue, point.MeasurementType);
-                row.Cells["RecordValue"].Value = point.RecordValue.HasValue ? FormatValue(point.RecordValue.Value, point.MeasurementType) : "-";
-                row.Cells["Tolerance"].Value = $"±{point.Tolerance}{(point.IsPercent ? "%" : "")}";
-                row.Cells["Description"].Value = point.Description;
-                row.Cells["Status"].Value = point.GetToleranceStatus();
+                // Format the record value based on condition
+                string displayValue = GetDisplayValueForCondition(measuredValue, toleranceStatus, point.MeasurementType);
                 
-                // Highlight current row
-                if (i == _currentIndex)
+                // Get display status for UI (what user sees)
+                string displayStatus = GetDisplayStatus(point, measuredValue);
+                
+                // Update the Record Value cell
+                SetCellValueSafely(row, "RecordValue", displayValue);
+                
+                // Update the Status cell with display status
+                SetCellValueSafely(row, "Status", displayStatus);
+                
+                // Update the API Response cell
+                SetCellValueSafely(row, "ApiResponse", GetApiResponseDisplay(point));
+                
+                // Update row styling based on display status
+                Color bgColor, textColor;
+                GetStatusColors(displayStatus, out bgColor, out textColor);
+                
+                row.DefaultCellStyle.BackColor = bgColor;
+                row.DefaultCellStyle.ForeColor = textColor;
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error updating DataGridView record value: {ex.Message}");
+            }
+        }
+
+        private string GetDisplayStatus(MeasurementPoint point, double measuredValue)
+        {
+            // Check for overload condition (for 2W resistance measurements)
+            if (point.Marker != null && point.Marker.Type.ToUpper() == "2W")
+            {
+                if (double.IsNaN(measuredValue) || measuredValue >= 50.0E6 || measuredValue < 0)
                 {
-                    row.DefaultCellStyle.BackColor = Color.LightBlue;
-                    row.DefaultCellStyle.ForeColor = Color.Black;
+                    return "Overload";
                 }
-                else if (point.IsCompleted)
+            }
+            
+            // Check for open circuit condition (for Diode/Continuity markers)
+            if (point.Marker != null && (point.Marker.Type.ToUpper() == "DIO" || point.Marker.Type.ToUpper() == "CON"))
+            {
+                if (double.IsNaN(measuredValue) || measuredValue >= 9.9E37)
                 {
-                    // Color based on tolerance status
-                    string toleranceStatus = point.GetToleranceStatus();
-                    if (toleranceStatus == "Pass")
-                    {
-                        row.DefaultCellStyle.BackColor = Color.LightGreen;
-                        row.DefaultCellStyle.ForeColor = Color.Black;
-                    }
-                    else if (toleranceStatus == "Fail")
-                    {
-                        row.DefaultCellStyle.BackColor = Color.LightCoral;
-                        row.DefaultCellStyle.ForeColor = Color.Black;
-                    }
-                    else
-                    {
-                        row.DefaultCellStyle.BackColor = Color.LightGray;
-                        row.DefaultCellStyle.ForeColor = Color.Black;
-                    }
+                    return "Open";
                 }
+            }
+            
+            // Check if tolerance is enabled
+            bool toleranceEnabled = point.Marker != null && point.Marker.ToleranceEnabled == 1;
+            
+            // If tolerance is disabled, always pass
+            if (!toleranceEnabled)
+            {
+                return "Pass";
+            }
+            
+            // Normal tolerance check
+            double toleranceRange;
+            if (point.IsPercent)
+            {
+                toleranceRange = Math.Abs(point.TargetValue * point.Tolerance / 100.0);
+            }
+            else
+            {
+                toleranceRange = point.Tolerance;
+            }
+            
+            bool withinTolerance = Math.Abs(measuredValue - point.TargetValue) <= toleranceRange;
+            return withinTolerance ? "Pass" : "Fail";
+        }
+
+        private string GetDisplayValueForCondition(double measuredValue, string toleranceStatus, string measurementType)
+        {
+            // Use display status instead of API status
+            if (double.IsNaN(measuredValue))
+            {
+                // Check if this is overload or open circuit based on measurement type
+                if (toleranceStatus == "pass") // API status indicates special condition
+                {
+                    return "---"; // Will be updated by GetDisplayStatus in the UI
+                }
+                else
+                {
+                    return "---";
+                }
+            }
+            else
+            {
+                return FormatValue(measuredValue, measurementType);
+            }
+        }
+
+        private void GetStatusColors(string toleranceStatus, out Color bgColor, out Color textColor)
+        {
+            switch (toleranceStatus)
+            {
+                case "Pass":
+                    bgColor = Color.LightGreen;
+                    textColor = Color.Black;
+                    break;
+                case "Fail":
+                    bgColor = Color.LightCoral;
+                    textColor = Color.Black;
+                    break;
+                case "Overload":
+                    bgColor = Color.LightYellow;
+                    textColor = Color.Black;
+                    break;
+                case "Open":
+                    bgColor = Color.LightGray;
+                    textColor = Color.Black;
+                    break;
+                default:
+                    bgColor = Color.LightYellow;
+                    textColor = Color.Black;
+                    break;
             }
         }
 
@@ -215,7 +482,9 @@ namespace MultiRecord
                 progressBar.Value = 100;
             }
             
-            LoadMeasurementPoints();
+            // Refresh DataGridView display and scroll to current row
+            RefreshDataGridViewSafely();
+            ScrollToCurrentRow();
         }
 
         private async void buttonLoadSession_Click(object sender, EventArgs e)
@@ -223,7 +492,9 @@ namespace MultiRecord
             string sessionId = textBoxSessionID.Text.Trim();
             if (string.IsNullOrEmpty(sessionId))
             {
-                MessageBox.Show("Please enter a Measurement Session ID", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string error = "Please enter a Measurement Session ID";
+                _lastError = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {error}";
+                MessageBox.Show(error, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             
@@ -239,6 +510,7 @@ namespace MultiRecord
             }
             catch (Exception ex)
             {
+                _lastError = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - Failed to load session {sessionId}\n\nException: {ex.GetType().Name}\nMessage: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}";
                 MessageBox.Show($"Failed to load session:\n\n{ex.Message}", 
                               "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -246,6 +518,50 @@ namespace MultiRecord
             {
                 buttonLoadSession.Enabled = true;
                 buttonLoadSession.Text = "Load Session";
+            }
+        }
+        
+        private void buttonCopyError_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_lastError))
+            {
+                MessageBox.Show("No error information available to copy.\n\nPlease perform an action that generates an error first.", 
+                              "No Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            try
+            {
+                // Create detailed error report
+                string errorReport = $"===== MULTI RECORD ERROR REPORT =====\n\n";
+                errorReport += $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
+                errorReport += $"Application: MultiRecord Measurement Mode\n";
+                errorReport += $"Session ID: {textBoxSessionID.Text.Trim()}\n";
+                errorReport += $"User: {AuthManager.CurrentUser?.Email ?? "Not logged in"}\n\n";
+                
+                errorReport += $"ERROR DETAILS:\n";
+                errorReport += $"{_lastError}\n\n";
+                
+                errorReport += $"SYSTEM INFORMATION:\n";
+                errorReport += $"OS: {Environment.OSVersion}\n";
+                errorReport += $".NET Version: {Environment.Version}\n";
+                errorReport += $"Machine Name: {Environment.MachineName}\n\n";
+                
+                errorReport += $"MEASUREMENT MODE STATE:\n";
+                errorReport += $"Current Index: {_currentIndex}\n";
+                errorReport += $"Measurement Points Count: {_measurementPoints?.Count ?? 0}\n";
+                errorReport += $"DMM Connected: {_dmm?.IsConnected ?? false}\n\n";
+                
+                errorReport += $"===== END REPORT =====";
+                
+                Clipboard.SetText(errorReport);
+                MessageBox.Show("Error details copied to clipboard!\n\nYou can now paste this information for debugging.", 
+                              "Error Copied", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy error to clipboard:\n\n{ex.Message}", 
+                              "Copy Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -264,6 +580,8 @@ namespace MultiRecord
                 var session = await OrbitzAPI.GetMeasurementSessionAsync(sessionId);
                 _currentSessionId = sessionId;
                 _currentRepairId = session.RepairId;
+                _currentTestGroupId = session.PcbTestGroupId;
+                // Note: You might need to get annotation ID from somewhere else or via API
                 
                 // Load measurement markers from Orbitz API
                 var markers = await OrbitzAPI.GetMeasurementMarkersAsync(sessionId);
@@ -285,6 +603,7 @@ namespace MultiRecord
             }
             catch (Exception ex)
             {
+                _lastError = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - Orbitz API Error loading session {sessionId}\n\nException: {ex.GetType().Name}\nMessage: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}";
                 throw new Exception($"Failed to load session from Orbitz API: {ex.Message}");
             }
         }
@@ -529,15 +848,42 @@ namespace MultiRecord
             // Calculate tolerance check
             string toleranceStatus;
             bool withinTolerance = false;
+            bool isOverload = false;
+            bool isOpenCircuit = false;
+            
+            // Check for overload condition (for 2W resistance measurements)
+            if (currentPoint.Marker != null && currentPoint.Marker.Type.ToUpper() == "2W")
+            {
+                // Check if the measured value indicates overload
+                if (double.IsNaN(measuredValue) || measuredValue >= 50.0E6 || measuredValue < 0) // >50MΩ typically indicates overload
+                {
+                    isOverload = true;
+                    measuredValue = double.NaN; // Set to NaN for API
+                    toleranceStatus = "pass"; // Overload is considered pass for API
+                    withinTolerance = true; // Overload is considered pass
+                }
+            }
+            
+            // Check if tolerance is enabled (1 = enabled, 0 = disabled)
+            bool toleranceEnabled = currentPoint.Marker != null && currentPoint.Marker.ToleranceEnabled == 1;
+            
+            // If tolerance is disabled or overload, always pass
+            if (!toleranceEnabled || isOverload)
+            {
+                toleranceStatus = "pass"; // API only accepts 'pass' or 'fail'
+                withinTolerance = true;
+            }
             
             // Special handling for Diode/Continuity markers with OPEN/OVERLOAD conditions
-            if (currentPoint.Marker != null && 
+            else if (currentPoint.Marker != null && 
                 (currentPoint.Marker.Type.ToUpper() == "DIO" || currentPoint.Marker.Type.ToUpper() == "CON"))
             {
                 if (double.IsNaN(measuredValue) || measuredValue >= 9.9E37)
                 {
-                    toleranceStatus = "Open";
-                    // For open circuits, consider it as "completed" but not necessarily pass/fail
+                    isOpenCircuit = true;
+                    measuredValue = double.NaN; // Set to NaN for API
+                    toleranceStatus = "pass"; // Open circuit is considered pass for API
+                    withinTolerance = true; // Open circuit is considered pass
                 }
                 else
                 {
@@ -553,7 +899,7 @@ namespace MultiRecord
                     }
                     
                     withinTolerance = Math.Abs(measuredValue - currentPoint.TargetValue) <= toleranceRange;
-                    toleranceStatus = withinTolerance ? "Pass" : "Fail";
+                    toleranceStatus = withinTolerance ? "pass" : "fail"; // API only accepts 'pass' or 'fail'
                 }
             }
             else
@@ -570,7 +916,7 @@ namespace MultiRecord
                 }
                 
                 withinTolerance = Math.Abs(measuredValue - currentPoint.TargetValue) <= toleranceRange;
-                toleranceStatus = withinTolerance ? "Pass" : "Fail";
+                toleranceStatus = withinTolerance ? "pass" : "fail"; // API only accepts 'pass' or 'fail'
             }
             
             // Add to records table (same format as existing records)
@@ -590,10 +936,18 @@ namespace MultiRecord
             // Mark current point as completed
             currentPoint.IsCompleted = true;
             
+            // Clear previous API response
+            currentPoint.ApiResponse = null;
+            currentPoint.ApiError = null;
+            currentPoint.ApiTimestamp = null;
+            
+            // Update DataGridView immediately with new record value (use current index)
+            UpdateDataGridViewRecordValue(_currentIndex, measuredValue, toleranceStatus);
+            
             // Update measurement via Orbitz API
             if (currentPoint.Marker != null)
             {
-                UpdateMeasurementViaAPI(currentPoint, measuredValue, toleranceStatus);
+                UpdateMeasurementViaAPI(currentPoint, measuredValue, toleranceStatus, isOverload, isOpenCircuit);
             }
             
             // Move to next position
@@ -676,6 +1030,9 @@ namespace MultiRecord
                 _dmm.ReadingReceived -= Dmm_ReadingReceived;
             }
             
+            // Unsubscribe from DataGridView events
+            dataGridViewPoints.CellClick -= DataGridViewPoints_CellClick;
+            
             _measurementTimer?.Stop();
             _measurementTimer?.Dispose();
         }
@@ -686,6 +1043,7 @@ namespace MultiRecord
             {
                 _currentIndex--;
                 await UpdateCurrentPosition();
+                ScrollToCurrentRow();
             }
         }
 
@@ -695,6 +1053,7 @@ namespace MultiRecord
             {
                 _currentIndex++;
                 await UpdateCurrentPosition();
+                ScrollToCurrentRow();
             }
         }
 
@@ -760,21 +1119,57 @@ namespace MultiRecord
             }
         }
         
-        private async void UpdateMeasurementViaAPI(MeasurementPoint point, double measuredValue, string toleranceStatus)
+        private async void UpdateMeasurementViaAPI(MeasurementPoint point, double measuredValue, string toleranceStatus, bool isOverload = false, bool isOpenCircuit = false)
         {
+            var startTime = DateTime.Now;
             try
             {
                 var marker = point.Marker;
-                var repairId = ExtractRepairIdFromSession(_currentSessionId); // You'll need to implement this
+                var repairId = ExtractRepairIdFromSession(_currentSessionId);
+                
+                // Update UI to show "sending" status
+                point.ApiResponse = "Sending...";
+                UpdateDataGridViewRecordValue(_measurementPoints.IndexOf(point), measuredValue, toleranceStatus);
+                
+                // Handle measured value for overload/open circuit conditions
+                decimal? apiMeasuredValue = null;
+                if (!double.IsNaN(measuredValue))
+                {
+                    apiMeasuredValue = (decimal)measuredValue;
+                }
+                
+                // Create marker parameters with overload/open information
+                var updatedParameters = new Dictionary<string, object>();
+                if (marker.Parameters != null)
+                {
+                    foreach (var param in marker.Parameters)
+                    {
+                        updatedParameters[param.Key] = param.Value;
+                    }
+                }
+                
+                // Set overload/open parameters based on marker type
+                bool isOpen = false;
+                if (marker.Type.ToUpper() == "2W")
+                {
+                    updatedParameters["overload"] = isOverload;
+                    updatedParameters["open"] = isOverload;
+                    isOpen = isOverload;
+                }
+                else if (marker.Type.ToUpper() == "DIO" || marker.Type.ToUpper() == "CON")
+                {
+                    updatedParameters["open"] = isOpenCircuit;
+                    isOpen = isOpenCircuit;
+                }
                 
                 var request = new MeasurementUpdateRequest
                 {
                     MarkerId = marker.Id,
-                    MeasuredValue = (decimal)measuredValue,
-                    ToleranceStatus = toleranceStatus.ToLower(),
+                    MeasuredValue = apiMeasuredValue,
+                    ToleranceStatus = toleranceStatus.ToLower() == "pass" ? "pass" : "fail",
                     MeasurementId = marker.MeasurementId,
                     MarkerType = marker.Type,
-                    MarkerParameters = marker.Parameters,
+                    MarkerParameters = updatedParameters,
                     MarkerPositionX = marker.X,
                     MarkerPositionY = marker.Y,
                     MarkerDisplayName = marker.DisplayName,
@@ -787,39 +1182,40 @@ namespace MultiRecord
                     ToleranceUpperLimit = marker.ToleranceUpperLimit,
                     ToleranceLowerLimit = marker.ToleranceLowerLimit,
                     MeasurementUnit = marker.MeasurementUnit,
-                    Notes = marker.Notes
+                    Notes = GetOverloadNotes(isOverload, isOpenCircuit, toleranceStatus),
+                    Open = isOpen
                 };
                 
-                // Handle special cases for Diode/Continuity
-                if (marker.Type.ToUpper() == "DIO" || marker.Type.ToUpper() == "CON")
-                {
-                    // Check if it's an open circuit condition
-                    bool isOpenCircuit = double.IsNaN(measuredValue) || measuredValue >= 9.9E37;
-                    
-                    if (isOpenCircuit)
-                    {
-                        request.MeasuredValue = null;
-                        request.ToleranceStatus = "open";
-                        request.Open = true;
-                    }
-                    else
-                    {
-                        request.Open = false;
-                    }
-                }
-                else
-                {
-                    request.Open = false;
-                }
-                
                 // Update measurement via API
-                await OrbitzAPI.UpdateMeasurementAsync(repairId, marker.MeasurementId, request);
+                var response = await OrbitzAPI.UpdateMeasurementAsync(repairId, marker.MeasurementId, request);
+                var endTime = DateTime.Now;
+                var duration = endTime - startTime;
                 
-                LogActivity($"Updated measurement for {marker.DisplayName}: {measuredValue} {marker.MeasurementUnit} ({toleranceStatus})");
+                // Store successful response
+                point.ApiResponse = response ? "Success" : "Failed";
+                point.ApiTimestamp = endTime;
+                point.ApiError = null;
+                
+                LogActivity($"Updated measurement for {marker.DisplayName}: {measuredValue} {marker.MeasurementUnit} ({toleranceStatus}) - {duration.TotalMilliseconds:F0}ms");
+                
+                // Update UI to show success
+                UpdateDataGridViewRecordValue(_measurementPoints.IndexOf(point), measuredValue, toleranceStatus);
             }
             catch (Exception ex)
             {
-                LogActivity($"Failed to update measurement via API: {ex.Message}");
+                var endTime = DateTime.Now;
+                var duration = endTime - startTime;
+                
+                // Store error information
+                point.ApiError = ex.Message;
+                point.ApiTimestamp = endTime;
+                point.ApiResponse = null;
+                
+                LogActivity($"Failed to update measurement via API: {ex.Message} - {duration.TotalMilliseconds:F0}ms");
+                
+                // Update UI to show error
+                UpdateDataGridViewRecordValue(_measurementPoints.IndexOf(point), measuredValue, toleranceStatus);
+                
                 // Don't throw - allow local recording to continue even if API fails
             }
         }
@@ -830,10 +1226,194 @@ namespace MultiRecord
             return _currentRepairId ?? "unknown-repair-id";
         }
         
+        private string GetOverloadNotes(bool isOverload, bool isOpenCircuit, string toleranceStatus)
+        {
+            if (isOverload)
+            {
+                return "Overload condition detected (Resistance > 50MΩ)";
+            }
+            else if (isOpenCircuit)
+            {
+                return "Open circuit detected";
+            }
+            else if (toleranceStatus.ToLower() == "pass")
+            {
+                return "Normal measurement - Passed";
+            }
+            else if (toleranceStatus.ToLower() == "fail")
+            {
+                return "Normal measurement - Failed";
+            }
+            
+            return "Measurement recorded";
+        }
+
+        private string GetApiResponseDisplay(MeasurementPoint point)
+        {
+            if (!string.IsNullOrEmpty(point.ApiError))
+            {
+                return "❌ Error";
+            }
+            else if (!string.IsNullOrEmpty(point.ApiResponse))
+            {
+                return "✅ Success";
+            }
+            else if (point.IsCompleted)
+            {
+                return "📤 Sent";
+            }
+            else
+            {
+                return "⏳ Pending";
+            }
+        }
+        
         private void LogActivity(string message)
         {
             // Add to debug output or activity log
             System.Diagnostics.Debug.WriteLine($"[MeasurementMode] {DateTime.Now:HH:mm:ss} - {message}");
+        }
+        
+        private void InitializeMarkerNavigationContextMenu()
+        {
+            var contextMenu = new ContextMenuStrip();
+            
+            var navigateMenuItem = new ToolStripMenuItem("🧭 นำทางไปยัง Marker");
+            navigateMenuItem.Click += (sender, e) =>
+            {
+                if (dataGridViewPoints.SelectedRows.Count > 0)
+                {
+                    int rowIndex = dataGridViewPoints.SelectedRows[0].Index;
+                    if (rowIndex < _measurementPoints.Count)
+                    {
+                        var selectedPoint = _measurementPoints[rowIndex];
+                        if (selectedPoint.Marker != null)
+                        {
+                            HandleMarkerNavigation(selectedPoint.Marker);
+                        }
+                        else
+                        {
+                            MessageBox.Show("ไม่มีข้อมูล marker สำหรับจุดการวัดนี้", "No Marker Data", 
+                                          MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+            };
+            
+            var showMarkerInfoMenuItem = new ToolStripMenuItem("📋 แสดงข้อมูล Marker");
+            showMarkerInfoMenuItem.Click += (sender, e) =>
+            {
+                if (dataGridViewPoints.SelectedRows.Count > 0)
+                {
+                    int rowIndex = dataGridViewPoints.SelectedRows[0].Index;
+                    if (rowIndex < _measurementPoints.Count)
+                    {
+                        var selectedPoint = _measurementPoints[rowIndex];
+                        if (selectedPoint.Marker != null)
+                        {
+                            ShowMarkerInfo(selectedPoint.Marker);
+                        }
+                        else
+                        {
+                            MessageBox.Show("ไม่มีข้อมูล marker สำหรับจุดการวัดนี้", "No Marker Data", 
+                                          MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+            };
+            
+            var showApiResponseMenuItem = new ToolStripMenuItem("🌐 แสดงข้อมูล API Response");
+            showApiResponseMenuItem.Click += (sender, e) =>
+            {
+                if (dataGridViewPoints.SelectedRows.Count > 0)
+                {
+                    int rowIndex = dataGridViewPoints.SelectedRows[0].Index;
+                    if (rowIndex < _measurementPoints.Count)
+                    {
+                        var selectedPoint = _measurementPoints[rowIndex];
+                        ShowApiResponseInfo(selectedPoint);
+                    }
+                }
+            };
+            
+            contextMenu.Items.Add(navigateMenuItem);
+            contextMenu.Items.Add(showMarkerInfoMenuItem);
+            contextMenu.Items.Add(new ToolStripSeparator());
+            contextMenu.Items.Add(showApiResponseMenuItem);
+            
+            dataGridViewPoints.ContextMenuStrip = contextMenu;
+        }
+        
+        private void ShowApiResponseInfo(MeasurementPoint point)
+        {
+            string responseInfo = $"🌐 API Response Information\n\n";
+            responseInfo += $"Position: {point.Position}\n";
+            responseInfo += $"Type: {point.MeasurementType}\n";
+            responseInfo += $"Recorded Value: {(point.RecordValue.HasValue ? point.RecordValue.Value.ToString() : "N/A")}\n\n";
+            
+            if (point.ApiTimestamp.HasValue)
+            {
+                responseInfo += $"Timestamp: {point.ApiTimestamp.Value:yyyy-MM-dd HH:mm:ss}\n";
+            }
+            else
+            {
+                responseInfo += $"Timestamp: Not sent\n";
+            }
+            
+            if (!string.IsNullOrEmpty(point.ApiError))
+            {
+                responseInfo += $"Status: ❌ FAILED\n\n";
+                responseInfo += $"Error Message:\n{point.ApiError}\n";
+            }
+            else if (!string.IsNullOrEmpty(point.ApiResponse))
+            {
+                responseInfo += $"Status: ✅ SUCCESS\n\n";
+                responseInfo += $"Response:\n{point.ApiResponse}\n";
+            }
+            else if (point.IsCompleted)
+            {
+                responseInfo += $"Status: 📤 Sent (Response pending)\n";
+            }
+            else
+            {
+                responseInfo += $"Status: ⏳ Not sent\n";
+            }
+            
+            if (point.Marker != null)
+            {
+                responseInfo += $"\nMarker ID: {point.Marker.Id}\n";
+                responseInfo += $"Measurement ID: {point.Marker.MeasurementId}\n";
+            }
+            
+            MessageBox.Show(responseInfo, $"API Response - {point.Position}", 
+                          MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        
+        private void ShowMarkerInfo(MeasurementMarker marker)
+        {
+            string markerInfo = $"📍 Marker Information\n\n" +
+                               $"Name: {marker.DisplayName}\n" +
+                               $"Type: {marker.Type}\n" +
+                               $"Position: X={marker.X:F2}, Y={marker.Y:F2}\n" +
+                               $"ID: {marker.Id}\n" +
+                               $"Color: {marker.Color}\n" +
+                               $"Sort Order: {marker.SortOrder}\n" +
+                               $"Tolerance Upper: {marker.ToleranceUpper ?? 0}% ({marker.ToleranceUpperType})\n" +
+                               $"Tolerance Lower: {marker.ToleranceLower ?? 0}% ({marker.ToleranceLowerType})\n" +
+                               $"Measured: {(marker.IsMeasured ? "Yes" : "No")}\n" +
+                               $"Open Circuit: {marker.OpenCircuit ?? false}";
+                               
+            if (marker.Parameters != null && marker.Parameters.Count > 0)
+            {
+                markerInfo += "\n\nParameters:";
+                foreach (var param in marker.Parameters)
+                {
+                    markerInfo += $"\n• {param.Key}: {param.Value}";
+                }
+            }
+            
+            MessageBox.Show(markerInfo, $"Marker Info - {marker.DisplayName}", 
+                          MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private async System.Threading.Tasks.Task UpdateRealTimeDisplay()
@@ -968,6 +1548,119 @@ namespace MultiRecord
                 lblCurrentFunction.Text = function;
             }
         }
+        
+        private void DataGridViewPoints_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+                // Ignore header clicks
+                if (e.RowIndex < 0) return;
+                
+                // Get the selected measurement point
+                if (e.RowIndex < _measurementPoints.Count)
+                {
+                    var selectedPoint = _measurementPoints[e.RowIndex];
+                    
+                    // Navigate to marker if it has marker data
+                    if (selectedPoint.Marker != null)
+                    {
+                        HandleMarkerNavigation(selectedPoint.Marker);
+                    }
+                    
+                    // Also update current index to match selected row
+                    _currentIndex = e.RowIndex;
+                    _ = UpdateCurrentPosition();
+                    ScrollToCurrentRow();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error handling cell click: {ex.Message}");
+            }
+        }
+        
+        private void HandleMarkerNavigation(MeasurementMarker marker)
+        {
+            try
+            {
+                // Try PostMessage first (if opened in popup/iframe)
+                if (TryPostMessageNavigation(marker))
+                {
+                    LogActivity($"นำทางไปยัง {marker.DisplayName} ผ่าน PostMessage");
+                    return;
+                }
+                
+                // Fallback to URL navigation
+                TryUrlNavigation(marker);
+                LogActivity($"นำทางไปยัง {marker.DisplayName} ผ่าน URL");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error navigating to marker {marker.DisplayName}: {ex.Message}");
+                MessageBox.Show($"ไม่สามารถนำทางไปยัง marker {marker.DisplayName} ได้\n\nError: {ex.Message}", 
+                              "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        
+        private bool TryPostMessageNavigation(MeasurementMarker marker)
+        {
+            try
+            {
+                // This would work if the application was embedded in a web browser
+                // For WinForms, we'll simulate this by trying to communicate with external processes
+                
+                // Check if we can find a browser process or parent application
+                var browserProcesses = Process.GetProcessesByName("chrome")
+                    .Concat(Process.GetProcessesByName("firefox"))
+                    .Concat(Process.GetProcessesByName("msedge"))
+                    .ToArray();
+                
+                if (browserProcesses.Length > 0)
+                {
+                    // Log that we would send PostMessage (actual implementation would depend on browser integration)
+                    LogActivity($"Would send PostMessage to browser: NAVIGATE_TO_MARKER for {marker.DisplayName} (x:{marker.X}, y:{marker.Y})");
+                    return true;
+                }
+                
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private void TryUrlNavigation(MeasurementMarker marker)
+        {
+            try
+            {
+                // Construct canvas URL based on the documentation pattern
+                string canvasUrl = $"http://100.75.21.95:3001/repair/{_currentRepairId}/test/{_currentTestGroupId}/canvas/{_currentAnnotationId ?? "default"}?" +
+                                 $"session={_currentSessionId}&marker={marker.Id}&x={marker.X}&y={marker.Y}";
+                
+                // Open in default browser
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = canvasUrl,
+                    UseShellExecute = true
+                });
+                
+                LogActivity($"Opened canvas URL: {canvasUrl}");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Failed to open URL navigation: {ex.Message}");
+                
+                // Fallback: Show marker coordinates in a message box
+                string markerInfo = $"Marker: {marker.DisplayName}\n" +
+                                   $"Type: {marker.Type}\n" +
+                                   $"Position: X={marker.X}, Y={marker.Y}\n" +
+                                   $"ID: {marker.Id}";
+                
+                MessageBox.Show(markerInfo, $"Marker Information - {marker.DisplayName}", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
 
     }
 
@@ -983,16 +1676,73 @@ namespace MultiRecord
         public bool IsCompleted { get; set; }
         public PCBMeasurement PCBMeasurement { get; set; }
         public MeasurementMarker Marker { get; set; }
+        public string ApiResponse { get; set; }
+        public string ApiError { get; set; }
+        public DateTime? ApiTimestamp { get; set; }
         
         public string GetToleranceStatus()
         {
             if (!RecordValue.HasValue)
-                return "-";
+                return "Overload"; // Assume overload if no value
                 
+            // Check if tolerance is enabled (1 = enabled, 0 = disabled)
+            bool toleranceEnabled = Marker != null && Marker.ToleranceEnabled == 1;
+            
+            // If tolerance is disabled, always pass
+            if (!toleranceEnabled)
+                return "Pass";
+                
+            // Special handling for 2W resistance markers - check for overload
+            if (Marker != null && Marker.Type.ToUpper() == "2W")
+            {
+                if (double.IsNaN(RecordValue.Value) || RecordValue.Value >= 50.0E6)
+                    return "Overload";
+            }
+            
             // Special handling for Diode/Continuity markers
             if (Marker != null && (Marker.Type.ToUpper() == "DIO" || Marker.Type.ToUpper() == "CON"))
             {
-                if (Marker.OpenCircuit)
+                if (Marker.OpenCircuit == true || double.IsNaN(RecordValue.Value) || RecordValue.Value >= 9.9E37)
+                    return "Open";
+            }
+                
+            double toleranceRange;
+            if (IsPercent)
+            {
+                toleranceRange = Math.Abs(TargetValue * Tolerance / 100.0);
+            }
+            else
+            {
+                toleranceRange = Tolerance;
+            }
+            
+            bool withinTolerance = Math.Abs(RecordValue.Value - TargetValue) <= toleranceRange;
+            return withinTolerance ? "Pass" : "Fail";
+        }
+        
+        public string GetToleranceStatusDisplay()
+        {
+            if (!RecordValue.HasValue)
+                return "Overload"; // Assume overload if no value
+                
+            // Check if tolerance is enabled (1 = enabled, 0 = disabled)
+            bool toleranceEnabled = Marker != null && Marker.ToleranceEnabled == 1;
+            
+            // If tolerance is disabled, always pass
+            if (!toleranceEnabled)
+                return "Pass";
+                
+            // Special handling for 2W resistance markers - check for overload
+            if (Marker != null && Marker.Type.ToUpper() == "2W")
+            {
+                if (double.IsNaN(RecordValue.Value) || RecordValue.Value >= 50.0E6)
+                    return "Overload";
+            }
+            
+            // Special handling for Diode/Continuity markers
+            if (Marker != null && (Marker.Type.ToUpper() == "DIO" || Marker.Type.ToUpper() == "CON"))
+            {
+                if (Marker.OpenCircuit == true || double.IsNaN(RecordValue.Value) || RecordValue.Value >= 9.9E37)
                     return "Open";
             }
                 

@@ -41,6 +41,7 @@ namespace MultiRecord
             this.Tolerance = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Description = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ApiResponse = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.groupBoxProgress = new System.Windows.Forms.GroupBox();
             this.buttonReset = new System.Windows.Forms.Button();
             this.buttonNext = new System.Windows.Forms.Button();
@@ -125,7 +126,8 @@ namespace MultiRecord
             this.RecordValue,
             this.Tolerance,
             this.Description,
-            this.Status});
+            this.Status,
+            this.ApiResponse});
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = System.Drawing.Color.White;
             dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -195,6 +197,14 @@ namespace MultiRecord
             this.Status.Name = "Status";
             this.Status.ReadOnly = true;
             this.Status.Width = 64;
+            // 
+            // ApiResponse
+            // 
+            this.ApiResponse.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.ApiResponse.HeaderText = "API Response";
+            this.ApiResponse.Name = "ApiResponse";
+            this.ApiResponse.ReadOnly = true;
+            this.ApiResponse.Width = 80;
             // 
             // groupBoxProgress
             // 
@@ -424,6 +434,7 @@ namespace MultiRecord
             // 
             // groupBoxSession
             // 
+            this.groupBoxSession.Controls.Add(this.buttonCopyError);
             this.groupBoxSession.Controls.Add(this.buttonLoadSession);
             this.groupBoxSession.Controls.Add(this.textBoxSessionID);
             this.groupBoxSession.Controls.Add(this.labelSessionID);
@@ -431,7 +442,7 @@ namespace MultiRecord
             this.groupBoxSession.ForeColor = System.Drawing.Color.White;
             this.groupBoxSession.Location = new System.Drawing.Point(20, 20);
             this.groupBoxSession.Name = "groupBoxSession";
-            this.groupBoxSession.Size = new System.Drawing.Size(960, 80);
+            this.groupBoxSession.Size = new System.Drawing.Size(960, 120);
             this.groupBoxSession.TabIndex = 0;
             this.groupBoxSession.TabStop = false;
             this.groupBoxSession.Text = "Measurement Session ID";
@@ -450,6 +461,21 @@ namespace MultiRecord
             this.buttonLoadSession.Text = "Load Session";
             this.buttonLoadSession.UseVisualStyleBackColor = false;
             this.buttonLoadSession.Click += new System.EventHandler(this.buttonLoadSession_Click);
+            // 
+            // buttonCopyError
+            // 
+            this.buttonCopyError.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(220)))), ((int)(((byte)(53)))), ((int)(((byte)(69)))));
+            this.buttonCopyError.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonCopyError.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonCopyError.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonCopyError.ForeColor = System.Drawing.Color.White;
+            this.buttonCopyError.Location = new System.Drawing.Point(480, 30);
+            this.buttonCopyError.Name = "buttonCopyError";
+            this.buttonCopyError.Size = new System.Drawing.Size(100, 30);
+            this.buttonCopyError.TabIndex = 3;
+            this.buttonCopyError.Text = "📋 Copy Error";
+            this.buttonCopyError.UseVisualStyleBackColor = false;
+            this.buttonCopyError.Click += new System.EventHandler(this.buttonCopyError_Click);
             // 
             // textBoxSessionID
             // 
@@ -503,6 +529,7 @@ namespace MultiRecord
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.GroupBox groupBoxSession;
         private System.Windows.Forms.Button buttonLoadSession;
+        private System.Windows.Forms.Button buttonCopyError = new System.Windows.Forms.Button();
         private System.Windows.Forms.TextBox textBoxSessionID;
         private System.Windows.Forms.Label labelSessionID;
         private System.Windows.Forms.GroupBox groupBoxCurrentMeasurement;
@@ -528,6 +555,7 @@ namespace MultiRecord
         private System.Windows.Forms.DataGridViewTextBoxColumn Tolerance;
         private System.Windows.Forms.DataGridViewTextBoxColumn Description;
         private System.Windows.Forms.DataGridViewTextBoxColumn Status;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ApiResponse;
         private System.Windows.Forms.Panel panelRealTimeDisplay;
         private System.Windows.Forms.Label lblCurrentReading;
         private System.Windows.Forms.Label lblCurrentUnit;

@@ -137,6 +137,7 @@ namespace MultiRecord
             this.textBoxPassword.Name = "textBoxPassword";
             this.textBoxPassword.Size = new System.Drawing.Size(350, 27);
             this.textBoxPassword.TabIndex = 2;
+            this.textBoxPassword.Text = "admin123";
             this.textBoxPassword.UseSystemPasswordChar = true;
             this.textBoxPassword.Enter += new System.EventHandler(this.textBoxPassword_Enter);
             // 
@@ -147,7 +148,7 @@ namespace MultiRecord
             this.labelPassword.ForeColor = System.Drawing.Color.White;
             this.labelPassword.Location = new System.Drawing.Point(30, 115);
             this.labelPassword.Name = "labelPassword";
-            this.labelPassword.Size = new System.Drawing.Size(73, 19);
+            this.labelPassword.Size = new System.Drawing.Size(77, 19);
             this.labelPassword.TabIndex = 3;
             this.labelPassword.Text = "Password:";
             // 
@@ -161,6 +162,7 @@ namespace MultiRecord
             this.textBoxEmail.Name = "textBoxEmail";
             this.textBoxEmail.Size = new System.Drawing.Size(350, 27);
             this.textBoxEmail.TabIndex = 1;
+            this.textBoxEmail.Text = "admin@orbitz.com";
             this.textBoxEmail.Enter += new System.EventHandler(this.textBoxEmail_Enter);
             // 
             // labelEmail
@@ -170,7 +172,7 @@ namespace MultiRecord
             this.labelEmail.ForeColor = System.Drawing.Color.White;
             this.labelEmail.Location = new System.Drawing.Point(30, 40);
             this.labelEmail.Name = "labelEmail";
-            this.labelEmail.Size = new System.Drawing.Size(138, 19);
+            this.labelEmail.Size = new System.Drawing.Size(139, 19);
             this.labelEmail.TabIndex = 1;
             this.labelEmail.Text = "Email or Username:";
             // 

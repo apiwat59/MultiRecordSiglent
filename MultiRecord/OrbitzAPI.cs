@@ -11,7 +11,7 @@ namespace MultiRecord
     public class OrbitzAPI
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string BASE_URL = "http://100.75.21.95:3001/api";
+        private const string BASE_URL = "http://100.87.111.69:3001/api";
         
         static OrbitzAPI()
         {
@@ -273,7 +273,7 @@ namespace MultiRecord
         public string ToleranceLowerType { get; set; }
         
         [JsonProperty("tolerance_enabled")]
-        public bool ToleranceEnabled { get; set; }
+        public int ToleranceEnabled { get; set; }
         
         [JsonProperty("notes")]
         public string Notes { get; set; }
@@ -306,7 +306,7 @@ namespace MultiRecord
         public string MeasurementUnit { get; set; }
         
         [JsonProperty("open_circuit")]
-        public bool OpenCircuit { get; set; }
+        public bool? OpenCircuit { get; set; }
         
         [JsonProperty("measurement_number")]
         public int MeasurementNumber { get; set; }
@@ -360,7 +360,7 @@ namespace MultiRecord
         public string ToleranceLowerType { get; set; }
         
         [JsonProperty("tolerance_enabled")]
-        public bool ToleranceEnabled { get; set; }
+        public int ToleranceEnabled { get; set; }
         
         [JsonProperty("tolerance_upper_limit")]
         public decimal? ToleranceUpperLimit { get; set; }

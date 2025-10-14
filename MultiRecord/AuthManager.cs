@@ -10,7 +10,7 @@ namespace MultiRecord
     public class AuthManager
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string BASE_URL = "http://100.75.21.95:3001/api/auth";
+        private const string BASE_URL = "http://100.87.111.69:3001/api/auth";
         
         public static string CurrentToken { get; private set; }
         public static OrbitzUser CurrentUser { get; private set; }
