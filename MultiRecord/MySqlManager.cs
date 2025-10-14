@@ -28,7 +28,7 @@ namespace MultiRecord
                 AllowUserVariables = true,
                 UseCompression = false,
                 CharacterSet = "utf8mb4",
-                SslMode = MySqlSslMode.None
+                SslMode = MySqlSslMode.Disabled
             };
             _connectionString = builder.ToString();
         }
@@ -133,84 +133,60 @@ namespace MultiRecord
             {
                 await connection.OpenAsync();
 
-                // Create QW_Records table
-                var createRecordsTable = @"
-                    CREATE TABLE IF NOT EXISTS `QW_Records` (
+                // Create software_models table
+                var createModelsTable = @"
+                    CREATE TABLE IF NOT EXISTS `software_models` (
                         `id` INT AUTO_INCREMENT PRIMARY KEY,
-                        `QWID` VARCHAR(50) NOT NULL UNIQUE,
-                        `Section` VARCHAR(100) NOT NULL,
-                        `InstrumentVendor` VARCHAR(50) NOT NULL DEFAULT 'Siglent',
-                        `InstrumentModel` VARCHAR(50) NOT NULL DEFAULT 'SDM3055-SC',
-                        `InstrumentSerial` VARCHAR(100) NOT NULL,
-                        `OperatorID` INT DEFAULT 1,
-                        `CreatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        `UpdatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        INDEX `idx_qwid` (`QWID`),
-                        INDEX `idx_section` (`Section`)
+                        `model_name` VARCHAR(100) NOT NULL UNIQUE,
+                        `description` TEXT,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX `idx_model_name` (`model_name`)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                 ";
 
-                // Create Measurements table
+                // Create software_serial_numbers table
+                var createSerialNumbersTable = @"
+                    CREATE TABLE IF NOT EXISTS `software_serial_numbers` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `model_id` INT NOT NULL,
+                        `serial_number` VARCHAR(100) NOT NULL,
+                        `status` VARCHAR(20) DEFAULT 'active',
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        FOREIGN KEY (`model_id`) REFERENCES `software_models`(`id`) ON DELETE CASCADE,
+                        UNIQUE KEY `unique_model_serial` (`model_id`, `serial_number`),
+                        INDEX `idx_serial_number` (`serial_number`),
+                        INDEX `idx_status` (`status`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ";
+
+                // Create software_measurements table
                 var createMeasurementsTable = @"
-                    CREATE TABLE IF NOT EXISTS `Measurements` (
+                    CREATE TABLE IF NOT EXISTS `software_measurements` (
                         `id` INT AUTO_INCREMENT PRIMARY KEY,
-                        `QW_Record_ID` INT NOT NULL,
-                        `MeasurementIndex` INT NOT NULL,
-                        `Function` VARCHAR(50) NOT NULL,
-                        `Measurement` DECIMAL(15,8) NOT NULL,
-                        `Unit` VARCHAR(20) NOT NULL,
-                        `Timestamp` DATETIME NOT NULL,
-                        `Tolerance` VARCHAR(20) DEFAULT 'N/A',
-                        `ToleranceMode` VARCHAR(20) DEFAULT 'percent',
-                        `UpperPercent` DECIMAL(8,4) DEFAULT NULL,
-                        `LowerPercent` DECIMAL(8,4) DEFAULT NULL,
-                        `UpperAbs` DECIMAL(15,8) DEFAULT NULL,
-                        `LowerAbs` DECIMAL(15,8) DEFAULT NULL,
-                        `ToleranceEnabled` BOOLEAN DEFAULT FALSE,
-                        `MarkerAnnotation_ID` INT DEFAULT NULL,
-                        `CreatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (`QW_Record_ID`) REFERENCES `QW_Records`(`id`) ON DELETE CASCADE,
-                        INDEX `idx_qw_record` (`QW_Record_ID`),
-                        INDEX `idx_function` (`Function`),
-                        INDEX `idx_timestamp` (`Timestamp`)
+                        `serial_id` INT NOT NULL,
+                        `measurement_no` INT NOT NULL,
+                        `function_name` VARCHAR(50) NOT NULL,
+                        `measurement_value` DECIMAL(15,8) NOT NULL,
+                        `upper_limit` DECIMAL(15,8) DEFAULT NULL,
+                        `lower_limit` DECIMAL(15,8) DEFAULT NULL,
+                        `tolerance_enabled` BOOLEAN DEFAULT FALSE,
+                        `measured_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (`serial_id`) REFERENCES `software_serial_numbers`(`id`) ON DELETE CASCADE,
+                        INDEX `idx_serial_id` (`serial_id`),
+                        INDEX `idx_function_name` (`function_name`),
+                        INDEX `idx_measurement_no` (`measurement_no`)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                 ";
 
-                // Create Annotation_Images table
-                var createImagesTable = @"
-                    CREATE TABLE IF NOT EXISTS `Annotation_Images` (
-                        `id` INT AUTO_INCREMENT PRIMARY KEY,
-                        `QW_Record_ID` INT NOT NULL,
-                        `ImageData` LONGTEXT NOT NULL,
-                        `MimeType` VARCHAR(50) DEFAULT 'image/jpeg',
-                        `Width` INT DEFAULT NULL,
-                        `Height` INT DEFAULT NULL,
-                        `CreatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (`QW_Record_ID`) REFERENCES `QW_Records`(`id`) ON DELETE CASCADE,
-                        INDEX `idx_qw_record_img` (`QW_Record_ID`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-                ";
+                using (var command = new MySqlCommand(createModelsTable, connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
 
-                // Create Marker_Annotations table
-                var createAnnotationsTable = @"
-                    CREATE TABLE IF NOT EXISTS `Marker_Annotations` (
-                        `id` INT AUTO_INCREMENT PRIMARY KEY,
-                        `QW_Record_ID` INT NOT NULL,
-                        `Measurement_ID` INT NOT NULL,
-                        `PositionX` DECIMAL(10,2) NOT NULL,
-                        `PositionY` DECIMAL(10,2) NOT NULL,
-                        `Label` VARCHAR(255) NOT NULL,
-                        `Shape` VARCHAR(20) DEFAULT 'point',
-                        `Color` VARCHAR(20) DEFAULT NULL,
-                        `CreatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (`QW_Record_ID`) REFERENCES `QW_Records`(`id`) ON DELETE CASCADE,
-                        FOREIGN KEY (`Measurement_ID`) REFERENCES `Measurements`(`id`) ON DELETE CASCADE,
-                        INDEX `idx_qw_record_marker` (`QW_Record_ID`),
-                        INDEX `idx_measurement` (`Measurement_ID`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-                ";
-
-                using (var command = new MySqlCommand(createRecordsTable, connection))
+                using (var command = new MySqlCommand(createSerialNumbersTable, connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }
@@ -220,283 +196,329 @@ namespace MultiRecord
                     await command.ExecuteNonQueryAsync();
                 }
 
-                using (var command = new MySqlCommand(createImagesTable, connection))
+                // Insert default models if they don't exist
+                var insertDefaultModels = @"
+                    INSERT IGNORE INTO `software_models` (`model_name`, `description`) VALUES
+                    ('SDM3055-SC', 'Siglent Digital Multimeter SDM3055-SC'),
+                    ('SDM3065X', 'Siglent Digital Multimeter SDM3065X'),
+                    ('Generic DMM', 'Generic Digital Multimeter');
+                ";
+
+                using (var command = new MySqlCommand(insertDefaultModels, connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }
-
-                using (var command = new MySqlCommand(createAnnotationsTable, connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                }
             }
         }
 
-        public async Task<int> CreateOrUpdateQWRecordAsync(string qwid, string section, string instrumentSerial, int operatorId = 1)
+        // Software Models Management
+        public async Task<List<(int Id, string ModelName, string Description)>> GetSoftwareModelsAsync()
         {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                // Check if record exists
-                var checkSql = "SELECT id FROM QW_Records WHERE QWID = @qwid";
-                using (var checkCommand = new MySqlCommand(checkSql, connection))
-                {
-                    checkCommand.Parameters.AddWithValue("@qwid", qwid);
-                    var existingId = await checkCommand.ExecuteScalarAsync();
-                    
-                    if (existingId != null)
-                    {
-                        // Update existing record
-                        var updateSql = @"
-                            UPDATE QW_Records 
-                            SET Section = @section, InstrumentSerial = @serial, OperatorID = @operatorId, UpdatedAt = CURRENT_TIMESTAMP
-                            WHERE QWID = @qwid";
-                        
-                        using (var updateCommand = new MySqlCommand(updateSql, connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@qwid", qwid);
-                            updateCommand.Parameters.AddWithValue("@section", section);
-                            updateCommand.Parameters.AddWithValue("@serial", instrumentSerial);
-                            updateCommand.Parameters.AddWithValue("@operatorId", operatorId);
-                            await updateCommand.ExecuteNonQueryAsync();
-                        }
-                        
-                        return Convert.ToInt32(existingId);
-                    }
-                    else
-                    {
-                        // Create new record
-                        var insertSql = @"
-                            INSERT INTO QW_Records (QWID, Section, InstrumentSerial, OperatorID) 
-                            VALUES (@qwid, @section, @serial, @operatorId);
-                            SELECT LAST_INSERT_ID();";
-                        
-                        using (var insertCommand = new MySqlCommand(insertSql, connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@qwid", qwid);
-                            insertCommand.Parameters.AddWithValue("@section", section);
-                            insertCommand.Parameters.AddWithValue("@serial", instrumentSerial);
-                            insertCommand.Parameters.AddWithValue("@operatorId", operatorId);
-                            var result = await insertCommand.ExecuteScalarAsync();
-                            return Convert.ToInt32(result);
-                        }
-                    }
-                }
-            }
-        }
-
-        public async Task<int> InsertMeasurementAsync(int qwRecordId, int measurementIndex, string function, 
-            decimal measurement, string unit, DateTime timestamp, string tolerance, 
-            ToleranceData toleranceData = null, int? markerAnnotationId = null)
-        {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var sql = @"
-                    INSERT INTO Measurements 
-                    (QW_Record_ID, MeasurementIndex, Function, Measurement, Unit, Timestamp, Tolerance, 
-                     ToleranceMode, UpperPercent, LowerPercent, UpperAbs, LowerAbs, ToleranceEnabled, MarkerAnnotation_ID) 
-                    VALUES (@qwRecordId, @measurementIndex, @function, @measurement, @unit, @timestamp, @tolerance,
-                            @toleranceMode, @upperPercent, @lowerPercent, @upperAbs, @lowerAbs, @toleranceEnabled, @markerAnnotationId);
-                    SELECT LAST_INSERT_ID();";
-
-                using (var command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@qwRecordId", qwRecordId);
-                    command.Parameters.AddWithValue("@measurementIndex", measurementIndex);
-                    command.Parameters.AddWithValue("@function", function);
-                    command.Parameters.AddWithValue("@measurement", measurement);
-                    command.Parameters.AddWithValue("@unit", unit);
-                    command.Parameters.AddWithValue("@timestamp", timestamp);
-                    command.Parameters.AddWithValue("@tolerance", tolerance);
-
-                    if (toleranceData != null)
-                    {
-                        command.Parameters.AddWithValue("@toleranceMode", toleranceData.Mode ?? "percent");
-                        command.Parameters.AddWithValue("@upperPercent", toleranceData.UpperPercent);
-                        command.Parameters.AddWithValue("@lowerPercent", toleranceData.LowerPercent);
-                        command.Parameters.AddWithValue("@upperAbs", toleranceData.UpperAbs);
-                        command.Parameters.AddWithValue("@lowerAbs", toleranceData.LowerAbs);
-                        command.Parameters.AddWithValue("@toleranceEnabled", toleranceData.Enabled);
-                    }
-                    else
-                    {
-                        command.Parameters.AddWithValue("@toleranceMode", DBNull.Value);
-                        command.Parameters.AddWithValue("@upperPercent", DBNull.Value);
-                        command.Parameters.AddWithValue("@lowerPercent", DBNull.Value);
-                        command.Parameters.AddWithValue("@upperAbs", DBNull.Value);
-                        command.Parameters.AddWithValue("@lowerAbs", DBNull.Value);
-                        command.Parameters.AddWithValue("@toleranceEnabled", false);
-                    }
-
-                    command.Parameters.AddWithValue("@markerAnnotationId", markerAnnotationId.HasValue ? (object)markerAnnotationId.Value : DBNull.Value);
-
-                    var result = await command.ExecuteScalarAsync();
-                    return Convert.ToInt32(result);
-                }
-            }
-        }
-
-        public async Task<int> InsertMarkerAnnotationAsync(int qwRecordId, int measurementId, 
-            decimal positionX, decimal positionY, string label, string shape = "point", string color = null)
-        {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var sql = @"
-                    INSERT INTO Marker_Annotations (QW_Record_ID, Measurement_ID, PositionX, PositionY, Label, Shape, Color) 
-                    VALUES (@qwRecordId, @measurementId, @positionX, @positionY, @label, @shape, @color);
-                    SELECT LAST_INSERT_ID();";
-
-                using (var command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@qwRecordId", qwRecordId);
-                    command.Parameters.AddWithValue("@measurementId", measurementId);
-                    command.Parameters.AddWithValue("@positionX", positionX);
-                    command.Parameters.AddWithValue("@positionY", positionY);
-                    command.Parameters.AddWithValue("@label", label);
-                    command.Parameters.AddWithValue("@shape", shape ?? "point");
-                    command.Parameters.AddWithValue("@color", (object)color ?? DBNull.Value);
-
-                    var result = await command.ExecuteScalarAsync();
-                    return Convert.ToInt32(result);
-                }
-            }
-        }
-
-        public async Task<int> InsertAnnotationImageAsync(int qwRecordId, string imageDataBase64, 
-            string mimeType = "image/jpeg", int? width = null, int? height = null)
-        {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var sql = @"
-                    INSERT INTO Annotation_Images (QW_Record_ID, ImageData, MimeType, Width, Height) 
-                    VALUES (@qwRecordId, @imageData, @mimeType, @width, @height);
-                    SELECT LAST_INSERT_ID();";
-
-                using (var command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@qwRecordId", qwRecordId);
-                    command.Parameters.AddWithValue("@imageData", imageDataBase64);
-                    command.Parameters.AddWithValue("@mimeType", mimeType);
-                    command.Parameters.AddWithValue("@width", width.HasValue ? (object)width.Value : DBNull.Value);
-                    command.Parameters.AddWithValue("@height", height.HasValue ? (object)height.Value : DBNull.Value);
-
-                    var result = await command.ExecuteScalarAsync();
-                    return Convert.ToInt32(result);
-                }
-            }
-        }
-
-        public async Task<JObject> ExportQWRecordAsJsonAsync(string qwid)
-        {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                // Get QW Record
-                var qwRecordSql = @"
-                    SELECT QWID, Section, InstrumentVendor, InstrumentModel, InstrumentSerial 
-                    FROM QW_Records WHERE QWID = @qwid";
-
-                JObject result = new JObject();
-
-                using (var command = new MySqlCommand(qwRecordSql, connection))
-                {
-                    command.Parameters.AddWithValue("@qwid", qwid);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            result["QWID"] = reader["QWID"].ToString();
-                            result["Section"] = reader["Section"].ToString();
-                            
-                            result["Instrument"] = new JObject
-                            {
-                                ["Vendor"] = reader["InstrumentVendor"].ToString(),
-                                ["Model"] = reader["InstrumentModel"].ToString(),
-                                ["Serial"] = reader["InstrumentSerial"].ToString()
-                            };
-                        }
-                    }
-                }
-
-                // Get Measurements and Annotations
-                // This is a complex query that we'll implement based on your specific needs
-                // For now, returning basic structure
-                result["Measurement"] = new JArray();
-                result["MarkerAnnotation"] = new JArray();
-
-                return result;
-            }
-        }
-
-        public async Task<List<PCBMeasurement>> GetPCBMeasurementsBySessionAsync(string sessionId)
-        {
-            var measurements = new List<PCBMeasurement>();
+            var models = new List<(int Id, string ModelName, string Description)>();
             
             using (var connection = new MySqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
+                
+                var sql = "SELECT id, model_name, description FROM software_models ORDER BY model_name";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            models.Add((
+                                Convert.ToInt32(reader["id"]),
+                                reader["model_name"].ToString(),
+                                reader["description"]?.ToString() ?? ""
+                            ));
+                        }
+                    }
+                }
+            }
+            
+            return models;
+        }
+
+        // Software Serial Numbers Management
+        public async Task<int> CreateSoftwareSerialNumberAsync(int modelId, string serialNumber)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
                 var sql = @"
-                    SELECT 
-                        id, measurement_session_id, marker_id, measurement_number,
-                        measured_value, tolerance_status, tolerance_upper, tolerance_lower,
-                        tolerance_upper_type, tolerance_lower_type, tolerance_enabled,
-                        marker_type, marker_parameters, marker_position_x, marker_position_y,
-                        marker_display_name, marker_color, notes, measurement_unit,
-                        tolerance_upper_limit, tolerance_lower_limit, open
-                    FROM pcb_measurements 
-                    WHERE measurement_session_id = @sessionId 
-                    ORDER BY measurement_number";
+                    INSERT INTO software_serial_numbers (model_id, serial_number, status) 
+                    VALUES (@modelId, @serialNumber, 'active');
+                    SELECT LAST_INSERT_ID();";
 
                 using (var command = new MySqlCommand(sql, connection))
                 {
-                    command.Parameters.AddWithValue("@sessionId", sessionId);
+                    command.Parameters.AddWithValue("@modelId", modelId);
+                    command.Parameters.AddWithValue("@serialNumber", serialNumber);
+                    
+                    var result = await command.ExecuteScalarAsync();
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+
+        public async Task<bool> CheckSoftwareSerialNumberExistsAsync(int modelId, string serialNumber)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = "SELECT COUNT(*) FROM software_serial_numbers WHERE model_id = @modelId AND serial_number = @serialNumber";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@modelId", modelId);
+                    command.Parameters.AddWithValue("@serialNumber", serialNumber);
+                    
+                    var count = Convert.ToInt32(await command.ExecuteScalarAsync());
+                    return count > 0;
+                }
+            }
+        }
+
+        public async Task<int?> GetSoftwareSerialNumberIdAsync(int modelId, string serialNumber)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = "SELECT id FROM software_serial_numbers WHERE model_id = @modelId AND serial_number = @serialNumber AND status = 'active'";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@modelId", modelId);
+                    command.Parameters.AddWithValue("@serialNumber", serialNumber);
+                    
+                    var result = await command.ExecuteScalarAsync();
+                    return result != null ? (int?)Convert.ToInt32(result) : null;
+                }
+            }
+        }
+
+        public async Task<List<(int Id, string SerialNumber, DateTime CreatedAt)>> GetSoftwareSerialNumbersByModelAsync(int modelId)
+        {
+            var serialNumbers = new List<(int Id, string SerialNumber, DateTime CreatedAt)>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = "SELECT id, serial_number, created_at FROM software_serial_numbers WHERE model_id = @modelId ORDER BY created_at DESC";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@modelId", modelId);
                     
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
                         {
-                            var measurement = new PCBMeasurement
+                            serialNumbers.Add((
+                                Convert.ToInt32(reader["id"]),
+                                reader["serial_number"].ToString(),
+                                Convert.ToDateTime(reader["created_at"])
+                            ));
+                        }
+                    }
+                }
+            }
+            
+            return serialNumbers;
+        }
+
+        // Software Measurements Management
+        public async Task<int> InsertSoftwareMeasurementAsync(int serialId, int measurementNo, string functionName, 
+            decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    INSERT INTO software_measurements 
+                    (serial_id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, measured_at) 
+                    VALUES (@serialId, @measurementNo, @functionName, @measurementValue, @upperLimit, @lowerLimit, @toleranceEnabled, NOW());
+                    SELECT LAST_INSERT_ID();";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    command.Parameters.AddWithValue("@measurementNo", measurementNo);
+                    command.Parameters.AddWithValue("@functionName", functionName);
+                    command.Parameters.AddWithValue("@measurementValue", measurementValue);
+                    command.Parameters.AddWithValue("@upperLimit", upperLimit.HasValue ? (object)upperLimit.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@lowerLimit", lowerLimit.HasValue ? (object)lowerLimit.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@toleranceEnabled", toleranceEnabled);
+
+                    var result = await command.ExecuteScalarAsync();
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+
+        public async Task<bool> UpdateSoftwareMeasurementToleranceAsync(int measurementId, decimal? upperLimit, decimal? lowerLimit, bool toleranceEnabled)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    UPDATE software_measurements 
+                    SET upper_limit = @upperLimit, lower_limit = @lowerLimit, tolerance_enabled = @toleranceEnabled
+                    WHERE id = @measurementId";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@measurementId", measurementId);
+                    command.Parameters.AddWithValue("@upperLimit", upperLimit.HasValue ? (object)upperLimit.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@lowerLimit", lowerLimit.HasValue ? (object)lowerLimit.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@toleranceEnabled", toleranceEnabled);
+
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        public async Task<List<SoftwareMeasurement>> GetSoftwareMeasurementsBySerialIdAsync(int serialId)
+        {
+            var measurements = new List<SoftwareMeasurement>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    SELECT id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, measured_at
+                    FROM software_measurements 
+                    WHERE serial_id = @serialId 
+                    ORDER BY measurement_no";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            measurements.Add(new SoftwareMeasurement
                             {
-                                Id = reader["id"].ToString(),
-                                MeasurementSessionId = reader["measurement_session_id"].ToString(),
-                                MarkerId = reader["marker_id"].ToString(),
-                                MeasurementNumber = Convert.ToInt32(reader["measurement_number"]),
-                                MeasuredValue = reader["measured_value"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["measured_value"]),
-                                ToleranceStatus = reader["tolerance_status"].ToString(),
-                                ToleranceUpper = Convert.ToDecimal(reader["tolerance_upper"]),
-                                ToleranceLower = Convert.ToDecimal(reader["tolerance_lower"]),
-                                ToleranceUpperType = reader["tolerance_upper_type"].ToString(),
-                                ToleranceLowerType = reader["tolerance_lower_type"].ToString(),
+                                Id = Convert.ToInt32(reader["id"]),
+                                MeasurementNo = Convert.ToInt32(reader["measurement_no"]),
+                                FunctionName = reader["function_name"].ToString(),
+                                MeasurementValue = Convert.ToDecimal(reader["measurement_value"]),
+                                UpperLimit = reader["upper_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["upper_limit"]),
+                                LowerLimit = reader["lower_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["lower_limit"]),
                                 ToleranceEnabled = Convert.ToBoolean(reader["tolerance_enabled"]),
-                                MarkerType = reader["marker_type"].ToString(),
-                                MarkerParameters = reader["marker_parameters"].ToString(),
-                                MarkerPositionX = Convert.ToDecimal(reader["marker_position_x"]),
-                                MarkerPositionY = Convert.ToDecimal(reader["marker_position_y"]),
-                                MarkerDisplayName = reader["marker_display_name"].ToString(),
-                                MarkerColor = reader["marker_color"].ToString(),
-                                Notes = reader["notes"]?.ToString(),
-                                MeasurementUnit = reader["measurement_unit"]?.ToString(),
-                                ToleranceUpperLimit = reader["tolerance_upper_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_upper_limit"]),
-                                ToleranceLowerLimit = reader["tolerance_lower_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_lower_limit"]),
-                                Open = reader["open"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["open"])
-                            };
-                            
-                            measurements.Add(measurement);
+                                MeasuredAt = Convert.ToDateTime(reader["measured_at"])
+                            });
                         }
                     }
                 }
             }
             
             return measurements;
+        }
+
+
+        public async Task<(bool Success, DataTable Data)> ExecuteQuery(string sql)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    
+                    using (var command = new MySqlCommand(sql, connection))
+                    {
+                        using (var adapter = new MySqlDataAdapter(command))
+                        {
+                            var dataTable = new DataTable();
+                            adapter.Fill(dataTable);
+                            return (true, dataTable);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SQL Query Error: {ex.Message}");
+                return (false, null);
+            }
+        }
+
+
+        // Legacy methods for backward compatibility with existing system
+        public async Task<int> CreateOrUpdateQWRecordAsync(string qwId, string section, string instrumentSerial, string operatorId)
+        {
+            if (_connection == null || _connection.State != ConnectionState.Open)
+            {
+                _connection = new MySqlConnection(_connectionString);
+                await _connection.OpenAsync();
+            }
+            
+            string sql = @"
+                INSERT INTO QW_Records (qw_id, section, instrument_serial, operator_id, created_at, updated_at)
+                VALUES (@qwId, @section, @instrumentSerial, @operatorId, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    section = VALUES(section),
+                    instrument_serial = VALUES(instrument_serial),
+                    operator_id = VALUES(operator_id),
+                    updated_at = NOW()";
+            
+            using (var command = new MySqlCommand(sql, _connection))
+            {
+                command.Parameters.AddWithValue("@qwId", qwId);
+                command.Parameters.AddWithValue("@section", section);
+                command.Parameters.AddWithValue("@instrumentSerial", instrumentSerial);
+                command.Parameters.AddWithValue("@operatorId", operatorId);
+                
+                await command.ExecuteNonQueryAsync();
+                
+                // Get the record ID
+                string selectSql = "SELECT id FROM QW_Records WHERE qw_id = @qwId";
+                using (var selectCommand = new MySqlCommand(selectSql, _connection))
+                {
+                    selectCommand.Parameters.AddWithValue("@qwId", qwId);
+                    var result = await selectCommand.ExecuteScalarAsync();
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+        
+        public async Task<int> InsertMeasurementAsync(int qwRecordId, int measurementIndex, string function, decimal measurementValue, string unit, DateTime timestamp, string toleranceStatus, ToleranceData toleranceData = null)
+        {
+            if (_connection == null || _connection.State != ConnectionState.Open)
+            {
+                _connection = new MySqlConnection(_connectionString);
+                await _connection.OpenAsync();
+            }
+            
+            string sql = @"
+                INSERT INTO Measurements 
+                (qw_record_id, measurement_index, function_name, measurement_value, unit, timestamp, tolerance_status, upper_limit, lower_limit, tolerance_enabled)
+                VALUES (@qwRecordId, @measurementIndex, @function, @measurementValue, @unit, @timestamp, @toleranceStatus, @upperLimit, @lowerLimit, @toleranceEnabled)";
+            
+            using (var command = new MySqlCommand(sql, _connection))
+            {
+                command.Parameters.AddWithValue("@qwRecordId", qwRecordId);
+                command.Parameters.AddWithValue("@measurementIndex", measurementIndex);
+                command.Parameters.AddWithValue("@function", function);
+                command.Parameters.AddWithValue("@measurementValue", measurementValue);
+                command.Parameters.AddWithValue("@unit", unit);
+                command.Parameters.AddWithValue("@timestamp", timestamp);
+                command.Parameters.AddWithValue("@toleranceStatus", toleranceStatus);
+                command.Parameters.AddWithValue("@upperLimit", toleranceData?.UpperLimit);
+                command.Parameters.AddWithValue("@lowerLimit", toleranceData?.LowerLimit);
+                command.Parameters.AddWithValue("@toleranceEnabled", toleranceData?.Enabled ?? false);
+                
+                await command.ExecuteNonQueryAsync();
+                return (int)command.LastInsertedId;
+            }
         }
 
         public void Dispose()
@@ -509,39 +531,27 @@ namespace MultiRecord
         }
     }
 
-    public class PCBMeasurement
+    public class SoftwareMeasurement
     {
-        public string Id { get; set; }
-        public string MeasurementSessionId { get; set; }
-        public string MarkerId { get; set; }
-        public int MeasurementNumber { get; set; }
-        public decimal? MeasuredValue { get; set; }
-        public string ToleranceStatus { get; set; }
-        public decimal ToleranceUpper { get; set; }
-        public decimal ToleranceLower { get; set; }
-        public string ToleranceUpperType { get; set; }
-        public string ToleranceLowerType { get; set; }
+        public int Id { get; set; }
+        public int MeasurementNo { get; set; }
+        public string FunctionName { get; set; }
+        public decimal MeasurementValue { get; set; }
+        public decimal? UpperLimit { get; set; }
+        public decimal? LowerLimit { get; set; }
         public bool ToleranceEnabled { get; set; }
-        public string MarkerType { get; set; }
-        public string MarkerParameters { get; set; }
-        public decimal MarkerPositionX { get; set; }
-        public decimal MarkerPositionY { get; set; }
-        public string MarkerDisplayName { get; set; }
-        public string MarkerColor { get; set; }
-        public string Notes { get; set; }
-        public string MeasurementUnit { get; set; }
-        public decimal? ToleranceUpperLimit { get; set; }
-        public decimal? ToleranceLowerLimit { get; set; }
-        public bool? Open { get; set; }
+        public DateTime MeasuredAt { get; set; }
     }
-
+    
+    // Legacy class for backward compatibility
     public class ToleranceData
     {
-        public string Mode { get; set; } = "percent";
+        public decimal? UpperLimit { get; set; }
+        public decimal? LowerLimit { get; set; }
         public decimal? UpperPercent { get; set; }
         public decimal? LowerPercent { get; set; }
         public decimal? UpperAbs { get; set; }
         public decimal? LowerAbs { get; set; }
-        public bool Enabled { get; set; } = true;
+        public bool Enabled { get; set; }
     }
 }

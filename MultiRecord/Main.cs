@@ -8,6 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Media; // เพิ่ม namespace นี้
+using System.Runtime.InteropServices; // สำหรับจัดการ COM exceptions
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -25,9 +26,16 @@ namespace MultiRecord
         private bool _isRelativeEnabled = false;
 
         private DataTable _recordsTable;
+        private DataTable _rdRecordsTable;
         private double _lastReadingValue;
         private string _lastReadingUnit;
         private bool _isOverload = false;
+        
+        // R&D specific variables
+        private int _currentModelId = -1;
+        private int _currentSerialId = -1;
+        private string _currentSerialNumber = "";
+        private bool _isRDTabActive = false;
 
         // Tolerance settings
         private bool _toleranceEnabled = false;
@@ -51,10 +59,12 @@ namespace MultiRecord
 
             InitializeForm();
             InitializeDataTableAndLoadData();
+            InitializeRDDataTable();
             LoadLastSuccessfulConnection();
             InitializeToleranceControls();
             InitializeQWRecord();
             InitializeMySQL();
+            InitializeRDTab();
         }
 
         private void InitializeForm()
@@ -1730,7 +1740,7 @@ namespace MultiRecord
         #endregion
 
         // *** เพิ่มการ select แถวล่าสุดหลังจากลบข้อมูล ***
-        private async void buttonDeleteRecord_Click(object sender, EventArgs e)
+        private void buttonDeleteRecord_Click(object sender, EventArgs e)
         {
             if (dataGridViewRecords.SelectedRows.Count == 0) return;
             var confirmResult = MessageBox.Show("ยืนยันการลบแถวที่เลือก?", "ยืนยันการลบ", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
@@ -1919,13 +1929,7 @@ namespace MultiRecord
             {
                 try
                 {
-                    _mysqlManager = new MySqlManager(
-                        SettingsManager.MySqlHost,
-                        SettingsManager.MySqlPort,
-                        SettingsManager.MySqlUser,
-                        SettingsManager.MySqlPassword,
-                        SettingsManager.MySqlDatabase
-                    );
+                    _mysqlManager = DatabaseConfig.CreateMySqlManager();
 
                     bool connected = await _mysqlManager.TestConnectionAsync();
                     if (connected)
@@ -1993,7 +1997,7 @@ namespace MultiRecord
                     SettingsManager.CurrentQWID,
                     SettingsManager.CurrentSection,
                     SettingsManager.InstrumentSerial,
-                    SettingsManager.OperatorID
+                    SettingsManager.OperatorID.ToString()
                 );
 
                 // Parse measurement value
@@ -2005,7 +2009,8 @@ namespace MultiRecord
                     {
                         toleranceData = new ToleranceData
                         {
-                            Mode = _toleranceIsPercent ? "percent" : "absolute",
+                            UpperLimit = _toleranceIsPercent ? null : (decimal?)_toleranceValueDC,
+                            LowerLimit = _toleranceIsPercent ? null : (decimal?)_toleranceValueDC,
                             UpperPercent = _toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
                             LowerPercent = _toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
                             UpperAbs = !_toleranceIsPercent ? (decimal?)_toleranceValueDC : null,
@@ -2072,10 +2077,747 @@ namespace MultiRecord
 
         #endregion
 
+        #region --- R&D Tab Methods ---
+
+        private void InitializeRDDataTable()
+        {
+            _rdRecordsTable = new DataTable("RDMeasurementRecords");
+            _rdRecordsTable.Columns.Add("No", typeof(int));
+            _rdRecordsTable.Columns.Add("Function", typeof(string));
+            _rdRecordsTable.Columns.Add("Measurement", typeof(string));
+            _rdRecordsTable.Columns.Add("Upper", typeof(string));
+            _rdRecordsTable.Columns.Add("Lower", typeof(string));
+            _rdRecordsTable.Columns.Add("ToleranceEnable", typeof(bool));
+
+            dataGridViewRD.DataSource = _rdRecordsTable;
+
+            // ตั้งค่า AutoSizeMode
+            dataGridViewRD.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Function"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Measurement"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewRD.Columns["Upper"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRD.Columns["ToleranceEnable"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+
+            // ตั้งค่า Selection Mode
+            dataGridViewRD.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewRD.MultiSelect = false;
+            dataGridViewRD.ReadOnly = false; // อนุญาตให้แก้ไขได้
+            dataGridViewRD.AllowUserToDeleteRows = false;
+            dataGridViewRD.AllowUserToAddRows = false;
+
+            // เพิ่ม Event Handler สำหรับ Cell Click เพื่อแก้ไข tolerance
+            dataGridViewRD.CellClick += DataGridViewRD_CellClick;
+            dataGridViewRD.CellValueChanged += DataGridViewRD_CellValueChanged;
+        }
+
+        private async void InitializeRDTab()
+        {
+            // โหลดรายการ Models จาก database
+            await LoadModelsFromDatabase();
+            
+            // เพิ่ม Event Handlers
+            comboBoxModels.SelectedIndexChanged += ComboBoxModels_SelectedIndexChanged;
+            buttonCreateSN.Click += ButtonCreateSN_Click;
+            buttonLoadSN.Click += ButtonLoadSN_Click;
+            buttonRecordRD.Click += ButtonRecordRD_Click;
+            buttonExportRD.Click += ButtonExportRD_Click;
+            buttonClearRD.Click += ButtonClearRD_Click;
+            
+            // เพิ่ม Tab Changed Event
+            tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
+            
+            LogActivity("เริ่มต้น R&D Tab สำเร็จ");
+        }
+
+        private async Task<bool> ShowRDSelectionDialog()
+        {
+            try
+            {
+                using (var dialog = new RDSelectionDialog())
+                {
+                    DialogResult result;
+                    try
+                    {
+                        result = dialog.ShowDialog(this);
+                    }
+                    catch (System.Runtime.InteropServices.COMException comEx)
+                    {
+                        LogActivity($"COM Interop Warning (ไม่กระทบการทำงาน): {comEx.Message}");
+                        // ลองใหม่อีกครั้ง
+                        result = dialog.ShowDialog(this);
+                    }
+                    catch (System.InvalidOperationException invEx) when (invEx.Message.Contains("ComboBox"))
+                    {
+                        LogActivity($"ComboBox COM Warning (ไม่กระทบการทำงาน): {invEx.Message}");
+                        // ลองใหม่อีกครั้ง
+                        result = dialog.ShowDialog(this);
+                    }
+                    
+                    if (result == DialogResult.OK)
+                    {
+                        _currentModelId = dialog.SelectedModelId;
+                        _currentSerialNumber = dialog.SelectedSerialNumber;
+                        
+                        if (dialog.IsCreateNew)
+                        {
+                            // สร้าง Serial Number ใหม่
+                            using (var createDialog = new CreateSerialDialog(_currentModelId, dialog.SelectedModelName))
+                            {
+                                DialogResult createResult;
+                                try
+                                {
+                                    createResult = createDialog.ShowDialog(this);
+                                }
+                                catch (System.Runtime.InteropServices.COMException comEx)
+                                {
+                                    LogActivity($"COM Interop Warning ใน Create Dialog (ไม่กระทบการทำงาน): {comEx.Message}");
+                                    createResult = createDialog.ShowDialog(this);
+                                }
+                                catch (System.InvalidOperationException invEx) when (invEx.Message.Contains("ComboBox") || invEx.Message.Contains("TextBox"))
+                                {
+                                    LogActivity($"Control COM Warning ใน Create Dialog (ไม่กระทบการทำงาน): {invEx.Message}");
+                                    createResult = createDialog.ShowDialog(this);
+                                }
+                                
+                                if (createResult == DialogResult.OK)
+                                {
+                                    _currentSerialNumber = createDialog.SerialNumber;
+                                    _currentSerialId = await GetSerialIdByNumber(_currentSerialNumber, _currentModelId);
+                                    
+                                    LogActivity($"สร้าง Serial Number ใหม่: {_currentSerialNumber} สำหรับ Model: {dialog.SelectedModelName}");
+                                    
+                                    // อัปเดต UI
+                                    await UpdateRDTabUI();
+                                    await LoadRDRecordsFromDatabase();
+                                    
+                                    return true;
+                                }
+                                else
+                                {
+                                    // ยกเลิกการสร้าง SN ใหม่ - กลับไป tab เดิม
+                                    tabControl1.SelectedIndex = 0; // กลับไป Data Recording tab
+                                    return false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // โหลด Serial Number ที่มีอยู่
+                            _currentSerialId = dialog.SelectedSerialId;
+                            
+                            LogActivity($"โหลด Serial Number: {_currentSerialNumber} สำหรับ Model: {dialog.SelectedModelName}");
+                            
+                            // อัปเดต UI
+                            await UpdateRDTabUI();
+                            await LoadRDRecordsFromDatabase();
+                            
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        // ยกเลิก - กลับไป tab เดิม
+                        tabControl1.SelectedIndex = 0; // กลับไป Data Recording tab
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดใน R&D Selection Dialog: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+                tabControl1.SelectedIndex = 0; // กลับไป Data Recording tab
+                return false;
+            }
+        }
+
+        private async Task<int> GetSerialIdByNumber(string serialNumber, int modelId)
+        {
+            try
+            {
+                string sql = $"SELECT id FROM software_serial_numbers WHERE serial_number = '{serialNumber}' AND model_id = {modelId}";
+                var result = await ExecuteSQLQuery(sql);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    return Convert.ToInt32(result.Data.Rows[0]["id"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการค้นหา Serial ID: {ex.Message}", true);
+            }
+            
+            return -1;
+        }
+
+        private async Task UpdateRDTabUI()
+        {
+            try
+            {
+                // อัปเดต UI elements ใน R&D Tab
+                if (_currentModelId > 0 && _currentSerialId > 0)
+                {
+                    // ซ่อน Model Selection UI เนื่องจากเลือกแล้ว
+                    groupBoxModelSelection.Visible = false;
+                    
+                    // แสดงข้อมูลที่เลือกไว้
+                    string modelName = await GetModelNameById(_currentModelId);
+                    LogActivity($"R&D Tab พร้อมใช้งาน - Model: {modelName}, SN: {_currentSerialNumber}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการอัปเดต R&D Tab UI: {ex.Message}", true);
+            }
+        }
+
+        private async Task<string> GetModelNameById(int modelId)
+        {
+            try
+            {
+                string sql = $"SELECT name FROM models WHERE id = {modelId}";
+                var result = await ExecuteSQLQuery(sql);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    return result.Data.Rows[0]["name"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการค้นหาชื่อ Model: {ex.Message}", true);
+            }
+            
+            return "Unknown Model";
+        }
+
+        private async Task LoadRDRecordsFromDatabase()
+        {
+            try
+            {
+                if (_currentSerialId <= 0)
+                {
+                    LogActivity("ไม่มี Serial ID สำหรับโหลดข้อมูล R&D", true);
+                    return;
+                }
+
+                string sql = $@"SELECT sm.id, sm.function_name, sm.measurement_value, sm.upper_limit, sm.lower_limit, sm.tolerance_enabled, sm.created_at
+                               FROM software_measurements sm 
+                               WHERE sm.serial_id = {_currentSerialId} 
+                               ORDER BY sm.created_at DESC";
+                
+                var result = await ExecuteSQLQuery(sql);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    _rdRecordsTable.Clear();
+                    int no = 1;
+                    
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        var newRow = _rdRecordsTable.NewRow();
+                        newRow["No"] = no++;
+                        newRow["Function"] = row["function_name"].ToString();
+                        newRow["Measurement"] = Convert.ToDouble(row["measurement_value"]);
+                        newRow["Upper"] = Convert.ToDouble(row["upper_limit"]);
+                        newRow["Lower"] = Convert.ToDouble(row["lower_limit"]);
+                        newRow["ToleranceEnable"] = Convert.ToBoolean(row["tolerance_enabled"]);
+                        _rdRecordsTable.Rows.Add(newRow);
+                    }
+                    
+                    LogActivity($"โหลดข้อมูล R&D จำนวน {_rdRecordsTable.Rows.Count} รายการ");
+                }
+                else
+                {
+                    LogActivity("ไม่พบข้อมูล R&D ในฐานข้อมูล");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการโหลดข้อมูล R&D: {ex.Message}", true);
+            }
+        }
+
+        private async Task LoadModelsFromDatabase()
+        {
+            try
+            {
+                // ใช้ MCP เพื่อดึงข้อมูล models
+                var result = await ExecuteSQLQuery("SELECT id, model_name, description FROM software_models ORDER BY model_name");
+                
+                comboBoxModels.Items.Clear();
+                comboBoxModels.Items.Add(new { Id = -1, Name = "-- เลือก Model --" });
+                
+                if (result.Success && result.Data.Rows != null)
+                {
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        var model = new { 
+                            Id = Convert.ToInt32(row["id"]), 
+                            Name = row["model_name"].ToString(),
+                            Description = row["description"]?.ToString() ?? ""
+                        };
+                        comboBoxModels.Items.Add(model);
+                    }
+                }
+                
+                comboBoxModels.DisplayMember = "Name";
+                comboBoxModels.ValueMember = "Id";
+                comboBoxModels.SelectedIndex = 0;
+                
+                LogActivity($"โหลด Models จาก database สำเร็จ: {comboBoxModels.Items.Count - 1} รายการ");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลด Models ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private async Task<(bool Success, DataTable Data)> ExecuteSQLQuery(string sql)
+        {
+            try
+            {
+                // TODO: ใช้ MCP เพื่อ execute SQL จริง
+                // สำหรับตอนนี้ใช้ข้อมูลจำลองก่อน เพื่อให้ compile ได้
+                
+                LogActivity($"Executing SQL: {sql.Substring(0, Math.Min(50, sql.Length))}...");
+                
+                // จำลองการหน่วงเวลาเหมือน database query จริง
+                await Task.Delay(100);
+                
+                var dataTable = new DataTable();
+                
+                // จำลองข้อมูล Models
+                if (sql.Contains("SELECT id, model_name, description FROM software_models"))
+                {
+                    dataTable.Columns.Add("id", typeof(int));
+                    dataTable.Columns.Add("model_name", typeof(string));
+                    dataTable.Columns.Add("description", typeof(string));
+                    
+                    dataTable.Rows.Add(1, "SDM3055", "Siglent Digital Multimeter 3055");
+                    dataTable.Rows.Add(2, "SDM3065X", "Siglent Digital Multimeter 3065X");
+                    dataTable.Rows.Add(3, "Test_Model_A", "Test Model for R&D Development");
+                    
+                    return (true, dataTable);
+                }
+                
+                // จำลองการสร้าง Serial Number
+                if (sql.Contains("INSERT INTO software_serial_numbers"))
+                {
+                    return (true, dataTable); // Empty DataTable
+                }
+                
+                // จำลองการค้นหา Serial Number
+                if (sql.Contains("SELECT id FROM software_serial_numbers"))
+                {
+                    dataTable.Columns.Add("id", typeof(int));
+                    dataTable.Rows.Add(DateTime.Now.Millisecond);
+                    return (true, dataTable);
+                }
+                
+                // จำลองการโหลด measurements
+                if (sql.Contains("SELECT measurement_no, function_name"))
+                {
+                    return (true, dataTable); // Empty DataTable
+                }
+                
+                // จำลองการ insert/update measurements
+                if (sql.Contains("INSERT INTO software_measurements") || sql.Contains("UPDATE software_measurements"))
+                {
+                    return (true, dataTable); // Empty DataTable
+                }
+                
+                return (true, dataTable); // Empty DataTable
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"SQL Query Error: {ex.Message}", true);
+                return (false, null);
+            }
+        }
+
+        private async void TabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            _isRDTabActive = (tabControl1.SelectedTab == tab_rd);
+            
+            if (_isRDTabActive)
+            {
+                LogActivity("เข้าสู่ R&D Tab");
+                // ตรวจสอบว่าต้องเลือก Model และ SN หรือไม่
+                if (_currentModelId == -1 || _currentSerialId == -1)
+                {
+                    await ShowRDSelectionDialog();
+                }
+            }
+            else
+            {
+                LogActivity("ออกจาก R&D Tab");
+            }
+        }
+
+        private void ComboBoxModels_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboBoxModels.SelectedItem != null)
+            {
+                dynamic selectedModel = comboBoxModels.SelectedItem;
+                _currentModelId = selectedModel.Id;
+                
+                if (_currentModelId > 0)
+                {
+                    LogActivity($"เลือก Model: {selectedModel.Name}");
+                    // ล้าง Serial Number เมื่อเปลี่ยน Model
+                    textBoxSerialNumber.Text = "";
+                    _currentSerialId = -1;
+                    _currentSerialNumber = "";
+                    _rdRecordsTable.Clear();
+                }
+            }
+        }
+
+        private async void ButtonCreateSN_Click(object sender, EventArgs e)
+        {
+            if (_currentModelId <= 0)
+            {
+                MessageBox.Show("กรุณาเลือก Model ก่อน", "ไม่ได้เลือก Model", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // สร้าง Serial Number ใหม่
+                string newSN = $"SN{DateTime.Now:yyyyMMddHHmmss}";
+                
+                // บันทึกลง database ผ่าน MCP
+                string insertSQL = $@"
+                    INSERT INTO software_serial_numbers (model_id, serial_number, status) 
+                    VALUES ({_currentModelId}, '{newSN}', 'active')";
+                
+                var result = await ExecuteSQLQuery(insertSQL);
+                
+                if (result.Success)
+                {
+                    textBoxSerialNumber.Text = newSN;
+                    _currentSerialNumber = newSN;
+                    
+                    // ดึง ID ของ Serial Number ที่สร้างใหม่
+                    var getIdResult = await ExecuteSQLQuery($@"
+                        SELECT id FROM software_serial_numbers 
+                        WHERE model_id = {_currentModelId} AND serial_number = '{newSN}'");
+                    
+                    if (getIdResult.Success && getIdResult.Data != null && getIdResult.Data.Rows.Count > 0)
+                    {
+                        _currentSerialId = Convert.ToInt32(getIdResult.Data.Rows[0]["id"]);
+                    }
+                    
+                    LogActivity($"สร้าง Serial Number ใหม่: {newSN}");
+                    _rdRecordsTable.Clear();
+                    SoundUtil.Beep();
+                }
+                else
+                {
+                    MessageBox.Show("ไม่สามารถสร้าง Serial Number ได้", "ข้อผิดพลาด", 
+                                  MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"สร้าง SN ล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonLoadSN_Click(object sender, EventArgs e)
+        {
+            if (_currentModelId <= 0)
+            {
+                MessageBox.Show("กรุณาเลือก Model ก่อน", "ไม่ได้เลือก Model", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string inputSN = textBoxSerialNumber.Text.Trim();
+            if (string.IsNullOrEmpty(inputSN))
+            {
+                MessageBox.Show("กรุณาใส่ Serial Number", "ไม่ได้ใส่ SN", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // ค้นหา Serial Number ใน database
+                string searchSQL = $@"
+                    SELECT id FROM software_serial_numbers 
+                    WHERE model_id = {_currentModelId} AND serial_number = '{inputSN}' AND status = 'active'";
+                
+                var result = await ExecuteSQLQuery(searchSQL);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    _currentSerialId = Convert.ToInt32(result.Data.Rows[0]["id"]);
+                    _currentSerialNumber = inputSN;
+                    
+                    // โหลดข้อมูล measurements ที่มีอยู่
+                    await LoadExistingMeasurements();
+                    
+                    LogActivity($"โหลด Serial Number: {inputSN} สำเร็จ");
+                    SoundUtil.Beep();
+                }
+                else
+                {
+                    MessageBox.Show($"ไม่พบ Serial Number '{inputSN}' สำหรับ Model นี้", 
+                                  "ไม่พบ SN", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลด SN ล้มเหลว: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadExistingMeasurements()
+        {
+            try
+            {
+                string loadSQL = $@"
+                    SELECT measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled
+                    FROM software_measurements 
+                    WHERE serial_id = {_currentSerialId}
+                    ORDER BY measurement_no";
+                
+                var result = await ExecuteSQLQuery(loadSQL);
+                
+                _rdRecordsTable.Clear();
+                
+                if (result.Success && result.Data.Rows != null)
+                {
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        _rdRecordsTable.Rows.Add(
+                            Convert.ToInt32(row["measurement_no"]),
+                            row["function_name"].ToString(),
+                            Convert.ToDouble(row["measurement_value"]).ToString("F4"),
+                            row["upper_limit"]?.ToString() ?? "",
+                            row["lower_limit"]?.ToString() ?? "",
+                            Convert.ToBoolean(row["tolerance_enabled"])
+                        );
+                    }
+                    
+                    LogActivity($"โหลดข้อมูล measurements: {_rdRecordsTable.Rows.Count} รายการ");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลด measurements ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private async void ButtonRecordRD_Click(object sender, EventArgs e)
+        {
+            if (!_isRDTabActive)
+            {
+                await saveRecord(); // ใช้ฟังก์ชันเดิมถ้าไม่ได้อยู่ใน R&D Tab
+                return;
+            }
+
+            await SaveRDRecord();
+        }
+
+        private async Task SaveRDRecord()
+        {
+            if (_dmm == null || !_dmm.IsConnected || lblReading.Text == "CONFIG..." || lblReading.Text == "ERROR")
+            {
+                LogActivity("ไม่สามารถบันทึกได้: ไม่มีค่าที่วัดได้", true);
+                return;
+            }
+
+            if (_currentModelId <= 0 || _currentSerialId <= 0)
+            {
+                MessageBox.Show("กรุณาเลือก Model และสร้าง/โหลด Serial Number ก่อน", 
+                              "ไม่ได้เลือก Model/SN", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                int newNo = _rdRecordsTable.Rows.Count + 1;
+                string function = _currentFunction.ToString();
+                string measurement = _isOverload ? "OVERLOAD" : _lastReadingValue.ToString("F4", CultureInfo.InvariantCulture);
+                
+                // เพิ่มข้อมูลใน DataTable
+                _rdRecordsTable.Rows.Add(newNo, function, measurement, "", "", false);
+                
+                // บันทึกลง database
+                await SaveRDMeasurementToDatabase(newNo, function, _lastReadingValue);
+                
+                LogActivity($"บันทึกค่า R&D No. {newNo}: {function}, {measurement}");
+                SoundUtil.Beep();
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"บันทึก R&D ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private async Task SaveRDMeasurementToDatabase(int measurementNo, string function, double value)
+        {
+            try
+            {
+                string insertSQL = $@"
+                    INSERT INTO software_measurements 
+                    (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, measured_at)
+                    VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, NOW())";
+                
+                await ExecuteSQLQuery(insertSQL);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"บันทึก measurement ลง database ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void DataGridViewRD_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                string columnName = dataGridViewRD.Columns[e.ColumnIndex].Name;
+                
+                // อนุญาตให้แก้ไขได้เฉพาะคอลัมน์ Upper, Lower, ToleranceEnable
+                if (columnName == "Upper" || columnName == "Lower" || columnName == "ToleranceEnable")
+                {
+                    dataGridViewRD.ReadOnly = false;
+                    dataGridViewRD.BeginEdit(true);
+                }
+                else
+                {
+                    dataGridViewRD.ReadOnly = true;
+                }
+            }
+        }
+
+        private void DataGridViewRD_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                try
+                {
+                    var row = dataGridViewRD.Rows[e.RowIndex];
+                    int measurementNo = Convert.ToInt32(row.Cells["No"].Value);
+                    string columnName = dataGridViewRD.Columns[e.ColumnIndex].Name;
+                    
+                    // อัพเดต database เมื่อมีการเปลี่ยนแปลง tolerance settings
+                    if (columnName == "Upper" || columnName == "Lower" || columnName == "ToleranceEnable")
+                    {
+                        _ = UpdateToleranceInDatabase(measurementNo, row);
+                        LogActivity($"อัพเดต tolerance สำหรับ measurement #{measurementNo}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"อัพเดต tolerance ล้มเหลว: {ex.Message}", true);
+                }
+            }
+        }
+
+        private async Task UpdateToleranceInDatabase(int measurementNo, DataGridViewRow row)
+        {
+            try
+            {
+                string upperLimit = row.Cells["Upper"].Value?.ToString() ?? "";
+                string lowerLimit = row.Cells["Lower"].Value?.ToString() ?? "";
+                bool toleranceEnabled = Convert.ToBoolean(row.Cells["ToleranceEnable"].Value ?? false);
+                
+                string updateSQL = $@"
+                    UPDATE software_measurements 
+                    SET upper_limit = {(string.IsNullOrEmpty(upperLimit) ? "NULL" : upperLimit)},
+                        lower_limit = {(string.IsNullOrEmpty(lowerLimit) ? "NULL" : lowerLimit)},
+                        tolerance_enabled = {toleranceEnabled}
+                    WHERE serial_id = {_currentSerialId} AND measurement_no = {measurementNo}";
+                
+                await ExecuteSQLQuery(updateSQL);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"อัพเดต tolerance ใน database ล้มเหลว: {ex.Message}", true);
+            }
+        }
+
+        private void ButtonExportRD_Click(object sender, EventArgs e)
+        {
+            // Export R&D data to CSV
+            if (_rdRecordsTable.Rows.Count == 0)
+            {
+                MessageBox.Show("ไม่มีข้อมูล R&D ให้ส่งออก", "แจ้งเตือน", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Filter = "CSV File (*.csv)|*.csv";
+                saveFileDialog.FileName = $"RD_Data_{_currentSerialNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var lines = new List<string>();
+                        lines.Add("No,Function,Measurement,Upper,Lower,ToleranceEnable");
+                        
+                        foreach (DataRow row in _rdRecordsTable.Rows)
+                        {
+                            string csvLine = string.Join(",",
+                                $"\"{row["No"]}\"",
+                                $"\"{row["Function"]}\"",
+                                $"\"{row["Measurement"]}\"",
+                                $"\"{row["Upper"]}\"",
+                                $"\"{row["Lower"]}\"",
+                                $"\"{row["ToleranceEnable"]}\""
+                            );
+                            lines.Add(csvLine);
+                        }
+
+                        File.WriteAllLines(saveFileDialog.FileName, lines, Encoding.UTF8);
+                        LogActivity($"ส่งออกข้อมูล R&D ไปยัง {saveFileDialog.FileName} สำเร็จ");
+                        MessageBox.Show("ส่งออกข้อมูล R&D สำเร็จ!", "สำเร็จ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogActivity($"ส่งออก R&D CSV ล้มเหลว: {ex.Message}", true);
+                        MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void ButtonClearRD_Click(object sender, EventArgs e)
+        {
+            if (_rdRecordsTable.Rows.Count == 0) return;
+            
+            var confirmResult = MessageBox.Show("ยืนยันการล้างข้อมูล R&D ทั้งหมด?", 
+                                              "ยืนยันการล้างข้อมูล", 
+                                              MessageBoxButtons.YesNo, 
+                                              MessageBoxIcon.Warning);
+
+            if (confirmResult == DialogResult.Yes)
+            {
+                _rdRecordsTable.Clear();
+                LogActivity("ล้างข้อมูล R&D ทั้งหมดแล้ว");
+            }
+        }
+
+        #endregion
+
         private bool isWaitingForSecondCtrlQ = false;
         private int doubleKeyInterval = 500;
 
-        private async void deleteLatestRecord()
+        private void deleteLatestRecord()
         {
             if (_recordsTable.Rows.Count == 0)
             {
@@ -2147,7 +2889,7 @@ namespace MultiRecord
                     {
                         // หมดเวลารอ = Single Ctrl+Q = บันทึกข้อมูล
                         isWaitingForSecondCtrlQ = false;
-                        saveRecord();
+                        await saveRecord();
                     }
                 }
 
@@ -2267,12 +3009,7 @@ namespace MultiRecord
                 richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Step 1: Testing network ping to {SettingsManager.MySqlHost}\n");
                 richTextBoxLog.ScrollToCaret();
                 
-                using (var mysqlManager = new MySqlManager(
-                    SettingsManager.MySqlHost,
-                    SettingsManager.MySqlPort,
-                    SettingsManager.MySqlUser,
-                    SettingsManager.MySqlPassword,
-                    SettingsManager.MySqlDatabase))
+                using (var mysqlManager = DatabaseConfig.CreateMySqlManager())
                 {
                     labelConnectionStatus.Text = "Testing MySQL connection...";
                     richTextBoxLog.AppendText($"[{DateTime.Now:HH:mm:ss}] Step 2: Testing MySQL authentication and database access\n");

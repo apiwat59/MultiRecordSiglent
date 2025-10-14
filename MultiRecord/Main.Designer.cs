@@ -18,6 +18,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
@@ -35,6 +37,20 @@
             this.buttonExportCsv = new System.Windows.Forms.Button();
             this.buttonRecord = new System.Windows.Forms.Button();
             this.dataGridViewRecords = new System.Windows.Forms.DataGridView();
+            this.tab_rd = new System.Windows.Forms.TabPage();
+            this.groupBoxRDRecord = new System.Windows.Forms.GroupBox();
+            this.buttonClearRD = new System.Windows.Forms.Button();
+            this.buttonExportRD = new System.Windows.Forms.Button();
+            this.buttonRecordRD = new System.Windows.Forms.Button();
+            this.dataGridViewRD = new System.Windows.Forms.DataGridView();
+            this.groupBoxModelSelection = new System.Windows.Forms.GroupBox();
+            this.buttonLoadSN = new System.Windows.Forms.Button();
+            this.buttonCreateSN = new System.Windows.Forms.Button();
+            this.textBoxSerialNumber = new System.Windows.Forms.TextBox();
+            this.labelSerialNumber = new System.Windows.Forms.Label();
+            this.comboBoxModels = new System.Windows.Forms.ComboBox();
+            this.labelModel = new System.Windows.Forms.Label();
+            this.tab_tools = new System.Windows.Forms.TabPage();
             this.tab_settings = new System.Windows.Forms.TabPage();
             this.groupBoxMySQL = new System.Windows.Forms.GroupBox();
             this.labelConnectionStatus = new System.Windows.Forms.Label();
@@ -111,12 +127,15 @@
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.tab_tools = new System.Windows.Forms.TabPage();
             this.panelChassis.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tab_datarecording.SuspendLayout();
             this.groupBoxRecord.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecords)).BeginInit();
+            this.tab_rd.SuspendLayout();
+            this.groupBoxRDRecord.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRD)).BeginInit();
+            this.groupBoxModelSelection.SuspendLayout();
             this.tab_settings.SuspendLayout();
             this.groupBoxMySQL.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
@@ -151,6 +170,7 @@
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tab_datarecording);
+            this.tabControl1.Controls.Add(this.tab_rd);
             this.tabControl1.Controls.Add(this.tab_tools);
             this.tabControl1.Controls.Add(this.tab_settings);
             this.tabControl1.Location = new System.Drawing.Point(750, 12);
@@ -350,6 +370,207 @@
             this.dataGridViewRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewRecords.Size = new System.Drawing.Size(588, 373);
             this.dataGridViewRecords.TabIndex = 0;
+            //
+            // Configure dataGridViewCellStyle1 for dataGridViewRD headers
+            //
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            //
+            // Configure dataGridViewCellStyle2 for dataGridViewRD cells
+            //
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            // 
+            // tab_rd
+            // 
+            this.tab_rd.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tab_rd.Controls.Add(this.groupBoxRDRecord);
+            this.tab_rd.Controls.Add(this.groupBoxModelSelection);
+            this.tab_rd.Location = new System.Drawing.Point(4, 22);
+            this.tab_rd.Name = "tab_rd";
+            this.tab_rd.Size = new System.Drawing.Size(614, 507);
+            this.tab_rd.TabIndex = 2;
+            this.tab_rd.Text = "R&D";
+            // 
+            // groupBoxRDRecord
+            // 
+            this.groupBoxRDRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.groupBoxRDRecord.Controls.Add(this.buttonClearRD);
+            this.groupBoxRDRecord.Controls.Add(this.buttonExportRD);
+            this.groupBoxRDRecord.Controls.Add(this.buttonRecordRD);
+            this.groupBoxRDRecord.Controls.Add(this.dataGridViewRD);
+            this.groupBoxRDRecord.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.groupBoxRDRecord.ForeColor = System.Drawing.Color.White;
+            this.groupBoxRDRecord.Location = new System.Drawing.Point(11, 92);
+            this.groupBoxRDRecord.Name = "groupBoxRDRecord";
+            this.groupBoxRDRecord.Size = new System.Drawing.Size(597, 409);
+            this.groupBoxRDRecord.TabIndex = 1;
+            this.groupBoxRDRecord.TabStop = false;
+            this.groupBoxRDRecord.Text = "R&D Measurements";
+            // 
+            // buttonClearRD
+            // 
+            this.buttonClearRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.buttonClearRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonClearRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonClearRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonClearRD.Location = new System.Drawing.Point(275, 22);
+            this.buttonClearRD.Name = "buttonClearRD";
+            this.buttonClearRD.Size = new System.Drawing.Size(124, 33);
+            this.buttonClearRD.TabIndex = 3;
+            this.buttonClearRD.Text = "ล้างข้อมูล R&D";
+            this.buttonClearRD.UseVisualStyleBackColor = false;
+            // 
+            // buttonExportRD
+            // 
+            this.buttonExportRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
+            this.buttonExportRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonExportRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonExportRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonExportRD.Location = new System.Drawing.Point(140, 22);
+            this.buttonExportRD.Name = "buttonExportRD";
+            this.buttonExportRD.Size = new System.Drawing.Size(124, 33);
+            this.buttonExportRD.TabIndex = 2;
+            this.buttonExportRD.Text = "ส่งออกไฟล์ CSV";
+            this.buttonExportRD.UseVisualStyleBackColor = false;
+            // 
+            // buttonRecordRD
+            // 
+            this.buttonRecordRD.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(151)))), ((int)(((byte)(234)))));
+            this.buttonRecordRD.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonRecordRD.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonRecordRD.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonRecordRD.Location = new System.Drawing.Point(10, 22);
+            this.buttonRecordRD.Name = "buttonRecordRD";
+            this.buttonRecordRD.Size = new System.Drawing.Size(119, 33);
+            this.buttonRecordRD.TabIndex = 1;
+            this.buttonRecordRD.Text = "บันทึกค่า R&D";
+            this.buttonRecordRD.UseVisualStyleBackColor = false;
+            // 
+            // dataGridViewRD
+            // 
+            this.dataGridViewRD.AllowUserToAddRows = false;
+            this.dataGridViewRD.AllowUserToDeleteRows = false;
+            this.dataGridViewRD.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dataGridViewRD.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.dataGridViewRD.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.dataGridViewRD.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            this.dataGridViewRD.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewRD.DefaultCellStyle = dataGridViewCellStyle2;
+            this.dataGridViewRD.EnableHeadersVisualStyles = false;
+            this.dataGridViewRD.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.dataGridViewRD.Location = new System.Drawing.Point(9, 65);
+            this.dataGridViewRD.Name = "dataGridViewRD";
+            this.dataGridViewRD.ReadOnly = true;
+            this.dataGridViewRD.RowHeadersVisible = false;
+            this.dataGridViewRD.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dataGridViewRD.Size = new System.Drawing.Size(578, 330);
+            this.dataGridViewRD.TabIndex = 0;
+            // 
+            // groupBoxModelSelection
+            // 
+            this.groupBoxModelSelection.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.groupBoxModelSelection.Controls.Add(this.buttonLoadSN);
+            this.groupBoxModelSelection.Controls.Add(this.buttonCreateSN);
+            this.groupBoxModelSelection.Controls.Add(this.textBoxSerialNumber);
+            this.groupBoxModelSelection.Controls.Add(this.labelSerialNumber);
+            this.groupBoxModelSelection.Controls.Add(this.comboBoxModels);
+            this.groupBoxModelSelection.Controls.Add(this.labelModel);
+            this.groupBoxModelSelection.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.groupBoxModelSelection.ForeColor = System.Drawing.Color.White;
+            this.groupBoxModelSelection.Location = new System.Drawing.Point(11, 6);
+            this.groupBoxModelSelection.Name = "groupBoxModelSelection";
+            this.groupBoxModelSelection.Size = new System.Drawing.Size(597, 80);
+            this.groupBoxModelSelection.TabIndex = 0;
+            this.groupBoxModelSelection.TabStop = false;
+            this.groupBoxModelSelection.Text = "Model & Serial Number Selection";
+            // 
+            // buttonLoadSN
+            // 
+            this.buttonLoadSN.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
+            this.buttonLoadSN.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonLoadSN.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonLoadSN.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.buttonLoadSN.ForeColor = System.Drawing.Color.White;
+            this.buttonLoadSN.Location = new System.Drawing.Point(320, 22);
+            this.buttonLoadSN.Name = "buttonLoadSN";
+            this.buttonLoadSN.Size = new System.Drawing.Size(80, 48);
+            this.buttonLoadSN.TabIndex = 5;
+            this.buttonLoadSN.Text = "โหลด SN";
+            this.buttonLoadSN.UseVisualStyleBackColor = false;
+            // 
+            // buttonCreateSN
+            // 
+            this.buttonCreateSN.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonCreateSN.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonCreateSN.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonCreateSN.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.buttonCreateSN.ForeColor = System.Drawing.Color.White;
+            this.buttonCreateSN.Location = new System.Drawing.Point(230, 22);
+            this.buttonCreateSN.Name = "buttonCreateSN";
+            this.buttonCreateSN.Size = new System.Drawing.Size(80, 48);
+            this.buttonCreateSN.TabIndex = 4;
+            this.buttonCreateSN.Text = "สร้าง SN ใหม่";
+            this.buttonCreateSN.UseVisualStyleBackColor = false;
+            // 
+            // textBoxSerialNumber
+            // 
+            this.textBoxSerialNumber.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxSerialNumber.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBoxSerialNumber.ForeColor = System.Drawing.Color.White;
+            this.textBoxSerialNumber.Location = new System.Drawing.Point(65, 47);
+            this.textBoxSerialNumber.Name = "textBoxSerialNumber";
+            this.textBoxSerialNumber.Size = new System.Drawing.Size(150, 23);
+            this.textBoxSerialNumber.TabIndex = 3;
+            // 
+            // labelSerialNumber
+            // 
+            this.labelSerialNumber.AutoSize = true;
+            this.labelSerialNumber.Location = new System.Drawing.Point(15, 50);
+            this.labelSerialNumber.Name = "labelSerialNumber";
+            this.labelSerialNumber.Size = new System.Drawing.Size(25, 15);
+            this.labelSerialNumber.TabIndex = 2;
+            this.labelSerialNumber.Text = "SN:";
+            // 
+            // comboBoxModels
+            // 
+            this.comboBoxModels.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.comboBoxModels.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxModels.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.comboBoxModels.ForeColor = System.Drawing.Color.White;
+            this.comboBoxModels.FormattingEnabled = true;
+            this.comboBoxModels.Location = new System.Drawing.Point(65, 22);
+            this.comboBoxModels.Name = "comboBoxModels";
+            this.comboBoxModels.Size = new System.Drawing.Size(150, 23);
+            this.comboBoxModels.TabIndex = 1;
+            // 
+            // labelModel
+            // 
+            this.labelModel.AutoSize = true;
+            this.labelModel.Location = new System.Drawing.Point(15, 25);
+            this.labelModel.Name = "labelModel";
+            this.labelModel.Size = new System.Drawing.Size(44, 15);
+            this.labelModel.TabIndex = 0;
+            this.labelModel.Text = "Model:";
+            // 
+            // tab_tools
+            // 
+            this.tab_tools.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tab_tools.Location = new System.Drawing.Point(4, 22);
+            this.tab_tools.Name = "tab_tools";
+            this.tab_tools.Size = new System.Drawing.Size(614, 507);
+            this.tab_tools.TabIndex = 3;
+            this.tab_tools.Text = "เครื่องมือ";
             // 
             // tab_settings
             // 
@@ -385,6 +606,7 @@
             this.groupBoxMySQL.TabIndex = 0;
             this.groupBoxMySQL.TabStop = false;
             this.groupBoxMySQL.Text = "MySQL Database Settings";
+            this.groupBoxMySQL.Visible = false;
             // 
             // labelConnectionStatus
             // 
@@ -489,7 +711,7 @@
             this.textBoxMySqlPort.Name = "textBoxMySqlPort";
             this.textBoxMySqlPort.Size = new System.Drawing.Size(80, 23);
             this.textBoxMySqlPort.TabIndex = 3;
-            this.textBoxMySqlPort.Text = "33306";
+            this.textBoxMySqlPort.Text = "3306";
             // 
             // labelMySqlPort
             // 
@@ -508,7 +730,7 @@
             this.textBoxMySqlHost.Name = "textBoxMySqlHost";
             this.textBoxMySqlHost.Size = new System.Drawing.Size(200, 23);
             this.textBoxMySqlHost.TabIndex = 1;
-            this.textBoxMySqlHost.Text = "100.84.90.72";
+            this.textBoxMySqlHost.Text = "100.83.170.41";
             // 
             // labelMySqlHost
             // 
@@ -1270,15 +1492,6 @@
             this.richTextBoxLog.TabIndex = 0;
             this.richTextBoxLog.Text = "";
             // 
-            // tab_tools
-            // 
-            this.tab_tools.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.tab_tools.Location = new System.Drawing.Point(4, 22);
-            this.tab_tools.Name = "tab_tools";
-            this.tab_tools.Size = new System.Drawing.Size(614, 507);
-            this.tab_tools.TabIndex = 2;
-            this.tab_tools.Text = "เครื่องมือ";
-            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1299,6 +1512,11 @@
             this.tab_datarecording.ResumeLayout(false);
             this.groupBoxRecord.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRecords)).EndInit();
+            this.tab_rd.ResumeLayout(false);
+            this.groupBoxRDRecord.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRD)).EndInit();
+            this.groupBoxModelSelection.ResumeLayout(false);
+            this.groupBoxModelSelection.PerformLayout();
             this.tab_settings.ResumeLayout(false);
             this.groupBoxMySQL.ResumeLayout(false);
             this.groupBoxMySQL.PerformLayout();
@@ -1414,5 +1632,18 @@
         private System.Windows.Forms.Label labelConnectionStatus;
         private System.Windows.Forms.Button buttonMeasurementMode;
         private System.Windows.Forms.TabPage tab_tools;
+        private System.Windows.Forms.TabPage tab_rd;
+        private System.Windows.Forms.GroupBox groupBoxRDRecord;
+        private System.Windows.Forms.DataGridView dataGridViewRD;
+        private System.Windows.Forms.GroupBox groupBoxModelSelection;
+        private System.Windows.Forms.ComboBox comboBoxModels;
+        private System.Windows.Forms.Label labelModel;
+        private System.Windows.Forms.TextBox textBoxSerialNumber;
+        private System.Windows.Forms.Label labelSerialNumber;
+        private System.Windows.Forms.Button buttonCreateSN;
+        private System.Windows.Forms.Button buttonLoadSN;
+        private System.Windows.Forms.Button buttonRecordRD;
+        private System.Windows.Forms.Button buttonExportRD;
+        private System.Windows.Forms.Button buttonClearRD;
     }
 }
