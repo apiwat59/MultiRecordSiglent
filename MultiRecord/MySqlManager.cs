@@ -168,12 +168,17 @@ namespace MultiRecord
                         `serial_id` INT NOT NULL,
                         `measurement_no` INT NOT NULL,
                         `function_name` VARCHAR(50) NOT NULL,
-                        `measurement_value` DECIMAL(15,8) NOT NULL,
-                        `upper_limit` DECIMAL(15,8) DEFAULT NULL,
-                        `lower_limit` DECIMAL(15,8) DEFAULT NULL,
-                        `tolerance_enabled` BOOLEAN DEFAULT FALSE,
+                        `measurement_name` VARCHAR(100) DEFAULT NULL,
+                        `measurement_value` DECIMAL(15,6) NOT NULL,
+                        `upper_limit` DECIMAL(15,6) DEFAULT NULL,
+                        `lower_limit` DECIMAL(15,6) DEFAULT NULL,
+                        `tolerance_enabled` TINYINT(1) DEFAULT 0,
+                        `tolerance_percentage` DECIMAL(5,2) DEFAULT NULL,
+                        `tolerance_type` ENUM('percent','absolute') DEFAULT 'percent',
+                        `note` TEXT DEFAULT NULL,
+                        `system_info` TEXT DEFAULT NULL,
+                        `is_pass` TINYINT(1) DEFAULT NULL,
                         `measured_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (`serial_id`) REFERENCES `software_serial_numbers`(`id`) ON DELETE CASCADE,
                         INDEX `idx_serial_id` (`serial_id`),
                         INDEX `idx_function_name` (`function_name`),
@@ -195,6 +200,8 @@ namespace MultiRecord
                 {
                     await command.ExecuteNonQueryAsync();
                 }
+
+                // Note: Database schema is already up-to-date with all required columns
 
                 // Insert default models if they don't exist
                 var insertDefaultModels = @"
@@ -379,7 +386,9 @@ namespace MultiRecord
 
         // Software Measurements Management
         public async Task<int> InsertSoftwareMeasurementAsync(int serialId, int measurementNo, string functionName, 
-            decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false, string systemInfo = null)
+            decimal measurementValue, decimal? upperLimit = null, decimal? lowerLimit = null, bool toleranceEnabled = false, 
+            string systemInfo = null, string measurementName = null, string toleranceType = "percent", 
+            decimal? tolerancePercentage = null, string note = null)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -387,19 +396,25 @@ namespace MultiRecord
 
                 var sql = @"
                     INSERT INTO software_measurements 
-                    (serial_id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, system_info, measured_at) 
-                    VALUES (@serialId, @measurementNo, @functionName, @measurementValue, @upperLimit, @lowerLimit, @toleranceEnabled, @systemInfo, NOW());
+                    (serial_id, measurement_no, measurement_name, function_name, measurement_value, upper_limit, lower_limit, 
+                     tolerance_enabled, tolerance_type, tolerance_percentage, note, system_info, measured_at) 
+                    VALUES (@serialId, @measurementNo, @measurementName, @functionName, @measurementValue, @upperLimit, @lowerLimit, 
+                            @toleranceEnabled, @toleranceType, @tolerancePercentage, @note, @systemInfo, NOW());
                     SELECT LAST_INSERT_ID();";
 
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@serialId", serialId);
                     command.Parameters.AddWithValue("@measurementNo", measurementNo);
+                    command.Parameters.AddWithValue("@measurementName", !string.IsNullOrEmpty(measurementName) ? (object)measurementName : DBNull.Value);
                     command.Parameters.AddWithValue("@functionName", functionName);
                     command.Parameters.AddWithValue("@measurementValue", measurementValue);
                     command.Parameters.AddWithValue("@upperLimit", upperLimit.HasValue ? (object)upperLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@lowerLimit", lowerLimit.HasValue ? (object)lowerLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@toleranceEnabled", toleranceEnabled);
+                    command.Parameters.AddWithValue("@toleranceType", toleranceType ?? "percent");
+                    command.Parameters.AddWithValue("@tolerancePercentage", tolerancePercentage.HasValue ? (object)tolerancePercentage.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@note", !string.IsNullOrEmpty(note) ? (object)note : DBNull.Value);
                     command.Parameters.AddWithValue("@systemInfo", !string.IsNullOrEmpty(systemInfo) ? (object)systemInfo : DBNull.Value);
 
                     var result = await command.ExecuteScalarAsync();
@@ -408,7 +423,8 @@ namespace MultiRecord
             }
         }
 
-        public async Task<bool> UpdateSoftwareMeasurementToleranceAsync(int measurementId, decimal? upperLimit, decimal? lowerLimit, bool toleranceEnabled)
+        public async Task<bool> UpdateSoftwareMeasurementToleranceAsync(int measurementId, decimal? upperLimit, decimal? lowerLimit, 
+            bool toleranceEnabled, string toleranceType = null, decimal? tolerancePercentage = null, string note = null)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -416,7 +432,10 @@ namespace MultiRecord
 
                 var sql = @"
                     UPDATE software_measurements 
-                    SET upper_limit = @upperLimit, lower_limit = @lowerLimit, tolerance_enabled = @toleranceEnabled
+                    SET upper_limit = @upperLimit, lower_limit = @lowerLimit, tolerance_enabled = @toleranceEnabled,
+                        tolerance_type = COALESCE(@toleranceType, tolerance_type),
+                        tolerance_percentage = @tolerancePercentage,
+                        note = COALESCE(@note, note)
                     WHERE id = @measurementId";
 
                 using (var command = new MySqlCommand(sql, connection))
@@ -425,6 +444,9 @@ namespace MultiRecord
                     command.Parameters.AddWithValue("@upperLimit", upperLimit.HasValue ? (object)upperLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@lowerLimit", lowerLimit.HasValue ? (object)lowerLimit.Value : DBNull.Value);
                     command.Parameters.AddWithValue("@toleranceEnabled", toleranceEnabled);
+                    command.Parameters.AddWithValue("@toleranceType", !string.IsNullOrEmpty(toleranceType) ? (object)toleranceType : DBNull.Value);
+                    command.Parameters.AddWithValue("@tolerancePercentage", tolerancePercentage.HasValue ? (object)tolerancePercentage.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@note", !string.IsNullOrEmpty(note) ? (object)note : DBNull.Value);
 
                     var rowsAffected = await command.ExecuteNonQueryAsync();
                     return rowsAffected > 0;
@@ -441,7 +463,8 @@ namespace MultiRecord
                 await connection.OpenAsync();
                 
                 var sql = @"
-                    SELECT id, measurement_no, function_name, measurement_value, upper_limit, lower_limit, tolerance_enabled, measured_at
+                    SELECT id, measurement_no, measurement_name, function_name, measurement_value, upper_limit, lower_limit, 
+                           tolerance_enabled, tolerance_type, tolerance_percentage, note, system_info, is_pass, measured_at
                     FROM software_measurements 
                     WHERE serial_id = @serialId 
                     ORDER BY measurement_no";
@@ -458,11 +481,17 @@ namespace MultiRecord
                             {
                                 Id = Convert.ToInt32(reader["id"]),
                                 MeasurementNo = Convert.ToInt32(reader["measurement_no"]),
+                                MeasurementName = reader["measurement_name"]?.ToString(),
                                 FunctionName = reader["function_name"].ToString(),
                                 MeasurementValue = Convert.ToDecimal(reader["measurement_value"]),
                                 UpperLimit = reader["upper_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["upper_limit"]),
                                 LowerLimit = reader["lower_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["lower_limit"]),
                                 ToleranceEnabled = Convert.ToBoolean(reader["tolerance_enabled"]),
+                                ToleranceType = reader["tolerance_type"]?.ToString() ?? "percent",
+                                TolerancePercentage = reader["tolerance_percentage"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_percentage"]),
+                                Note = reader["note"]?.ToString(),
+                                SystemInfo = reader["system_info"]?.ToString(),
+                                IsPass = reader["is_pass"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["is_pass"]),
                                 MeasuredAt = Convert.ToDateTime(reader["measured_at"])
                             });
                         }
@@ -594,11 +623,17 @@ namespace MultiRecord
     {
         public int Id { get; set; }
         public int MeasurementNo { get; set; }
+        public string MeasurementName { get; set; }
         public string FunctionName { get; set; }
         public decimal MeasurementValue { get; set; }
         public decimal? UpperLimit { get; set; }
         public decimal? LowerLimit { get; set; }
         public bool ToleranceEnabled { get; set; }
+        public string ToleranceType { get; set; } = "percent";
+        public decimal? TolerancePercentage { get; set; }
+        public string Note { get; set; }
+        public string SystemInfo { get; set; }
+        public bool? IsPass { get; set; }
         public DateTime MeasuredAt { get; set; }
     }
     

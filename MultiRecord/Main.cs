@@ -1534,6 +1534,164 @@ namespace MultiRecord
             return null;
         }
 
+        // Auto naming system for RD measurements
+        private Dictionary<string, int> _functionCounters = new Dictionary<string, int>();
+        
+        private string GenerateAutoName(string function)
+        {
+            // Debug: แสดงค่า function ที่ได้รับ
+            Console.WriteLine($"[AUTO NAME] GenerateAutoName called with function: '{function}'");
+            
+            // Map function types to prefixes
+            string prefix = GetFunctionPrefix(function);
+            Console.WriteLine($"[AUTO NAME] Mapped to prefix: '{prefix}'");
+            
+            // Get or initialize counter for this function type
+            if (!_functionCounters.ContainsKey(prefix))
+            {
+                _functionCounters[prefix] = 0;
+            }
+            
+            // Increment counter and generate name
+            _functionCounters[prefix]++;
+            string autoName = $"{prefix}{_functionCounters[prefix]}";
+            Console.WriteLine($"[AUTO NAME] Generated name: '{autoName}'");
+            
+            return autoName;
+        }
+        
+        private string GetFunctionPrefix(string function)
+        {
+            // Debug: แสดงค่า function ที่ได้รับ
+            Console.WriteLine($"[AUTO NAME] GetFunctionPrefix received: '{function}'");
+            
+            // Map DMM functions to measurement prefixes
+            switch (function?.ToUpper())
+            {
+                // Enum values from MeasurementFunction
+                case "VOLTAGEDC":
+                case "DCV":
+                case "DCVOLT":
+                case "DC_VOLT":
+                    return "DC";
+                    
+                case "VOLTAGEAC":
+                case "ACV":
+                case "ACVOLT":
+                case "AC_VOLT":
+                    return "AC";
+                    
+                case "CURRENTDC":
+                case "DCA":
+                case "DCAMP":
+                case "DC_AMP":
+                case "DCCURRENT":
+                case "DC_CURRENT":
+                    return "CDC";
+                    
+                case "CURRENTAC":
+                case "ACA":
+                case "ACAMP":
+                case "AC_AMP":
+                case "ACCURRENT":
+                case "AC_CURRENT":
+                    return "CAC";
+                    
+                case "RESISTANCE2W":
+                case "2W":
+                case "2WIRE":
+                case "2W_RES":
+                case "2WIRE_RES":
+                    return "2W";
+                    
+                case "RESISTANCE4W":
+                case "4W":
+                case "4WIRE":
+                case "4W_RES":
+                case "4WIRE_RES":
+                    return "CON";
+                    
+                case "CAPACITANCE":
+                case "CAP":
+                    return "CAP";
+                    
+                case "DIODE":
+                case "DIO":
+                    return "DIO";
+                    
+                case "FREQUENCY":
+                case "FREQ":
+                    return "FREQ";
+                    
+                case "PERIOD":
+                    return "PER";
+                    
+                case "TEMPERATURE":
+                    return "TEMP";
+                    
+                case "CONTINUOUS":
+                    return "CONT";
+                    
+                default:
+                    return "MEAS"; // Default prefix for unknown functions
+            }
+        }
+        
+        // Load existing counters from database to ensure continuity
+        private async Task LoadFunctionCountersFromDatabase()
+        {
+            if (_currentSerialId <= 0) return;
+            
+            try
+            {
+                string sql = @"
+                    SELECT measurement_name, function_name 
+                    FROM software_measurements 
+                    WHERE serial_id = @serialId 
+                    AND measurement_name IS NOT NULL 
+                    AND measurement_name != ''
+                    ORDER BY id";
+                
+                var result = await ExecuteSQLQuery(sql.Replace("@serialId", _currentSerialId.ToString()));
+                
+                if (result.Success && result.Data != null)
+                {
+                    _functionCounters.Clear();
+                    
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        string measurementName = row["measurement_name"]?.ToString() ?? "";
+                        string functionName = row["function_name"]?.ToString() ?? "";
+                        
+                        if (!string.IsNullOrEmpty(measurementName) && !string.IsNullOrEmpty(functionName))
+                        {
+                            string prefix = GetFunctionPrefix(functionName);
+                            
+                            // Extract number from measurement name (e.g., "DC5" -> 5)
+                            if (measurementName.StartsWith(prefix))
+                            {
+                                string numberPart = measurementName.Substring(prefix.Length);
+                                if (int.TryParse(numberPart, out int number))
+                                {
+                                    // Keep track of the highest number for each prefix
+                                    if (!_functionCounters.ContainsKey(prefix) || _functionCounters[prefix] < number)
+                                    {
+                                        _functionCounters[prefix] = number;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    LogActivity($"โหลดตัวนับชื่ออัตโนมัติสำเร็จ: {string.Join(", ", _functionCounters.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"โหลดตัวนับชื่ออัตโนมัติล้มเหลว: {ex.Message}", true);
+            }
+        }
+
         #region --- DataGridView Edit Panel Event Handlers ---
 
         private void DataGridViewRecords_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -2266,6 +2424,7 @@ namespace MultiRecord
                                     // อัปเดต UI
                                     await UpdateRDTabUI();
                                     await LoadRDRecordsFromDatabase();
+                                    await LoadFunctionCountersFromDatabase(); // โหลดตัวนับชื่ออัตโนมัติ
                                     
                                     return true;
                                 }
@@ -2287,6 +2446,7 @@ namespace MultiRecord
                             // อัปเดต UI
                             await UpdateRDTabUI();
                             await LoadRDRecordsFromDatabase();
+                            await LoadFunctionCountersFromDatabase(); // โหลดตัวนับชื่ออัตโนมัติ
                             
                             return true;
                         }
@@ -2726,29 +2886,32 @@ namespace MultiRecord
                 string function = _currentFunction.ToString();
                 string measurement = _isOverload ? "OVERLOAD" : _lastReadingValue.ToString("F4", CultureInfo.InvariantCulture);
                 
-                // สำหรับ OVERLOAD ใช้ค่าพิเศษ -9.99E37 (ค่าต่ำสุดของ DECIMAL ที่เป็นไปได้)
-                double valueToSave = _isOverload ? -9.99E37 : _lastReadingValue;
+                // สำหรับ OVERLOAD ใช้ค่าพิเศษ -999999.99999999 (ภายในขีดจำกัด DECIMAL(15,8))
+                double valueToSave = _isOverload ? -999999.99999999 : _lastReadingValue;
                 
                 // ดึงข้อมูล system_info จาก textBoxSystemInfo
                 string systemInfo = textBoxSystemInfo.Text ?? "";
+                
+                // สร้างชื่ออัตโนมัติตาม function type
+                string autoName = GenerateAutoName(function);
                 
                 // เพิ่มข้อมูลใน DataTable (อัพเดทให้ตรงกับ columns ใหม่)
                 var newRow = _rdRecordsTable.NewRow();
                 newRow["Select"] = false;
                 newRow["No"] = newNo;
-                newRow["Name"] = ""; // ยังไม่ได้ตั้งชื่อ
+                newRow["Name"] = autoName; // ใช้ชื่ออัตโนมัติ
                 newRow["Function"] = function;
                 newRow["Measurement"] = measurement;
-                newRow["Upper"] = "";
-                newRow["Lower"] = "";
+                newRow["Upper"] = "0%"; // ค่าเริ่มต้นแบบ formatted
+                newRow["Lower"] = "0%"; // ค่าเริ่มต้นแบบ formatted
                 newRow["Type"] = "percent"; // ค่าเริ่มต้น
                 newRow["ToleranceEnable"] = false; // ค่าเริ่มต้น
                 newRow["Note"] = "";
                 newRow["ID"] = 0; // จะอัพเดทหลังจากบันทึกลง database
                 _rdRecordsTable.Rows.Add(newRow);
                 
-                // บันทึกลง database พร้อม system_info (ส่งค่าพิเศษสำหรับ OVERLOAD)
-                int newId = await SaveRDMeasurementToDatabase(newNo, function, valueToSave, systemInfo);
+                // บันทึกลง database พร้อม system_info และชื่ออัตโนมัติ (ส่งค่าพิเศษสำหรับ OVERLOAD)
+                int newId = await SaveRDMeasurementToDatabase(newNo, function, valueToSave, systemInfo, autoName);
                 
                 // อัพเดท ID ใน DataTable
                 if (newId > 0)
@@ -2765,17 +2928,18 @@ namespace MultiRecord
             }
         }
 
-        private async Task<int> SaveRDMeasurementToDatabase(int measurementNo, string function, double value, string systemInfo = "")
+        private async Task<int> SaveRDMeasurementToDatabase(int measurementNo, string function, double value, string systemInfo = "", string measurementName = "")
         {
             try
             {
-                // Escape string สำหรับ system_info
+                // Escape strings สำหรับ system_info และ measurement_name
                 string escapedSystemInfo = MySqlHelper.EscapeString(systemInfo);
+                string escapedMeasurementName = MySqlHelper.EscapeString(measurementName);
                 
                 string insertSQL = $@"
                     INSERT INTO software_measurements 
-                    (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, system_info, measured_at)
-                    VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, '{escapedSystemInfo}', NOW())";
+                    (serial_id, measurement_no, function_name, measurement_value, tolerance_enabled, system_info, measurement_name, measured_at)
+                    VALUES ({_currentSerialId}, {measurementNo}, '{function}', {value}, false, '{escapedSystemInfo}', '{escapedMeasurementName}', NOW())";
                 
                 Console.WriteLine($"[RD SAVE] SQL Query: {insertSQL}");
                 Console.WriteLine($"[RD SAVE] Parameters - SerialId: {_currentSerialId}, MeasurementNo: {measurementNo}, Function: {function}, Value: {value}");
@@ -2841,6 +3005,11 @@ namespace MultiRecord
                 var row = dataGridViewRD.Rows[rowIndex];
                 int measurementId = Convert.ToInt32(row.Cells["ID"].Value);
                 string currentName = row.Cells["Name"].Value?.ToString() ?? "";
+                string currentFunction = row.Cells["Function"].Value?.ToString() ?? "";
+                string currentMeasurementValue = row.Cells["Measurement"].Value?.ToString() ?? "";
+                bool currentToleranceEnable = row.Cells["ToleranceEnable"].Value != null && 
+                                            row.Cells["ToleranceEnable"].Value != DBNull.Value && 
+                                            Convert.ToBoolean(row.Cells["ToleranceEnable"].Value);
                 string currentType = row.Cells["Type"].Value?.ToString() ?? "percent";
                 string currentNote = row.Cells["Note"].Value?.ToString() ?? "";
                 
@@ -2858,12 +3027,15 @@ namespace MultiRecord
                     currentLower = ParseFormattedToleranceValue(row.Cells["Lower"].Value.ToString());
                 }
 
-                using (RDEditDialog dialog = new RDEditDialog(currentName, currentType, currentUpper, currentLower, currentNote))
+                using (RDEditDialog dialog = new RDEditDialog(currentName, currentFunction, currentMeasurementValue, currentToleranceEnable, currentType, currentUpper, currentLower, currentNote))
                 {
                     if (dialog.ShowDialog() == DialogResult.OK)
                     {
                         // อัพเดทข้อมูลใน DataGridView with formatted values
                         row.Cells["Name"].Value = dialog.MeasurementName;
+                        row.Cells["Function"].Value = dialog.Function;
+                        row.Cells["Measurement"].Value = dialog.MeasurementValue;
+                        row.Cells["ToleranceEnable"].Value = dialog.ToleranceEnable;
                         row.Cells["Type"].Value = dialog.ToleranceType;
                         
                         // Format Upper/Lower based on tolerance type
@@ -2888,7 +3060,8 @@ namespace MultiRecord
                         row.Cells["Note"].Value = dialog.Note;
 
                         // อัพเดทข้อมูลใน database
-                        await UpdateMeasurementDetails(measurementId, dialog.MeasurementName, dialog.ToleranceType, 
+                        await UpdateMeasurementDetails(measurementId, dialog.MeasurementName, dialog.Function, 
+                            dialog.MeasurementValue, dialog.ToleranceEnable, dialog.ToleranceType, 
                             dialog.UpperLimit, dialog.LowerLimit, dialog.Note);
                         
                         LogActivity($"อัพเดทข้อมูลจุดวัด ID: {measurementId} สำเร็จ");
@@ -2902,15 +3075,32 @@ namespace MultiRecord
             }
         }
 
-        private async Task UpdateMeasurementDetails(int measurementId, string name, string type, decimal? upperLimit, decimal? lowerLimit, string note)
+        private async Task UpdateMeasurementDetails(int measurementId, string name, string function, string measurementValue, bool toleranceEnable, string type, decimal? upperLimit, decimal? lowerLimit, string note)
         {
             try
             {
                 string upperValue = upperLimit.HasValue ? upperLimit.Value.ToString() : "NULL";
                 string lowerValue = lowerLimit.HasValue ? lowerLimit.Value.ToString() : "NULL";
                 
+                // Parse measurement value - handle OVERLOAD case
+                string measurementValueSql = "NULL";
+                if (!string.IsNullOrWhiteSpace(measurementValue))
+                {
+                    if (measurementValue.ToUpper() == "OVERLOAD")
+                    {
+                        measurementValueSql = "-999999.99999999"; // Use our OVERLOAD constant
+                    }
+                    else if (decimal.TryParse(measurementValue, out decimal parsedValue))
+                    {
+                        measurementValueSql = parsedValue.ToString();
+                    }
+                }
+                
                 string sql = $@"UPDATE software_measurements 
                                SET measurement_name = '{MySqlHelper.EscapeString(name)}',
+                                   function_name = '{MySqlHelper.EscapeString(function)}',
+                                   measurement_value = {measurementValueSql},
+                                   tolerance_enabled = {(toleranceEnable ? 1 : 0)},
                                    tolerance_type = '{type}',
                                    upper_limit = {upperValue},
                                    lower_limit = {lowerValue},
@@ -2990,17 +3180,20 @@ namespace MultiRecord
                     try
                     {
                         var lines = new List<string>();
-                        lines.Add("No,Function,Measurement,Upper,Lower,ToleranceEnable");
+                        lines.Add("No,Name,Function,Measurement,Upper,Lower,Type,ToleranceEnable,Note");
                         
                         foreach (DataRow row in _rdRecordsTable.Rows)
                         {
                             string csvLine = string.Join(",",
                                 $"\"{row["No"]}\"",
+                                $"\"{row["Name"]}\"",
                                 $"\"{row["Function"]}\"",
                                 $"\"{row["Measurement"]}\"",
                                 $"\"{row["Upper"]}\"",
                                 $"\"{row["Lower"]}\"",
-                                $"\"{row["ToleranceEnable"]}\""
+                                $"\"{row["Type"]}\"",
+                                $"\"{row["ToleranceEnable"]}\"",
+                                $"\"{row["Note"]}\""
                             );
                             lines.Add(csvLine);
                         }
