@@ -44,6 +44,7 @@ namespace MultiRecord
         private string _repairQwid = "";
         private bool _isRepairTabActive = false;
         private int _previousTabIndex = 0;
+        private bool _isChangingTab = false; // ป้องกัน event recursion
 
         // Tolerance settings
         private bool _toleranceEnabled = false;
@@ -2664,6 +2665,11 @@ namespace MultiRecord
 
         private async void TabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // ป้องกัน event recursion
+            if (_isChangingTab)
+                return;
+
+            int currentTabIndex = tabControl1.SelectedIndex;
             _isRDTabActive = (tabControl1.SelectedTab == tab_rd);
             _isRepairTabActive = (tabControl1.SelectedTab == tab_repair);
             
@@ -2677,11 +2683,12 @@ namespace MultiRecord
                     if (!success)
                     {
                         // ถ้า Cancel ให้กลับไป Tab เดิม
-                        tabControl1.SelectedIndex = _previousTabIndex;
+                        LogActivity("ยกเลิก - กลับไป Tab เดิม");
+                        await SwitchBackToPreviousTab();
                         return;
                     }
                 }
-                _previousTabIndex = tabControl1.SelectedIndex;
+                _previousTabIndex = currentTabIndex;
             }
             else if (_isRepairTabActive)
             {
@@ -2692,16 +2699,43 @@ namespace MultiRecord
                 {
                     // ถ้า Cancel ให้กลับไป Tab เดิม
                     LogActivity("ยกเลิก - กลับไป Tab เดิม");
-                    tabControl1.SelectedIndex = _previousTabIndex;
+                    await SwitchBackToPreviousTab();
                     return;
                 }
-                _previousTabIndex = tabControl1.SelectedIndex;
+                _previousTabIndex = currentTabIndex;
             }
             else
             {
                 LogActivity("ออกจาก R&D/Repair Tab");
-                _previousTabIndex = tabControl1.SelectedIndex;
+                _previousTabIndex = currentTabIndex;
             }
+        }
+
+        private async Task SwitchBackToPreviousTab()
+        {
+            _isChangingTab = true;
+            
+            // ตรวจสอบว่า _previousTabIndex ถูกต้อง
+            if (_previousTabIndex >= 0 && _previousTabIndex < tabControl1.TabPages.Count)
+            {
+                // รอให้ UI อัพเดทก่อน
+                await Task.Delay(10);
+                
+                // เปลี่ยน tab
+                tabControl1.SelectedIndex = _previousTabIndex;
+                
+                // รอให้ UI แสดงผลเสร็จ
+                await Task.Delay(10);
+            }
+            else
+            {
+                // ถ้า index ไม่ถูกต้อง ให้กลับไป tab แรก
+                LogActivity("Tab index ไม่ถูกต้อง กลับไป tab แรก");
+                tabControl1.SelectedIndex = 0;
+                await Task.Delay(10);
+            }
+            
+            _isChangingTab = false;
         }
 
         private async void ButtonRecordRD_Click(object sender, EventArgs e)
@@ -3999,6 +4033,9 @@ namespace MultiRecord
                 this.Close();
                 return;
             }
+            
+            // Initialize previous tab index to current tab
+            _previousTabIndex = tabControl1.SelectedIndex;
             
             InitializeMySQLSettings();
             UpdateUserDisplay();
