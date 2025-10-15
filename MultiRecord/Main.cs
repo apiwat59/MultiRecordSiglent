@@ -3499,6 +3499,7 @@ namespace MultiRecord
         private void InitializeRepairDataTable()
         {
             _repairRecordsTable = new DataTable("RepairMeasurementRecords");
+            _repairRecordsTable.Columns.Add("Select", typeof(bool)); // เพิ่ม checkbox column
             _repairRecordsTable.Columns.Add("No", typeof(int));
             _repairRecordsTable.Columns.Add("Function", typeof(string));
             _repairRecordsTable.Columns.Add("Measured", typeof(string));
@@ -3520,6 +3521,10 @@ namespace MultiRecord
             dataGridViewRepair.Columns.Add(actionColumn);
 
             // ตั้งค่า AutoSizeMode และ ReadOnly สำหรับแต่ละคอลัมน์
+            dataGridViewRepair.Columns["Select"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Select"].HeaderText = "☐";
+            dataGridViewRepair.Columns["Select"].ReadOnly = false;
+            
             dataGridViewRepair.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             dataGridViewRepair.Columns["No"].ReadOnly = true;
             
@@ -3549,10 +3554,11 @@ namespace MultiRecord
             dataGridViewRepair.MultiSelect = true;
             dataGridViewRepair.AllowUserToDeleteRows = false;
             dataGridViewRepair.AllowUserToAddRows = false;
-            dataGridViewRepair.ReadOnly = true;
+            dataGridViewRepair.ReadOnly = false; // เปลี่ยนเป็น false เพื่อให้ checkbox แก้ไขได้
 
             // เพิ่ม Event Handler
             dataGridViewRepair.CellClick += DataGridViewRepair_CellClick;
+            dataGridViewRepair.CurrentCellDirtyStateChanged += DataGridViewRepair_CurrentCellDirtyStateChanged;
         }
 
         private void InitializeRepairTab()
@@ -3685,6 +3691,7 @@ namespace MultiRecord
                             isPass = measuredValue >= lowerLimit.Value && measuredValue <= upperLimit.Value;
                         }
                         
+                        newRow["Select"] = false; // เพิ่ม checkbox (ยังไม่เลือก)
                         newRow["No"] = measurementNo;
                         newRow["Function"] = functionName;
                         newRow["Measured"] = measuredValue.ToString("F2");
@@ -3726,6 +3733,18 @@ namespace MultiRecord
             }
         }
 
+        private void DataGridViewRepair_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (dataGridViewRepair.IsCurrentCellDirty)
+            {
+                // Commit the changes immediately for checkbox columns
+                if (dataGridViewRepair.CurrentCell.ColumnIndex == dataGridViewRepair.Columns["Select"].Index)
+                {
+                    dataGridViewRepair.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                }
+            }
+        }
+
         private void ButtonRecordRepair_Click(object sender, EventArgs e)
         {
             // TODO: Implement record functionality for Repair
@@ -3735,9 +3754,111 @@ namespace MultiRecord
 
         private void ButtonDeleteRepair_Click(object sender, EventArgs e)
         {
-            // TODO: Implement delete functionality
-            MessageBox.Show("Delete functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // นับจำนวนแถวที่เลือก
+            int selectedCount = 0;
+            foreach (DataRow row in _repairRecordsTable.Rows)
+            {
+                if (row["Select"] != DBNull.Value && (bool)row["Select"])
+                {
+                    selectedCount++;
+                }
+            }
+
+            if (selectedCount == 0)
+            {
+                MessageBox.Show("กรุณาเลือกรายการที่ต้องการลบ", "ไม่มีรายการที่เลือก", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"ยืนยันการลบ {selectedCount} รายการที่เลือก?", 
+                "ยืนยันการลบ", 
+                MessageBoxButtons.YesNo, 
+                MessageBoxIcon.Question);
+
+            if (confirmResult == DialogResult.Yes)
+            {
+                try
+                {
+                    SoundUtil.Delete();
+
+                    // เก็บ ID ของแถวที่จะลบ
+                    List<int> idsToDelete = new List<int>();
+                    foreach (DataRow row in _repairRecordsTable.Rows)
+                    {
+                        if (row["Select"] != DBNull.Value && (bool)row["Select"])
+                        {
+                            int id = row["ID"] != DBNull.Value ? Convert.ToInt32(row["ID"]) : 0;
+                            if (id > 0)
+                            {
+                                idsToDelete.Add(id);
+                            }
+                        }
+                    }
+
+                    // ลบออกจาก DataTable
+                    for (int i = _repairRecordsTable.Rows.Count - 1; i >= 0; i--)
+                    {
+                        DataRow row = _repairRecordsTable.Rows[i];
+                        if (row["Select"] != DBNull.Value && (bool)row["Select"])
+                        {
+                            row.Delete();
+                        }
+                    }
+                    _repairRecordsTable.AcceptChanges();
+
+                    // จัดเรียงหมายเลขใหม่
+                    RenumberRepairRows();
+
+                    // ลบจาก database (ถ้ามี)
+                    if (idsToDelete.Count > 0)
+                    {
+                        _ = DeleteRepairRecordsFromDatabase(idsToDelete);
+                    }
+
+                    LogActivity($"ลบข้อมูล Repair จำนวน {selectedCount} รายการ");
+                }
+                catch (Exception ex)
+                {
+                    LogActivity($"เกิดข้อผิดพลาดในการลบข้อมูล: {ex.Message}", true);
+                    MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void RenumberRepairRows()
+        {
+            int counter = 1;
+            foreach (DataRow row in _repairRecordsTable.Rows)
+            {
+                row["No"] = counter++;
+            }
+        }
+
+        private async Task DeleteRepairRecordsFromDatabase(List<int> ids)
+        {
+            try
+            {
+                string idsList = string.Join(",", ids);
+                string sql = $"DELETE FROM spaze.measurements WHERE id IN ({idsList})";
+                
+                var result = await _mysqlManager.ExecuteQuery(sql);
+                
+                if (result.Success)
+                {
+                    LogActivity($"ลบข้อมูลจาก database สำเร็จ: {ids.Count} รายการ");
+                }
+                else
+                {
+                    LogActivity($"ลบข้อมูลจาก database ล้มเหลว: {result.ErrorMessage}", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการลบข้อมูลจาก database: {ex.Message}", true);
+            }
         }
 
         private void ButtonExportRepair_Click(object sender, EventArgs e)
@@ -3749,16 +3870,20 @@ namespace MultiRecord
 
         private void ButtonSelectAllRepair_Click(object sender, EventArgs e)
         {
-            // TODO: Implement select all functionality
-            MessageBox.Show("Select all functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            foreach (DataRow row in _repairRecordsTable.Rows)
+            {
+                row["Select"] = true;
+            }
+            LogActivity("เลือกทั้งหมดใน Repair Tab");
         }
 
         private void ButtonDeselectAllRepair_Click(object sender, EventArgs e)
         {
-            // TODO: Implement deselect all functionality
-            MessageBox.Show("Deselect all functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            foreach (DataRow row in _repairRecordsTable.Rows)
+            {
+                row["Select"] = false;
+            }
+            LogActivity("ยกเลิกการเลือกทั้งหมดใน Repair Tab");
         }
 
         private void ButtonClearRepair_Click(object sender, EventArgs e)
