@@ -3873,6 +3873,106 @@ namespace MultiRecord
             }
         }
 
+        private void ConfigureTabAccessBasedOnRole()
+        {
+            if (!AuthManager.IsLoggedIn() || AuthManager.CurrentUser == null)
+            {
+                // ถ้าไม่ได้ login ให้ซ่อนทุก tabs ยกเว้นหน้าหลัก
+                HideAllTabsExceptMain();
+                return;
+            }
+
+            int roleId = AuthManager.CurrentUser.RoleId;
+            string roleName = AuthManager.CurrentUser.RoleDisplayName ?? AuthManager.CurrentUser.Role ?? "Unknown";
+            
+            LogActivity($"กำหนดสิทธิ์การเข้าถึงสำหรับ Role: {roleName} (ID: {roleId})");
+
+            // กำหนดสิทธิ์ตาม role ID
+            if (roleId == AuthManager.ROLE_ADMIN || roleId == AuthManager.ROLE_MANAGER)
+            {
+                // admin (1) และ manager (2): ดูได้ทุก tabs
+                ShowAllTabs();
+                LogActivity("สิทธิ์: เข้าถึงได้ทุก tabs");
+            }
+            else if (roleId == AuthManager.ROLE_RD)
+            {
+                // rd (3): ดูได้ทุก tabs ยกเว้นตั้งค่า
+                ShowAllTabs();
+                HideTab(tab_settings);
+                LogActivity("สิทธิ์: เข้าถึงได้ทุก tabs ยกเว้นตั้งค่า");
+            }
+            else if (roleId == AuthManager.ROLE_STAFF)
+            {
+                // staff (4): ดูได้แค่หน้าหลักและ Repair
+                HideAllTabsExceptMain();
+                ShowTab(tab_repair);
+                LogActivity("สิทธิ์: เข้าถึงได้เฉพาะหน้าหลักและ Repair");
+            }
+            else
+            {
+                // role อื่นๆ: ดูได้แค่หน้าหลัก
+                HideAllTabsExceptMain();
+                LogActivity("สิทธิ์: เข้าถึงได้เฉพาะหน้าหลัก");
+            }
+        }
+
+        private void ShowAllTabs()
+        {
+            if (!tabControl1.TabPages.Contains(tab_datarecording))
+                tabControl1.TabPages.Add(tab_datarecording);
+            if (!tabControl1.TabPages.Contains(tab_rd))
+                tabControl1.TabPages.Add(tab_rd);
+            if (!tabControl1.TabPages.Contains(tab_repair))
+                tabControl1.TabPages.Add(tab_repair);
+            if (!tabControl1.TabPages.Contains(tab_settings))
+                tabControl1.TabPages.Add(tab_settings);
+
+            // เรียงลำดับ tabs ให้ถูกต้อง
+            tabControl1.TabPages.Clear();
+            tabControl1.TabPages.Add(tab_datarecording);
+            tabControl1.TabPages.Add(tab_rd);
+            tabControl1.TabPages.Add(tab_repair);
+            tabControl1.TabPages.Add(tab_settings);
+        }
+
+        private void HideAllTabsExceptMain()
+        {
+            tabControl1.TabPages.Clear();
+            tabControl1.TabPages.Add(tab_datarecording);
+        }
+
+        private void ShowTab(TabPage tab)
+        {
+            if (!tabControl1.TabPages.Contains(tab))
+            {
+                // เพิ่ม tab ในตำแหน่งที่เหมาะสม
+                if (tab == tab_rd && !tabControl1.TabPages.Contains(tab_rd))
+                {
+                    int index = tabControl1.TabPages.IndexOf(tab_datarecording) + 1;
+                    tabControl1.TabPages.Insert(index, tab_rd);
+                }
+                else if (tab == tab_repair && !tabControl1.TabPages.Contains(tab_repair))
+                {
+                    int index = tabControl1.TabPages.Contains(tab_rd) ? 
+                               tabControl1.TabPages.IndexOf(tab_rd) + 1 : 
+                               tabControl1.TabPages.IndexOf(tab_datarecording) + 1;
+                    tabControl1.TabPages.Insert(index, tab_repair);
+                }
+                else if (tab == tab_settings && !tabControl1.TabPages.Contains(tab_settings))
+                {
+                    tabControl1.TabPages.Add(tab_settings);
+                }
+            }
+        }
+
+        private void HideTab(TabPage tab)
+        {
+            if (tabControl1.TabPages.Contains(tab))
+            {
+                tabControl1.TabPages.Remove(tab);
+            }
+        }
+
         private async Task LogoutUser()
         {
             try
@@ -3902,6 +4002,7 @@ namespace MultiRecord
             
             InitializeMySQLSettings();
             UpdateUserDisplay();
+            ConfigureTabAccessBasedOnRole();
         }
 
         private void InitializeMySQLSettings()

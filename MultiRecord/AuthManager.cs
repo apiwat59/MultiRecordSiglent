@@ -50,11 +50,12 @@ namespace MultiRecord
                             Id = userObj["id"]?.Value<int>() ?? 0,
                             Email = userObj["email"]?.Value<string>(),
                             Username = userObj["username"]?.Value<string>(),
-                            FullName = userObj["fullName"]?.Value<string>(),
+                            FullName = userObj["full_name"]?.Value<string>(),
+                            RoleId = userObj["role_id"]?.Value<int>() ?? 0,
                             Role = userObj["role"]?.Value<string>(),
-                            RoleDisplayName = userObj["roleDisplayName"]?.Value<string>(),
-                            IsActive = userObj["isActive"]?.Value<bool>() ?? false,
-                            LastLoginAt = userObj["lastLoginAt"]?.Value<DateTime?>()
+                            RoleDisplayName = userObj["role_display_name"]?.Value<string>(),
+                            IsActive = userObj["is_active"]?.Value<bool>() ?? false,
+                            LastLoginAt = userObj["last_login_at"]?.Value<DateTime?>()
                         };
                     }
                     
@@ -161,10 +162,11 @@ namespace MultiRecord
                             Id = userObj["id"]?.Value<int>() ?? 0,
                             Email = userObj["email"]?.Value<string>(),
                             Username = userObj["username"]?.Value<string>(),
-                            FullName = userObj["fullName"]?.Value<string>(),
+                            FullName = userObj["full_name"]?.Value<string>(),
+                            RoleId = userObj["role_id"]?.Value<int>() ?? 0,
                             Role = userObj["role"]?.Value<string>(),
-                            RoleDisplayName = userObj["roleDisplayName"]?.Value<string>(),
-                            IsActive = userObj["isActive"]?.Value<bool>() ?? false,
+                            RoleDisplayName = userObj["role_display_name"]?.Value<string>(),
+                            IsActive = userObj["is_active"]?.Value<bool>() ?? false,
                             Phone = userObj["phone"]?.Value<string>(),
                             Address = userObj["address"]?.Value<string>(),
                             City = userObj["city"]?.Value<string>(),
@@ -172,10 +174,10 @@ namespace MultiRecord
                             Timezone = userObj["timezone"]?.Value<string>(),
                             Language = userObj["language"]?.Value<string>(),
                             Theme = userObj["theme"]?.Value<string>(),
-                            LastLoginAt = userObj["lastLoginAt"]?.Value<DateTime?>(),
-                            LoginCount = userObj["loginCount"]?.Value<int>() ?? 0,
-                            CreatedAt = userObj["createdAt"]?.Value<DateTime?>(),
-                            UpdatedAt = userObj["updatedAt"]?.Value<DateTime?>()
+                            LastLoginAt = userObj["last_login_at"]?.Value<DateTime?>(),
+                            LoginCount = userObj["login_count"]?.Value<int>() ?? 0,
+                            CreatedAt = userObj["created_at"]?.Value<DateTime?>(),
+                            UpdatedAt = userObj["updated_at"]?.Value<DateTime?>()
                         };
                     }
                     
@@ -243,6 +245,63 @@ namespace MultiRecord
             CurrentToken = null;
             CurrentUser = null;
         }
+        
+        /// <summary>
+        /// Role IDs constants (ตรงกับค่าจริงในฐานข้อมูล)
+        /// </summary>
+        public const int ROLE_ADMIN = 1;
+        public const int ROLE_MANAGER = 3;
+        public const int ROLE_RD = 7;
+        public const int ROLE_STAFF = 9;
+        
+        /// <summary>
+        /// ตรวจสอบว่า role ปัจจุบันมีสิทธิ์เข้าถึงทุก tabs หรือไม่
+        /// </summary>
+        public static bool HasFullAccess()
+        {
+            if (CurrentUser == null)
+                return false;
+            
+            return CurrentUser.RoleId == ROLE_ADMIN || CurrentUser.RoleId == ROLE_MANAGER;
+        }
+        
+        /// <summary>
+        /// ตรวจสอบว่า role ปัจจุบันสามารถเข้าถึง R&D tab ได้หรือไม่
+        /// </summary>
+        public static bool CanAccessRDTab()
+        {
+            if (CurrentUser == null)
+                return false;
+            
+            return CurrentUser.RoleId == ROLE_ADMIN || 
+                   CurrentUser.RoleId == ROLE_MANAGER || 
+                   CurrentUser.RoleId == ROLE_RD;
+        }
+        
+        /// <summary>
+        /// ตรวจสอบว่า role ปัจจุบันสามารถเข้าถึง Repair tab ได้หรือไม่
+        /// </summary>
+        public static bool CanAccessRepairTab()
+        {
+            if (CurrentUser == null)
+                return false;
+            
+            return CurrentUser.RoleId == ROLE_ADMIN || 
+                   CurrentUser.RoleId == ROLE_MANAGER || 
+                   CurrentUser.RoleId == ROLE_RD || 
+                   CurrentUser.RoleId == ROLE_STAFF;
+        }
+        
+        /// <summary>
+        /// ตรวจสอบว่า role ปัจจุบันสามารถเข้าถึง Settings tab ได้หรือไม่
+        /// </summary>
+        public static bool CanAccessSettingsTab()
+        {
+            if (CurrentUser == null)
+                return false;
+            
+            return CurrentUser.RoleId == ROLE_ADMIN || CurrentUser.RoleId == ROLE_MANAGER;
+        }
     }
     
     public class AuthResult
@@ -261,6 +320,7 @@ namespace MultiRecord
         public string Email { get; set; }
         public string Username { get; set; }
         public string FullName { get; set; }
+        public int RoleId { get; set; }
         public string Role { get; set; }
         public string RoleDisplayName { get; set; }
         public bool IsActive { get; set; }
