@@ -57,6 +57,10 @@
             this.buttonExportRepair = new System.Windows.Forms.Button();
             this.buttonDeleteRepair = new System.Windows.Forms.Button();
             this.buttonRecordRepair = new System.Windows.Forms.Button();
+            this.labelRepairSession = new System.Windows.Forms.Label();
+            this.comboBoxRepairSession = new System.Windows.Forms.ComboBox();
+            this.buttonNewRepairSession = new System.Windows.Forms.Button();
+            this.buttonRepairHistory = new System.Windows.Forms.Button();
             this.dataGridViewRepair = new System.Windows.Forms.DataGridView();
             this.tab_settings = new System.Windows.Forms.TabPage();
             this.groupBoxMySQL = new System.Windows.Forms.GroupBox();
@@ -565,6 +569,10 @@
             // groupBoxRepairRecord
             // 
             this.groupBoxRepairRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.groupBoxRepairRecord.Controls.Add(this.labelRepairSession);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonRepairHistory);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonNewRepairSession);
+            this.groupBoxRepairRecord.Controls.Add(this.comboBoxRepairSession);
             this.groupBoxRepairRecord.Controls.Add(this.buttonDeselectAllRepair);
             this.groupBoxRepairRecord.Controls.Add(this.buttonSelectAllRepair);
             this.groupBoxRepairRecord.Controls.Add(this.buttonChangeModelRepair);
@@ -610,17 +618,69 @@
             this.buttonSelectAllRepair.Text = "☑ Select All";
             this.buttonSelectAllRepair.UseVisualStyleBackColor = false;
             // 
+            // labelRepairSession
+            // 
+            this.labelRepairSession.AutoSize = true;
+            this.labelRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.labelRepairSession.ForeColor = System.Drawing.Color.White;
+            this.labelRepairSession.Location = new System.Drawing.Point(230, 30);
+            this.labelRepairSession.Name = "labelRepairSession";
+            this.labelRepairSession.Size = new System.Drawing.Size(70, 15);
+            this.labelRepairSession.TabIndex = 11;
+            this.labelRepairSession.Text = "รอบการซ่อม:";
+            // 
+            // comboBoxRepairSession
+            // 
+            this.comboBoxRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.comboBoxRepairSession.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.comboBoxRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.comboBoxRepairSession.ForeColor = System.Drawing.Color.White;
+            this.comboBoxRepairSession.FormattingEnabled = true;
+            this.comboBoxRepairSession.Location = new System.Drawing.Point(304, 27);
+            this.comboBoxRepairSession.Name = "comboBoxRepairSession";
+            this.comboBoxRepairSession.Size = new System.Drawing.Size(100, 23);
+            this.comboBoxRepairSession.TabIndex = 10;
+            // 
+            // buttonNewRepairSession
+            // 
+            this.buttonNewRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
+            this.buttonNewRepairSession.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonNewRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonNewRepairSession.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold);
+            this.buttonNewRepairSession.ForeColor = System.Drawing.Color.White;
+            this.buttonNewRepairSession.Location = new System.Drawing.Point(410, 26);
+            this.buttonNewRepairSession.Name = "buttonNewRepairSession";
+            this.buttonNewRepairSession.Size = new System.Drawing.Size(60, 25);
+            this.buttonNewRepairSession.TabIndex = 9;
+            this.buttonNewRepairSession.Text = "+ สร้าง";
+            this.buttonNewRepairSession.UseVisualStyleBackColor = false;
+            // 
+            // buttonRepairHistory
+            // 
+            this.buttonRepairHistory.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
+            this.buttonRepairHistory.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonRepairHistory.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonRepairHistory.Font = new System.Drawing.Font("Segoe UI", 8.25F);
+            this.buttonRepairHistory.ForeColor = System.Drawing.Color.White;
+            this.buttonRepairHistory.Location = new System.Drawing.Point(476, 26);
+            this.buttonRepairHistory.Name = "buttonRepairHistory";
+            this.buttonRepairHistory.Size = new System.Drawing.Size(60, 25);
+            this.buttonRepairHistory.TabIndex = 12;
+            this.buttonRepairHistory.Text = "ประวัติ";
+            this.buttonRepairHistory.UseVisualStyleBackColor = false;
+            // 
             // buttonChangeModelRepair
             // 
             this.buttonChangeModelRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(156)))), ((int)(((byte)(39)))), ((int)(((byte)(176)))));
             this.buttonChangeModelRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
             this.buttonChangeModelRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonChangeModelRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
-            this.buttonChangeModelRepair.Location = new System.Drawing.Point(459, 22);
+            this.buttonChangeModelRepair.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.buttonChangeModelRepair.Location = new System.Drawing.Point(542, 26);
             this.buttonChangeModelRepair.Name = "buttonChangeModelRepair";
-            this.buttonChangeModelRepair.Size = new System.Drawing.Size(124, 33);
+            this.buttonChangeModelRepair.Size = new System.Drawing.Size(41, 25);
             this.buttonChangeModelRepair.TabIndex = 4;
-            this.buttonChangeModelRepair.Text = "เปลี่ยนโมเดล";
+            this.buttonChangeModelRepair.Text = "เปลี่ยน";
             this.buttonChangeModelRepair.UseVisualStyleBackColor = false;
             // 
             // buttonClearRepair
@@ -1775,5 +1835,9 @@
         private System.Windows.Forms.Button buttonChangeModelRepair;
         private System.Windows.Forms.Button buttonSelectAllRepair;
         private System.Windows.Forms.Button buttonDeselectAllRepair;
+        private System.Windows.Forms.ComboBox comboBoxRepairSession;
+        private System.Windows.Forms.Button buttonNewRepairSession;
+        private System.Windows.Forms.Button buttonRepairHistory;
+        private System.Windows.Forms.Label labelRepairSession;
     }
 }

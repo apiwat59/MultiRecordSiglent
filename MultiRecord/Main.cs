@@ -45,6 +45,11 @@ namespace MultiRecord
         private bool _isRepairTabActive = false;
         private int _previousTabIndex = 0;
         private bool _isChangingTab = false; // ป้องกัน event recursion
+        
+        // Repair Session variables
+        private int _currentRepairSessionId = -1;
+        private List<RepairSession> _repairSessions = new List<RepairSession>();
+        private List<RepairMeasurement> _currentRepairMeasurements = new List<RepairMeasurement>();
 
         // Tolerance settings
         private bool _toleranceEnabled = false;
@@ -3501,13 +3506,15 @@ namespace MultiRecord
             _repairRecordsTable = new DataTable("RepairMeasurementRecords");
             _repairRecordsTable.Columns.Add("Select", typeof(bool)); // เพิ่ม checkbox column
             _repairRecordsTable.Columns.Add("No", typeof(int));
+            _repairRecordsTable.Columns.Add("Name", typeof(string)); // ชื่อจุดวัด
             _repairRecordsTable.Columns.Add("Function", typeof(string));
-            _repairRecordsTable.Columns.Add("Measured", typeof(string));
-            _repairRecordsTable.Columns.Add("Ref", typeof(string));
-            _repairRecordsTable.Columns.Add("Upper", typeof(string));
-            _repairRecordsTable.Columns.Add("Lower", typeof(string));
-            _repairRecordsTable.Columns.Add("Tolerance", typeof(string));
-            _repairRecordsTable.Columns.Add("ID", typeof(int)); // เก็บ measurement ID
+            _repairRecordsTable.Columns.Add("RefValue", typeof(string)); // ค่าอ้างอิง (จาก template) - เปลี่ยนเป็น string เพื่อรองรับ "-" และ "<->"
+            _repairRecordsTable.Columns.Add("Value", typeof(string)); // ค่าที่วัดได้ (ต้องวัดใหม่) - เปลี่ยนเป็น string เพื่อรองรับ "-" และ "<->"
+            _repairRecordsTable.Columns.Add("Status", typeof(string)); // PASS/FAIL status
+            _repairRecordsTable.Columns.Add("TolEnabled", typeof(bool)); // Tolerance Enable/Disable
+            _repairRecordsTable.Columns.Add("TolerancePercentage", typeof(decimal)); // เก็บ tolerance % ไว้คำนวณ
+            _repairRecordsTable.Columns.Add("SystemInfo", typeof(string)); // System Info
+            _repairRecordsTable.Columns.Add("MeasurementId", typeof(int)); // เก็บ measurement ID
 
             dataGridViewRepair.DataSource = _repairRecordsTable;
 
@@ -3525,33 +3532,41 @@ namespace MultiRecord
             dataGridViewRepair.Columns["Select"].HeaderText = "☐";
             dataGridViewRepair.Columns["Select"].ReadOnly = false;
             
-            dataGridViewRepair.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             dataGridViewRepair.Columns["No"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Name"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewRepair.Columns["Name"].HeaderText = "ชื่อจุดวัด";
+            dataGridViewRepair.Columns["Name"].ReadOnly = true;
             
             dataGridViewRepair.Columns["Function"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             dataGridViewRepair.Columns["Function"].ReadOnly = true;
             
-            dataGridViewRepair.Columns["Measured"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRepair.Columns["Measured"].ReadOnly = true;
+            dataGridViewRepair.Columns["RefValue"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["RefValue"].HeaderText = "ค่าอ้างอิง";
+            dataGridViewRepair.Columns["RefValue"].ReadOnly = true;
             
-            dataGridViewRepair.Columns["Ref"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRepair.Columns["Ref"].ReadOnly = true;
+            dataGridViewRepair.Columns["Value"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Value"].HeaderText = "ค่าวัดได้";
+            dataGridViewRepair.Columns["Value"].ReadOnly = true;
             
-            dataGridViewRepair.Columns["Upper"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRepair.Columns["Upper"].ReadOnly = true;
             
-            dataGridViewRepair.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRepair.Columns["Lower"].ReadOnly = true;
+            dataGridViewRepair.Columns["Status"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Status"].HeaderText = "สถานะ";
+            dataGridViewRepair.Columns["Status"].ReadOnly = true;
+            dataGridViewRepair.Columns["Status"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             
-            dataGridViewRepair.Columns["Tolerance"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewRepair.Columns["Tolerance"].ReadOnly = true;
             
-            // ซ่อนคอลัมน์ ID
-            dataGridViewRepair.Columns["ID"].Visible = false;
+            // ซ่อนคอลัมน์ที่ไม่ต้องแสดง
+            dataGridViewRepair.Columns["Select"].Visible = false; // ใช้ row selection แทน checkbox
+            dataGridViewRepair.Columns["TolEnabled"].Visible = false;
+            dataGridViewRepair.Columns["TolerancePercentage"].Visible = false;
+            dataGridViewRepair.Columns["SystemInfo"].Visible = false;
+            dataGridViewRepair.Columns["MeasurementId"].Visible = false;
 
             // ตั้งค่า DataGridView
             dataGridViewRepair.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridViewRepair.MultiSelect = true;
+            dataGridViewRepair.MultiSelect = true; // เลือกได้หลายแถว (สำหรับ Delete)
             dataGridViewRepair.AllowUserToDeleteRows = false;
             dataGridViewRepair.AllowUserToAddRows = false;
             dataGridViewRepair.ReadOnly = false; // เปลี่ยนเป็น false เพื่อให้ checkbox แก้ไขได้
@@ -3559,6 +3574,7 @@ namespace MultiRecord
             // เพิ่ม Event Handler
             dataGridViewRepair.CellClick += DataGridViewRepair_CellClick;
             dataGridViewRepair.CurrentCellDirtyStateChanged += DataGridViewRepair_CurrentCellDirtyStateChanged;
+            dataGridViewRepair.CellFormatting += DataGridViewRepair_CellFormatting;
         }
 
         private void InitializeRepairTab()
@@ -3572,8 +3588,16 @@ namespace MultiRecord
             buttonClearRepair.Click += ButtonClearRepair_Click;
             buttonChangeModelRepair.Click += ButtonChangeModelRepair_Click;
             
-            // เปิดใช้งาน MultiSelect สำหรับ DataGridView
-            dataGridViewRepair.MultiSelect = true;
+            // เพิ่ม Event Handlers สำหรับ Repair Sessions
+            buttonNewRepairSession.Click += ButtonNewRepairSession_Click;
+            buttonRepairHistory.Click += ButtonRepairHistory_Click;
+            comboBoxRepairSession.SelectedIndexChanged += ComboBoxRepairSession_SelectedIndexChanged;
+            
+            // ซ่อน session controls เริ่มต้น
+            labelRepairSession.Visible = false;
+            comboBoxRepairSession.Visible = false;
+            buttonNewRepairSession.Visible = false;
+            buttonRepairHistory.Visible = false;
             
             LogActivity("เริ่มต้น Repair Tab สำเร็จ");
         }
@@ -3623,92 +3647,23 @@ namespace MultiRecord
                     return;
                 }
 
-                string sql = $@"SELECT sm.id, sm.measurement_no, sm.function_name, sm.measurement_value, 
-                                      sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.tolerance_enabled, 
-                                      sm.tolerance_percentage, sm.measured_at
-                               FROM Orbitz.software_measurements sm 
-                               WHERE sm.serial_id = {_repairSerialId} 
-                               ORDER BY sm.measured_at ASC";
-                
-                var result = await ExecuteSQLQuery(sql);
-                
-                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                // โหลด repair sessions แทนที่จะโหลด measurements โดยตรง
+                await LoadRepairSessions();
+
+                // ถ้าไม่มี session ให้แจ้งเตือน
+                if (_repairSessions == null || _repairSessions.Count == 0)
                 {
-                    _repairRecordsTable.Clear();
-                    
-                    foreach (DataRow row in result.Data.Rows)
+                    var confirmResult = MessageBox.Show(
+                        "ไม่พบรอบการซ่อมสำหรับ Serial Number นี้\n\nต้องการสร้างรอบการซ่อมครั้งแรกหรือไม่?",
+                        "ไม่พบข้อมูล",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirmResult == DialogResult.Yes)
                     {
-                        DataRow newRow = _repairRecordsTable.NewRow();
-                        
-                        int measurementNo = Convert.ToInt32(row["measurement_no"]);
-                        string functionName = row["function_name"]?.ToString() ?? "";
-                        decimal measuredValue = Convert.ToDecimal(row["measurement_value"]);
-                        
-                        // คำนวณ Ref, Upper, Lower จาก tolerance
-                        bool toleranceEnabled = row["tolerance_enabled"] != DBNull.Value && Convert.ToBoolean(row["tolerance_enabled"]);
-                        string toleranceType = row["tolerance_type"]?.ToString() ?? "percent";
-                        decimal? tolerancePercentage = row["tolerance_percentage"] != DBNull.Value 
-                            ? Convert.ToDecimal(row["tolerance_percentage"]) 
-                            : (decimal?)null;
-                        
-                        decimal? upperLimit = row["upper_limit"] != DBNull.Value 
-                            ? Convert.ToDecimal(row["upper_limit"]) 
-                            : (decimal?)null;
-                        decimal? lowerLimit = row["lower_limit"] != DBNull.Value 
-                            ? Convert.ToDecimal(row["lower_limit"]) 
-                            : (decimal?)null;
-                        
-                        // คำนวณ Ref (ค่ากลาง)
-                        decimal refValue = measuredValue;
-                        if (upperLimit.HasValue && lowerLimit.HasValue)
-                        {
-                            refValue = (upperLimit.Value + lowerLimit.Value) / 2;
-                        }
-                        
-                        // Format tolerance display
-                        string toleranceDisplay = "N/A";
-                        string upperDisplay = upperLimit?.ToString("F2") ?? "N/A";
-                        string lowerDisplay = lowerLimit?.ToString("F2") ?? "N/A";
-                        
-                        if (toleranceEnabled && tolerancePercentage.HasValue)
-                        {
-                            if (toleranceType == "percent")
-                            {
-                                toleranceDisplay = $"{tolerancePercentage.Value}%[{upperDisplay}]";
-                                upperDisplay = $"{tolerancePercentage.Value}%[{upperDisplay}]";
-                                lowerDisplay = $"{tolerancePercentage.Value}%[{lowerDisplay}]";
-                            }
-                            else
-                            {
-                                toleranceDisplay = $"±{tolerancePercentage.Value}";
-                            }
-                        }
-                        
-                        // Check if pass
-                        bool isPass = true;
-                        if (toleranceEnabled && upperLimit.HasValue && lowerLimit.HasValue)
-                        {
-                            isPass = measuredValue >= lowerLimit.Value && measuredValue <= upperLimit.Value;
-                        }
-                        
-                        newRow["Select"] = false; // เพิ่ม checkbox (ยังไม่เลือก)
-                        newRow["No"] = measurementNo;
-                        newRow["Function"] = functionName;
-                        newRow["Measured"] = measuredValue.ToString("F2");
-                        newRow["Ref"] = refValue.ToString("F2");
-                        newRow["Upper"] = upperDisplay;
-                        newRow["Lower"] = lowerDisplay;
-                        newRow["Tolerance"] = isPass ? "pass" : "fail";
-                        newRow["ID"] = Convert.ToInt32(row["id"]);
-                        
-                        _repairRecordsTable.Rows.Add(newRow);
+                        // สร้าง session แรกโดยอัตโนมัติ
+                        await CreateFirstRepairSession();
                     }
-                    
-                    LogActivity($"โหลดข้อมูล Repair จำนวน {_repairRecordsTable.Rows.Count} รายการ");
-                }
-                else
-                {
-                    LogActivity("ไม่พบข้อมูล Repair ในฐานข้อมูล");
                 }
             }
             catch (Exception ex)
@@ -3745,26 +3700,157 @@ namespace MultiRecord
             }
         }
 
-        private void ButtonRecordRepair_Click(object sender, EventArgs e)
+        private void DataGridViewRepair_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            // TODO: Implement record functionality for Repair
-            MessageBox.Show("Record functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // จัดการสีสำหรับ Status column
+            if (dataGridViewRepair.Columns[e.ColumnIndex].Name == "Status")
+            {
+                if (e.Value != null)
+                {
+                    string status = e.Value.ToString();
+                    
+                    if (status == "PASS")
+                    {
+                        e.CellStyle.BackColor = Color.LightGreen;
+                        e.CellStyle.ForeColor = Color.DarkGreen;
+                        e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Bold);
+                    }
+                    else if (status == "FAIL")
+                    {
+                        e.CellStyle.BackColor = Color.LightCoral;
+                        e.CellStyle.ForeColor = Color.DarkRed;
+                        e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Bold);
+                    }
+                    else // "-" or empty
+                    {
+                        e.CellStyle.BackColor = Color.LightGray;
+                        e.CellStyle.ForeColor = Color.Gray;
+                    }
+                }
+            }
+        }
+
+        private async void ButtonRecordRepair_Click(object sender, EventArgs e)
+        {
+            if (!_isRepairTabActive)
+            {
+                MessageBox.Show("กรุณาเลือก QWID และ Serial Number ก่อน", "ข้อมูลไม่ครบ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_currentRepairSessionId == -1)
+            {
+                MessageBox.Show("กรุณาเลือก Repair Session ก่อน", "ข้อมูลไม่ครบ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // ตรวจสอบว่าได้อ่านค่าจาก DMM หรือไม่
+            if (double.IsNaN(_lastReadingValue) || _isOverload)
+            {
+                MessageBox.Show("กรุณาอ่านค่าจาก DMM ก่อนบันทึก", "ไม่มีค่าที่วัดได้",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // ตรวจสอบว่ามีการเลือกแถวใน DataGridView หรือไม่
+            // ใช้ CurrentRow แทน SelectedRows เพื่อให้แน่ใจว่ามีแถวที่ active อยู่
+            if (dataGridViewRepair.CurrentRow == null)
+            {
+                MessageBox.Show("กรุณาเลือกอย่างน้อย 1 แถวก่อนบันทึก", "ไม่มีแถวที่เลือก",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // ตรวจสอบว่าเลือกมากกว่า 1 แถวหรือไม่
+            if (dataGridViewRepair.SelectedRows.Count > 1)
+            {
+                MessageBox.Show("กรุณาเลือกเพียง 1 แถวต่อการบันทึก", "เลือกมากเกินไป",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                decimal measuredValue = (decimal)_lastReadingValue;
+
+                // หาแถวที่เลือก - ใช้ CurrentRow
+                DataGridViewRow selectedGridRow = dataGridViewRepair.CurrentRow;
+                DataRowView rowView = selectedGridRow.DataBoundItem as DataRowView;
+                if (rowView == null)
+                {
+                    MessageBox.Show("ไม่สามารถดึงข้อมูลแถวได้", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                DataRow selectedRow = rowView.Row;
+
+                int measurementId = Convert.ToInt32(selectedRow["MeasurementId"]);
+                decimal refValue = Convert.ToDecimal(selectedRow["RefValue"]);
+                bool tolEnabled = Convert.ToBoolean(selectedRow["TolEnabled"]);
+                decimal tolPercentage = Convert.ToDecimal(selectedRow["TolerancePercentage"]);
+                string expectedFunction = selectedRow["Function"].ToString();
+
+                // ตรวจสอบว่า function ที่เลือกตรงกับ row ที่เลือกหรือไม่
+                if (_currentFunction.ToString() != expectedFunction)
+                {
+                    MessageBox.Show($"Function ไม่ตรงกัน!\n\n" +
+                        $"Function ที่เลือก: {_currentFunction}\n" +
+                        $"Function ที่คาดหวัง: {expectedFunction}\n\n" +
+                        "กรุณาเลือก Function ที่ถูกต้องก่อนบันทึก", 
+                        "Function ไม่ตรงกัน", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // คำนวณ Status
+                string status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage);
+                bool isPass = status == "PASS";
+
+                // บันทึกลง Database
+                bool success = await _mysqlManager.UpdateRepairMeasurementAsync(measurementId, measuredValue, isPass);
+
+                if (success)
+                {
+                    // อัพเดต UI
+                    selectedRow["Value"] = measuredValue.ToString("F4");
+                    selectedRow["Status"] = status;
+
+                    LogActivity($"บันทึกค่า Repair Measurement สำเร็จ: {measuredValue:F4} ({status})");
+
+                    // เล่นเสียงตาม Status
+                    if (isPass)
+                    {
+                        SoundUtil.Beep();
+                    }
+                    else
+                    {
+                        SoundUtil.Over();
+                    }
+
+                    // เลื่อนไป row ถัดไป
+                    MoveToNextRepairRow();
+                }
+                else
+                {
+                    MessageBox.Show("บันทึกค่าล้มเหลว", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการบันทึก Repair: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void ButtonDeleteRepair_Click(object sender, EventArgs e)
         {
-            // นับจำนวนแถวที่เลือก
-            int selectedCount = 0;
-            foreach (DataRow row in _repairRecordsTable.Rows)
-            {
-                if (row["Select"] != DBNull.Value && (bool)row["Select"])
-                {
-                    selectedCount++;
-                }
-            }
-
-            if (selectedCount == 0)
+            // ตรวจสอบว่ามีการเลือกแถวหรือไม่
+            if (dataGridViewRepair.SelectedRows.Count == 0)
             {
                 MessageBox.Show("กรุณาเลือกรายการที่ต้องการลบ", "ไม่มีรายการที่เลือก", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -3772,7 +3858,7 @@ namespace MultiRecord
             }
 
             var confirmResult = MessageBox.Show(
-                $"ยืนยันการลบ {selectedCount} รายการที่เลือก?", 
+                $"ยืนยันการลบ {dataGridViewRepair.SelectedRows.Count} รายการที่เลือก?", 
                 "ยืนยันการลบ", 
                 MessageBoxButtons.YesNo, 
                 MessageBoxIcon.Question);
@@ -3785,26 +3871,27 @@ namespace MultiRecord
 
                     // เก็บ ID ของแถวที่จะลบ
                     List<int> idsToDelete = new List<int>();
-                    foreach (DataRow row in _repairRecordsTable.Rows)
+                    List<DataRow> rowsToDelete = new List<DataRow>();
+
+                    foreach (DataGridViewRow gridRow in dataGridViewRepair.SelectedRows)
                     {
-                        if (row["Select"] != DBNull.Value && (bool)row["Select"])
+                        DataRowView rowView = gridRow.DataBoundItem as DataRowView;
+                        if (rowView != null)
                         {
+                            DataRow row = rowView.Row;
                             int id = row["ID"] != DBNull.Value ? Convert.ToInt32(row["ID"]) : 0;
                             if (id > 0)
                             {
                                 idsToDelete.Add(id);
                             }
+                            rowsToDelete.Add(row);
                         }
                     }
 
                     // ลบออกจาก DataTable
-                    for (int i = _repairRecordsTable.Rows.Count - 1; i >= 0; i--)
+                    foreach (DataRow row in rowsToDelete)
                     {
-                        DataRow row = _repairRecordsTable.Rows[i];
-                        if (row["Select"] != DBNull.Value && (bool)row["Select"])
-                        {
-                            row.Delete();
-                        }
+                        row.Delete();
                     }
                     _repairRecordsTable.AcceptChanges();
 
@@ -3817,7 +3904,7 @@ namespace MultiRecord
                         _ = DeleteRepairRecordsFromDatabase(idsToDelete);
                     }
 
-                    LogActivity($"ลบข้อมูล Repair จำนวน {selectedCount} รายการ");
+                    LogActivity($"ลบข้อมูล Repair จำนวน {rowsToDelete.Count} รายการ");
                 }
                 catch (Exception ex)
                 {
@@ -3870,19 +3957,13 @@ namespace MultiRecord
 
         private void ButtonSelectAllRepair_Click(object sender, EventArgs e)
         {
-            foreach (DataRow row in _repairRecordsTable.Rows)
-            {
-                row["Select"] = true;
-            }
+            dataGridViewRepair.SelectAll();
             LogActivity("เลือกทั้งหมดใน Repair Tab");
         }
 
         private void ButtonDeselectAllRepair_Click(object sender, EventArgs e)
         {
-            foreach (DataRow row in _repairRecordsTable.Rows)
-            {
-                row["Select"] = false;
-            }
+            dataGridViewRepair.ClearSelection();
             LogActivity("ยกเลิกการเลือกทั้งหมดใน Repair Tab");
         }
 
@@ -3902,12 +3983,340 @@ namespace MultiRecord
             _repairSerialId = -1;
             _repairSerialNumber = "";
             _repairQwid = "";
+            _currentRepairSessionId = -1;
+            _repairSessions.Clear();
+            
+            // ซ่อน session controls
+            labelRepairSession.Visible = false;
+            comboBoxRepairSession.Visible = false;
+            buttonNewRepairSession.Visible = false;
+            buttonRepairHistory.Visible = false;
             
             LogActivity("เปลี่ยนโมเดล: ล้างข้อมูลและเลือกใหม่");
             
             // เปิด RepairQwidDialog เพื่อเลือกใหม่
             await ShowRepairQwidDialog();
         }
+
+        #region Repair Session Methods
+
+        private async Task CreateFirstRepairSession()
+        {
+            try
+            {
+                // ตรวจสอบว่ามี template (software_measurements) หรือไม่
+                var templateMeasurements = await _mysqlManager.GetSoftwareMeasurementsBySerialIdAsync(_repairSerialId);
+                
+                if (templateMeasurements == null || templateMeasurements.Count == 0)
+                {
+                    MessageBox.Show(
+                        "ไม่พบ Template สำหรับ Serial Number นี้\n\nกรุณาสร้างข้อมูลใน R&D Tab ก่อน",
+                        "ไม่พบ Template",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // สร้าง session ครั้งแรก
+                int sessionId = await _mysqlManager.CreateRepairSessionAsync(
+                    _repairQwid, 
+                    _repairSerialId, 
+                    _repairSerialNumber, 
+                    1, 
+                    "รอบการซ่อมครั้งแรก",
+                    AuthManager.CurrentUser?.Username);
+
+                // Clone measurements
+                int clonedCount = await _mysqlManager.CloneMeasurementsToRepairSessionAsync(sessionId, _repairSerialId);
+
+                LogActivity($"สร้างรอบการซ่อมครั้งแรกสำเร็จ (Clone {clonedCount} measurements)");
+
+                // โหลด sessions ใหม่
+                await LoadRepairSessions();
+
+                MessageBox.Show("สร้างรอบการซ่อมครั้งแรกสำเร็จ", "สำเร็จ", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการสร้างรอบการซ่อมครั้งแรก: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonNewRepairSession_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_repairSerialId <= 0)
+                {
+                    MessageBox.Show("กรุณาเลือก Serial Number ก่อน", "แจ้งเตือน", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // ดึง session number ถัดไป
+                int nextSessionNumber = await _mysqlManager.GetNextRepairSessionNumberAsync(_repairSerialId);
+
+                // แสดง dialog สร้าง session ใหม่
+                using (var dialog = new NewRepairSessionDialog(_repairQwid, _repairSerialNumber, nextSessionNumber))
+                {
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // สร้าง session ใหม่
+                        int sessionId = await _mysqlManager.CreateRepairSessionAsync(
+                            _repairQwid, 
+                            _repairSerialId, 
+                            _repairSerialNumber, 
+                            nextSessionNumber, 
+                            dialog.Description,
+                            AuthManager.CurrentUser?.Username);
+
+                        // Clone measurements จาก template
+                        int clonedCount = await _mysqlManager.CloneMeasurementsToRepairSessionAsync(sessionId, _repairSerialId);
+
+                        LogActivity($"สร้างรอบการซ่อมครั้งที่ {nextSessionNumber} สำเร็จ (Clone {clonedCount} measurements)");
+                        
+                        // โหลด sessions ใหม่
+                        await LoadRepairSessions();
+                        
+                        // เลือก session ที่สร้างใหม่
+                        SelectRepairSession(sessionId);
+                        
+                        MessageBox.Show($"สร้างรอบการซ่อมครั้งที่ {nextSessionNumber} สำเร็จ", "สำเร็จ", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการสร้างรอบการซ่อม: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonRepairHistory_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_repairSessions == null || _repairSessions.Count == 0)
+                {
+                    MessageBox.Show("ไม่มีประวัติการซ่อม", "แจ้งเตือน", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                using (var dialog = new RepairHistoryDialog(_repairSessions, _mysqlManager, _repairQwid, _repairSerialNumber))
+                {
+                    if (dialog.ShowDialog() == DialogResult.OK && dialog.SelectedSession != null)
+                    {
+                        // เลือก session ที่เลือกจาก history
+                        SelectRepairSession(dialog.SelectedSession.Id);
+                        LogActivity($"เลือกรอบการซ่อมครั้งที่ {dialog.SelectedSession.SessionNumber}");
+                    }
+                    else if (dialog.SessionDeleted)
+                    {
+                        // ถ้ามีการลบ session ให้โหลดใหม่
+                        await LoadRepairSessions();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการแสดงประวัติการซ่อม: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ComboBoxRepairSession_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (comboBoxRepairSession.SelectedItem != null)
+                {
+                    var session = (RepairSession)comboBoxRepairSession.SelectedItem;
+                    if (session.Id != _currentRepairSessionId)
+                    {
+                        await LoadRepairMeasurementsBySession(session.Id);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการเปลี่ยน session: {ex.Message}", true);
+            }
+        }
+
+        private async Task LoadRepairSessions()
+        {
+            try
+            {
+                if (_repairSerialId <= 0)
+                    return;
+
+                _repairSessions = await _mysqlManager.GetRepairSessionsBySerialIdAsync(_repairSerialId);
+                
+                comboBoxRepairSession.DataSource = null;
+                comboBoxRepairSession.DataSource = _repairSessions;
+                comboBoxRepairSession.DisplayMember = "SessionNumber";
+                comboBoxRepairSession.ValueMember = "Id";
+
+                if (_repairSessions.Count > 0)
+                {
+                    // แสดง session controls
+                    labelRepairSession.Visible = true;
+                    comboBoxRepairSession.Visible = true;
+                    buttonNewRepairSession.Visible = true;
+                    buttonRepairHistory.Visible = true;
+                    
+                    // เลือก session แรก (ล่าสุด)
+                    comboBoxRepairSession.SelectedIndex = 0;
+                }
+                else
+                {
+                    // ถ้าไม่มี session ให้แสดงแค่ปุ่มสร้าง
+                    labelRepairSession.Visible = true;
+                    comboBoxRepairSession.Visible = false;
+                    buttonNewRepairSession.Visible = true;
+                    buttonRepairHistory.Visible = false;
+                }
+                
+                LogActivity($"โหลด Repair Sessions สำเร็จ ({_repairSessions.Count} sessions)");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการโหลด Repair Sessions: {ex.Message}", true);
+            }
+        }
+
+        private void SelectRepairSession(int sessionId)
+        {
+            var session = _repairSessions.FirstOrDefault(s => s.Id == sessionId);
+            if (session != null)
+            {
+                comboBoxRepairSession.SelectedItem = session;
+            }
+        }
+
+        private async Task LoadRepairMeasurementsBySession(int sessionId)
+        {
+            try
+            {
+                _currentRepairSessionId = sessionId;
+                _currentRepairMeasurements = await _mysqlManager.GetRepairMeasurementsBySessionIdAsync(sessionId);
+
+                // อัพเดต DataTable
+                _repairRecordsTable.Clear();
+                
+                foreach (var measurement in _currentRepairMeasurements)
+                {
+                    var row = _repairRecordsTable.NewRow();
+                    row["Select"] = false;
+                    row["No"] = measurement.MeasurementNo;
+                    row["Name"] = measurement.MeasurementName ?? "";
+                    row["Function"] = measurement.FunctionName;
+                    row["RefValue"] = measurement.MeasurementValue.ToString("F4"); // ค่าอ้างอิงจาก template (format เป็น string)
+                    row["Value"] = measurement.ActualMeasuredValue?.ToString("F4") ?? "-"; // ค่าที่วัดได้จริง (ถ้ามี) หรือ - (ถ้ายังไม่ได้วัด)
+                    row["TolEnabled"] = measurement.ToleranceEnabled;
+                    row["TolerancePercentage"] = measurement.TolerancePercentage ?? 0m;
+                    row["SystemInfo"] = measurement.SystemInfo ?? "";
+                    row["MeasurementId"] = measurement.Id;
+                    
+                    // คำนวณ Status โดยใช้ ActualMeasuredValue ถ้ามี
+                    if (measurement.ActualMeasuredValue.HasValue)
+                    {
+                        row["Status"] = CalculateRepairStatus(
+                            measurement.ActualMeasuredValue.Value,
+                            measurement.MeasurementValue,
+                            measurement.ToleranceEnabled,
+                            measurement.TolerancePercentage ?? 0m
+                        );
+                    }
+                    else
+                    {
+                        row["Status"] = "-"; // ยังไม่ได้วัด
+                    }
+                    
+                    _repairRecordsTable.Rows.Add(row);
+                }
+
+                LogActivity($"โหลด Repair Measurements สำเร็จ ({_currentRepairMeasurements.Count} measurements)");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการโหลด Repair Measurements: {ex.Message}", true);
+            }
+        }
+
+        /// <summary>
+        /// เลื่อนไป row ถัดไปที่ยังไม่ได้วัด
+        /// </summary>
+        private void MoveToNextRepairRow()
+        {
+            try
+            {
+                // หา row ถัดไปที่ยังไม่ได้วัด (Value = "-")
+                for (int i = 0; i < dataGridViewRepair.Rows.Count; i++)
+                {
+                    var row = dataGridViewRepair.Rows[i];
+                    string value = row.Cells["Value"].Value?.ToString() ?? "";
+                    
+                    if (value == "-" || value == "<->") // ยังไม่ได้วัด
+                    {
+                        // เลือก row นี้
+                        dataGridViewRepair.ClearSelection();
+                        row.Selected = true;
+                        
+                        // เลื่อน view ไปที่ row นี้
+                        dataGridViewRepair.FirstDisplayedScrollingRowIndex = i;
+                        dataGridViewRepair.CurrentCell = row.Cells["Name"];
+                        
+                        LogActivity($"เลื่อนไป row ถัดไป: {row.Cells["No"].Value} - {row.Cells["Name"].Value}");
+                        return;
+                    }
+                }
+                
+                // ถ้าไม่เจอ row ที่ยังไม่ได้วัด
+                LogActivity("ไม่พบ row ที่ยังไม่ได้วัด");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการเลื่อนไป row ถัดไป: {ex.Message}", true);
+            }
+        }
+
+        /// <summary>
+        /// คำนวณ Status (PASS/FAIL) สำหรับ Repair Measurement
+        /// </summary>
+        private string CalculateRepairStatus(decimal actualValue, decimal refValue, 
+            bool tolEnabled, decimal tolPercentage)
+        {
+            // ถ้าไม่ได้เปิด tolerance ให้ผ่านทันที
+            if (!tolEnabled)
+            {
+                return "PASS";
+            }
+
+            // คำนวณ tolerance range จาก reference value
+            decimal toleranceRange = Math.Abs(refValue * tolPercentage / 100m);
+            decimal calculatedUpper = refValue + toleranceRange;
+            decimal calculatedLower = refValue - toleranceRange;
+
+            // เช็คว่าอยู่ใน tolerance range หรือไม่
+            if (actualValue >= calculatedLower && actualValue <= calculatedUpper)
+            {
+                return "PASS";
+            }
+            else
+            {
+                return "FAIL";
+            }
+        }
+
+        #endregion
 
         #endregion
 
@@ -3967,13 +4376,42 @@ namespace MultiRecord
         // เปลี่ยนจาก LogActivity($"ลบจ้า"); เป็นการเรียก function ใหม่
         private async void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if (buttonRecord.Enabled && e.Control && e.KeyCode == Keys.Q)
+            if (e.Control && e.KeyCode == Keys.Q)
             {
+                // ตรวจสอบว่าอยู่หน้าไหน
+                bool isMainTab = (tabControl1.SelectedTab == tab_datarecording);
+                bool isRDTab = (tabControl1.SelectedTab == tab_rd);
+                bool isRepairTab = (tabControl1.SelectedTab == tab_repair);
+
+                // ตรวจสอบว่าปุ่ม Record ของแท็บนั้นเปิดใช้งานอยู่หรือไม่
+                bool canRecord = (isMainTab && buttonRecord.Enabled) ||
+                                (isRDTab && buttonRecordRD.Enabled) ||
+                                (isRepairTab && buttonRecordRepair.Enabled);
+
+                if (!canRecord)
+                {
+                    return; // ไม่สามารถบันทึกได้ในแท็บนี้
+                }
+
                 if (isWaitingForSecondCtrlQ)
                 {
                     // Ctrl+Q ครั้งที่ 2 = Double Ctrl+Q = ลบข้อมูลล่าสุด
                     isWaitingForSecondCtrlQ = false;
-                    deleteLatestRecord(); // เรียก function ใหม่
+                    
+                    if (isMainTab)
+                    {
+                        deleteLatestRecord(); // ลบข้อมูลหน้าหลัก
+                    }
+                    else if (isRDTab)
+                    {
+                        // TODO: เพิ่ม function ลบข้อมูล R&D ถ้ามี
+                        LogActivity("ฟีเจอร์ลบข้อมูล R&D ยังไม่รองรับ", true);
+                    }
+                    else if (isRepairTab)
+                    {
+                        // TODO: เพิ่ม function ลบข้อมูล Repair ถ้ามี
+                        LogActivity("ฟีเจอร์ลบข้อมูล Repair ยังไม่รองรับ", true);
+                    }
                 }
                 else
                 {
@@ -3986,7 +4424,21 @@ namespace MultiRecord
                     {
                         // หมดเวลารอ = Single Ctrl+Q = บันทึกข้อมูล
                         isWaitingForSecondCtrlQ = false;
-                        await saveRecord();
+                        
+                        if (isMainTab)
+                        {
+                            await saveRecord(); // บันทึกข้อมูลหน้าหลัก
+                        }
+                        else if (isRDTab)
+                        {
+                            // เรียก ButtonRecordRD_Click
+                            ButtonRecordRD_Click(this, EventArgs.Empty);
+                        }
+                        else if (isRepairTab)
+                        {
+                            // เรียก ButtonRecordRepair_Click
+                            ButtonRecordRepair_Click(this, EventArgs.Empty);
+                        }
                     }
                 }
 

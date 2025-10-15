@@ -502,6 +502,262 @@ namespace MultiRecord
             return measurements;
         }
 
+        // ==================== Repair Sessions Management ====================
+        
+        /// <summary>
+        /// Get the next session number for a given serial_id
+        /// </summary>
+        public async Task<int> GetNextRepairSessionNumberAsync(int serialId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = "SELECT COALESCE(MAX(session_number), 0) + 1 FROM software_repair_sessions WHERE serial_id = @serialId";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    var result = await command.ExecuteScalarAsync();
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create a new repair session
+        /// </summary>
+        public async Task<int> CreateRepairSessionAsync(string qwId, int serialId, string serialNumber, int sessionNumber, string sessionNote, string createdBy = null)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    INSERT INTO software_repair_sessions 
+                    (qw_id, serial_id, session_number, session_note, status, created_by, created_at)
+                    VALUES (@qwId, @serialId, @sessionNumber, @sessionNote, 'in_progress', @createdBy, NOW());
+                    SELECT LAST_INSERT_ID();";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@qwId", qwId);
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    command.Parameters.AddWithValue("@sessionNumber", sessionNumber);
+                    command.Parameters.AddWithValue("@sessionNote", !string.IsNullOrEmpty(sessionNote) ? (object)sessionNote : DBNull.Value);
+                    command.Parameters.AddWithValue("@createdBy", !string.IsNullOrEmpty(createdBy) ? (object)createdBy : DBNull.Value);
+                    
+                    var result = await command.ExecuteScalarAsync();
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clone measurements from software_measurements to software_repair_measurements
+        /// </summary>
+        public async Task<int> CloneMeasurementsToRepairSessionAsync(int repairSessionId, int serialId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    INSERT INTO software_repair_measurements 
+                    (repair_session_id, measurement_no, measurement_name, function_name, measurement_value, 
+                     upper_limit, lower_limit, tolerance_enabled, tolerance_type, tolerance_percentage, note, system_info, measured_at)
+                    SELECT 
+                        @repairSessionId,
+                        measurement_no, measurement_name, function_name, measurement_value,
+                        upper_limit, lower_limit, tolerance_enabled, tolerance_type, tolerance_percentage, note, system_info, NOW()
+                    FROM software_measurements
+                    WHERE serial_id = @serialId
+                    ORDER BY measurement_no";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@repairSessionId", repairSessionId);
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get all repair sessions for a specific serial_id
+        /// </summary>
+        public async Task<List<RepairSession>> GetRepairSessionsBySerialIdAsync(int serialId)
+        {
+            var sessions = new List<RepairSession>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    SELECT id, qw_id, serial_id, session_number, session_note, status, created_by, created_at, updated_at, completed_at
+                    FROM software_repair_sessions
+                    WHERE serial_id = @serialId
+                    ORDER BY session_number DESC";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@serialId", serialId);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            sessions.Add(new RepairSession
+                            {
+                                Id = Convert.ToInt32(reader["id"]),
+                                QwId = reader["qw_id"].ToString(),
+                                SerialId = Convert.ToInt32(reader["serial_id"]),
+                                SessionNumber = Convert.ToInt32(reader["session_number"]),
+                                SessionNote = reader["session_note"]?.ToString(),
+                                Status = reader["status"].ToString(),
+                                CreatedBy = reader["created_by"]?.ToString(),
+                                CreatedAt = Convert.ToDateTime(reader["created_at"]),
+                                UpdatedAt = Convert.ToDateTime(reader["updated_at"]),
+                                CompletedAt = reader["completed_at"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["completed_at"])
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return sessions;
+        }
+
+        /// <summary>
+        /// Get repair measurements for a specific repair session
+        /// </summary>
+        public async Task<List<RepairMeasurement>> GetRepairMeasurementsBySessionIdAsync(int repairSessionId)
+        {
+            var measurements = new List<RepairMeasurement>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    SELECT id, repair_session_id, measurement_no, measurement_name, function_name, measurement_value, actual_measured_value,
+                           upper_limit, lower_limit, tolerance_enabled, tolerance_type, tolerance_percentage, note, system_info, is_pass, measured_at
+                    FROM software_repair_measurements
+                    WHERE repair_session_id = @repairSessionId
+                    ORDER BY measurement_no";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@repairSessionId", repairSessionId);
+                    
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            measurements.Add(new RepairMeasurement
+                            {
+                                Id = Convert.ToInt32(reader["id"]),
+                                RepairSessionId = Convert.ToInt32(reader["repair_session_id"]),
+                                MeasurementNo = Convert.ToInt32(reader["measurement_no"]),
+                                MeasurementName = reader["measurement_name"]?.ToString(),
+                                FunctionName = reader["function_name"].ToString(),
+                                MeasurementValue = Convert.ToDecimal(reader["measurement_value"]),
+                                ActualMeasuredValue = reader["actual_measured_value"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["actual_measured_value"]),
+                                UpperLimit = reader["upper_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["upper_limit"]),
+                                LowerLimit = reader["lower_limit"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["lower_limit"]),
+                                ToleranceEnabled = Convert.ToBoolean(reader["tolerance_enabled"]),
+                                ToleranceType = reader["tolerance_type"]?.ToString() ?? "percent",
+                                TolerancePercentage = reader["tolerance_percentage"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["tolerance_percentage"]),
+                                Note = reader["note"]?.ToString(),
+                                SystemInfo = reader["system_info"]?.ToString(),
+                                IsPass = reader["is_pass"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["is_pass"]),
+                                MeasuredAt = Convert.ToDateTime(reader["measured_at"])
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return measurements;
+        }
+
+        /// <summary>
+        /// Update a repair measurement value (actual measured value)
+        /// </summary>
+        public async Task<bool> UpdateRepairMeasurementAsync(int measurementId, decimal actualMeasuredValue, bool? isPass = null)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    UPDATE software_repair_measurements
+                    SET actual_measured_value = @actualMeasuredValue,
+                        is_pass = @isPass,
+                        measured_at = NOW()
+                    WHERE id = @measurementId";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@measurementId", measurementId);
+                    command.Parameters.AddWithValue("@actualMeasuredValue", actualMeasuredValue);
+                    command.Parameters.AddWithValue("@isPass", isPass.HasValue ? (object)isPass.Value : DBNull.Value);
+                    
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update repair session status
+        /// </summary>
+        public async Task<bool> UpdateRepairSessionStatusAsync(int sessionId, string status)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                var sql = @"
+                    UPDATE software_repair_sessions
+                    SET status = @status,
+                        completed_at = CASE WHEN @status = 'completed' THEN NOW() ELSE completed_at END
+                    WHERE id = @sessionId";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@sessionId", sessionId);
+                    command.Parameters.AddWithValue("@status", status);
+                    
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Delete a repair session and all its measurements
+        /// </summary>
+        public async Task<bool> DeleteRepairSessionAsync(int sessionId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                // CASCADE DELETE will automatically delete related measurements
+                var sql = "DELETE FROM software_repair_sessions WHERE id = @sessionId";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@sessionId", sessionId);
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
 
         public async Task<(bool Success, DataTable Data, string ErrorMessage)> ExecuteQuery(string sql)
         {
@@ -659,6 +915,40 @@ namespace MultiRecord
         public string MeasurementName { get; set; }
         public string FunctionName { get; set; }
         public decimal MeasurementValue { get; set; }
+        public decimal? UpperLimit { get; set; }
+        public decimal? LowerLimit { get; set; }
+        public bool ToleranceEnabled { get; set; }
+        public string ToleranceType { get; set; } = "percent";
+        public decimal? TolerancePercentage { get; set; }
+        public string Note { get; set; }
+        public string SystemInfo { get; set; }
+        public bool? IsPass { get; set; }
+        public DateTime MeasuredAt { get; set; }
+    }
+
+    public class RepairSession
+    {
+        public int Id { get; set; }
+        public string QwId { get; set; }
+        public int SerialId { get; set; }
+        public int SessionNumber { get; set; }
+        public string SessionNote { get; set; }
+        public string Status { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+    }
+
+    public class RepairMeasurement
+    {
+        public int Id { get; set; }
+        public int RepairSessionId { get; set; }
+        public int MeasurementNo { get; set; }
+        public string MeasurementName { get; set; }
+        public string FunctionName { get; set; }
+        public decimal MeasurementValue { get; set; } // ค่าอ้างอิงจาก template
+        public decimal? ActualMeasuredValue { get; set; } // ค่าที่วัดได้จริงในการซ่อม
         public decimal? UpperLimit { get; set; }
         public decimal? LowerLimit { get; set; }
         public bool ToleranceEnabled { get; set; }

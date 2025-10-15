@@ -143,6 +143,12 @@
     <Compile Include="RepairQwidDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="NewRepairSessionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RepairHistoryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="MySqlHelper.cs" />
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
