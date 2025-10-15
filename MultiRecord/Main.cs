@@ -37,6 +37,14 @@ namespace MultiRecord
         private string _currentSerialNumber = "";
         private bool _isRDTabActive = false;
 
+        // Repair specific variables
+        private DataTable _repairRecordsTable;
+        private int _repairSerialId = -1;
+        private string _repairSerialNumber = "";
+        private string _repairQwid = "";
+        private bool _isRepairTabActive = false;
+        private int _previousTabIndex = 0;
+
         // Tolerance settings
         private bool _toleranceEnabled = false;
         private double _toleranceValueDC = 0.5;
@@ -60,11 +68,13 @@ namespace MultiRecord
             InitializeForm();
             InitializeDataTableAndLoadData();
             InitializeRDDataTable();
+            InitializeRepairDataTable();
             LoadLastSuccessfulConnection();
             InitializeToleranceControls();
             InitializeQWRecord();
             InitializeMySQL();
             InitializeRDTab();
+            InitializeRepairTab();
         }
 
         private void InitializeForm()
@@ -1321,6 +1331,9 @@ namespace MultiRecord
             string toleranceStatus = withinTolerance ? "Pass" : "Fail";
             _recordsTable.Rows.Add(newId, function, measurement, unit, timestamp, toleranceStatus);
 
+            // Auto-scroll to latest record
+            ScrollToLatestRecord(dataGridViewRecords);
+
             try
             {
                 string formattedValue = FormatValueForDisplay(Convert.ToDouble(measurement), unit);
@@ -2538,7 +2551,7 @@ namespace MultiRecord
                                       sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.tolerance_enabled, sm.note, sm.measured_at
                                FROM software_measurements sm 
                                WHERE sm.serial_id = {_currentSerialId} 
-                               ORDER BY sm.measured_at DESC";
+                               ORDER BY sm.measured_at ASC";
                 
                 var result = await ExecuteSQLQuery(sql);
                 
@@ -2652,6 +2665,7 @@ namespace MultiRecord
         private async void TabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
             _isRDTabActive = (tabControl1.SelectedTab == tab_rd);
+            _isRepairTabActive = (tabControl1.SelectedTab == tab_repair);
             
             if (_isRDTabActive)
             {
@@ -2659,12 +2673,34 @@ namespace MultiRecord
                 // ตรวจสอบว่าต้องเลือก Model และ SN หรือไม่
                 if (_currentModelId == -1 || _currentSerialId == -1)
                 {
-                    await ShowRDSelectionDialog();
+                    bool success = await ShowRDSelectionDialog();
+                    if (!success)
+                    {
+                        // ถ้า Cancel ให้กลับไป Tab เดิม
+                        tabControl1.SelectedIndex = _previousTabIndex;
+                        return;
+                    }
                 }
+                _previousTabIndex = tabControl1.SelectedIndex;
+            }
+            else if (_isRepairTabActive)
+            {
+                LogActivity("เข้าสู่ Repair Tab");
+                // แสดง dialog เพื่อเลือก QWID ทุกครั้ง
+                bool success = await ShowRepairQwidDialog();
+                if (!success)
+                {
+                    // ถ้า Cancel ให้กลับไป Tab เดิม
+                    LogActivity("ยกเลิก - กลับไป Tab เดิม");
+                    tabControl1.SelectedIndex = _previousTabIndex;
+                    return;
+                }
+                _previousTabIndex = tabControl1.SelectedIndex;
             }
             else
             {
-                LogActivity("ออกจาก R&D Tab");
+                LogActivity("ออกจาก R&D/Repair Tab");
+                _previousTabIndex = tabControl1.SelectedIndex;
             }
         }
 
@@ -2919,6 +2955,9 @@ namespace MultiRecord
                     newRow["ID"] = newId;
                 }
                 
+                // Auto-scroll to latest record
+                _mysqlManager.ScrollRDToLatest(this);
+                
                 LogActivity($"บันทึกค่า R&D No. {newNo}: {function}, {measurement}");
                 SoundUtil.Beep();
             }
@@ -2995,6 +3034,45 @@ namespace MultiRecord
                 {
                     OpenEditDialog(e.RowIndex);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Auto-scroll DataGridView to the latest (last) record
+        /// </summary>
+        private void ScrollToLatestRecord(DataGridView dataGridView)
+        {
+            try
+            {
+                if (dataGridView == null || dataGridView.Rows.Count == 0)
+                {
+                    return;
+                }
+
+                // Check if we need to invoke on UI thread
+                if (dataGridView.InvokeRequired)
+                {
+                    dataGridView.Invoke(new Action(() => ScrollToLatestRecord(dataGridView)));
+                    return;
+                }
+
+                int lastRowIndex = dataGridView.Rows.Count - 1;
+                
+                // Clear current selection
+                dataGridView.ClearSelection();
+                
+                // Select the last row
+                dataGridView.Rows[lastRowIndex].Selected = true;
+                
+                // Scroll to make the last row visible
+                dataGridView.FirstDisplayedScrollingRowIndex = Math.Max(0, lastRowIndex);
+                
+                // Ensure the row is fully visible
+                dataGridView.CurrentCell = dataGridView.Rows[lastRowIndex].Cells[0];
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error scrolling to latest record: {ex.Message}");
             }
         }
 
@@ -3378,6 +3456,298 @@ namespace MultiRecord
                 LogActivity($"อัพเดต tolerance ใน database ล้มเหลว: {ex.Message}", true);
                 throw;
             }
+        }
+
+        #endregion
+
+        #region --- Repair Tab Methods ---
+
+        private void InitializeRepairDataTable()
+        {
+            _repairRecordsTable = new DataTable("RepairMeasurementRecords");
+            _repairRecordsTable.Columns.Add("No", typeof(int));
+            _repairRecordsTable.Columns.Add("Function", typeof(string));
+            _repairRecordsTable.Columns.Add("Measured", typeof(string));
+            _repairRecordsTable.Columns.Add("Ref", typeof(string));
+            _repairRecordsTable.Columns.Add("Upper", typeof(string));
+            _repairRecordsTable.Columns.Add("Lower", typeof(string));
+            _repairRecordsTable.Columns.Add("Tolerance", typeof(string));
+            _repairRecordsTable.Columns.Add("ID", typeof(int)); // เก็บ measurement ID
+
+            dataGridViewRepair.DataSource = _repairRecordsTable;
+
+            // เพิ่มคอลัมน์ปุ่ม Action
+            DataGridViewButtonColumn actionColumn = new DataGridViewButtonColumn();
+            actionColumn.Name = "Action";
+            actionColumn.HeaderText = "Action";
+            actionColumn.Text = "แก้ไข";
+            actionColumn.UseColumnTextForButtonValue = true;
+            actionColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns.Add(actionColumn);
+
+            // ตั้งค่า AutoSizeMode และ ReadOnly สำหรับแต่ละคอลัมน์
+            dataGridViewRepair.Columns["No"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["No"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Function"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Function"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Measured"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Measured"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Ref"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Ref"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Upper"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Upper"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Lower"].ReadOnly = true;
+            
+            dataGridViewRepair.Columns["Tolerance"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Tolerance"].ReadOnly = true;
+            
+            // ซ่อนคอลัมน์ ID
+            dataGridViewRepair.Columns["ID"].Visible = false;
+
+            // ตั้งค่า DataGridView
+            dataGridViewRepair.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewRepair.MultiSelect = true;
+            dataGridViewRepair.AllowUserToDeleteRows = false;
+            dataGridViewRepair.AllowUserToAddRows = false;
+            dataGridViewRepair.ReadOnly = true;
+
+            // เพิ่ม Event Handler
+            dataGridViewRepair.CellClick += DataGridViewRepair_CellClick;
+        }
+
+        private void InitializeRepairTab()
+        {
+            // เพิ่ม Event Handlers สำหรับปุ่มต่างๆ
+            buttonRecordRepair.Click += ButtonRecordRepair_Click;
+            buttonDeleteRepair.Click += ButtonDeleteRepair_Click;
+            buttonExportRepair.Click += ButtonExportRepair_Click;
+            buttonSelectAllRepair.Click += ButtonSelectAllRepair_Click;
+            buttonDeselectAllRepair.Click += ButtonDeselectAllRepair_Click;
+            buttonClearRepair.Click += ButtonClearRepair_Click;
+            buttonChangeModelRepair.Click += ButtonChangeModelRepair_Click;
+            
+            // เปิดใช้งาน MultiSelect สำหรับ DataGridView
+            dataGridViewRepair.MultiSelect = true;
+            
+            LogActivity("เริ่มต้น Repair Tab สำเร็จ");
+        }
+
+        private async Task<bool> ShowRepairQwidDialog()
+        {
+            try
+            {
+                using (var dialog = new RepairQwidDialog(_mysqlManager))
+                {
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        _repairSerialId = dialog.SelectedSerialId;
+                        _repairSerialNumber = dialog.SelectedSerialNumber;
+                        _repairQwid = dialog.SelectedQwid;
+                        
+                        LogActivity($"เลือก QWID: {_repairQwid}, Serial: {_repairSerialNumber}");
+                        
+                        // โหลดข้อมูล measurements
+                        await LoadRepairRecordsFromDatabase();
+                        
+                        return true;
+                    }
+                    else
+                    {
+                        LogActivity("ยกเลิกการเลือก QWID");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการแสดง Repair QWID Dialog: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
+        private async Task LoadRepairRecordsFromDatabase()
+        {
+            try
+            {
+                if (_repairSerialId <= 0)
+                {
+                    LogActivity("ไม่มี Serial ID สำหรับโหลดข้อมูล Repair", true);
+                    return;
+                }
+
+                string sql = $@"SELECT sm.id, sm.measurement_no, sm.function_name, sm.measurement_value, 
+                                      sm.upper_limit, sm.lower_limit, sm.tolerance_type, sm.tolerance_enabled, 
+                                      sm.tolerance_percentage, sm.measured_at
+                               FROM Orbitz.software_measurements sm 
+                               WHERE sm.serial_id = {_repairSerialId} 
+                               ORDER BY sm.measured_at ASC";
+                
+                var result = await ExecuteSQLQuery(sql);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    _repairRecordsTable.Clear();
+                    
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        DataRow newRow = _repairRecordsTable.NewRow();
+                        
+                        int measurementNo = Convert.ToInt32(row["measurement_no"]);
+                        string functionName = row["function_name"]?.ToString() ?? "";
+                        decimal measuredValue = Convert.ToDecimal(row["measurement_value"]);
+                        
+                        // คำนวณ Ref, Upper, Lower จาก tolerance
+                        bool toleranceEnabled = row["tolerance_enabled"] != DBNull.Value && Convert.ToBoolean(row["tolerance_enabled"]);
+                        string toleranceType = row["tolerance_type"]?.ToString() ?? "percent";
+                        decimal? tolerancePercentage = row["tolerance_percentage"] != DBNull.Value 
+                            ? Convert.ToDecimal(row["tolerance_percentage"]) 
+                            : (decimal?)null;
+                        
+                        decimal? upperLimit = row["upper_limit"] != DBNull.Value 
+                            ? Convert.ToDecimal(row["upper_limit"]) 
+                            : (decimal?)null;
+                        decimal? lowerLimit = row["lower_limit"] != DBNull.Value 
+                            ? Convert.ToDecimal(row["lower_limit"]) 
+                            : (decimal?)null;
+                        
+                        // คำนวณ Ref (ค่ากลาง)
+                        decimal refValue = measuredValue;
+                        if (upperLimit.HasValue && lowerLimit.HasValue)
+                        {
+                            refValue = (upperLimit.Value + lowerLimit.Value) / 2;
+                        }
+                        
+                        // Format tolerance display
+                        string toleranceDisplay = "N/A";
+                        string upperDisplay = upperLimit?.ToString("F2") ?? "N/A";
+                        string lowerDisplay = lowerLimit?.ToString("F2") ?? "N/A";
+                        
+                        if (toleranceEnabled && tolerancePercentage.HasValue)
+                        {
+                            if (toleranceType == "percent")
+                            {
+                                toleranceDisplay = $"{tolerancePercentage.Value}%[{upperDisplay}]";
+                                upperDisplay = $"{tolerancePercentage.Value}%[{upperDisplay}]";
+                                lowerDisplay = $"{tolerancePercentage.Value}%[{lowerDisplay}]";
+                            }
+                            else
+                            {
+                                toleranceDisplay = $"±{tolerancePercentage.Value}";
+                            }
+                        }
+                        
+                        // Check if pass
+                        bool isPass = true;
+                        if (toleranceEnabled && upperLimit.HasValue && lowerLimit.HasValue)
+                        {
+                            isPass = measuredValue >= lowerLimit.Value && measuredValue <= upperLimit.Value;
+                        }
+                        
+                        newRow["No"] = measurementNo;
+                        newRow["Function"] = functionName;
+                        newRow["Measured"] = measuredValue.ToString("F2");
+                        newRow["Ref"] = refValue.ToString("F2");
+                        newRow["Upper"] = upperDisplay;
+                        newRow["Lower"] = lowerDisplay;
+                        newRow["Tolerance"] = isPass ? "pass" : "fail";
+                        newRow["ID"] = Convert.ToInt32(row["id"]);
+                        
+                        _repairRecordsTable.Rows.Add(newRow);
+                    }
+                    
+                    LogActivity($"โหลดข้อมูล Repair จำนวน {_repairRecordsTable.Rows.Count} รายการ");
+                }
+                else
+                {
+                    LogActivity("ไม่พบข้อมูล Repair ในฐานข้อมูล");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการโหลดข้อมูล Repair: {ex.Message}", true);
+            }
+        }
+
+        private void DataGridViewRepair_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                string columnName = dataGridViewRepair.Columns[e.ColumnIndex].Name;
+                
+                // Handle Action button click
+                if (columnName == "Action")
+                {
+                    // TODO: Implement edit functionality
+                    MessageBox.Show("Edit functionality coming soon", "Info", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void ButtonRecordRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement record functionality for Repair
+            MessageBox.Show("Record functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ButtonDeleteRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement delete functionality
+            MessageBox.Show("Delete functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ButtonExportRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement export functionality
+            MessageBox.Show("Export functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ButtonSelectAllRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement select all functionality
+            MessageBox.Show("Select all functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ButtonDeselectAllRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement deselect all functionality
+            MessageBox.Show("Deselect all functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ButtonClearRepair_Click(object sender, EventArgs e)
+        {
+            // TODO: Implement clear functionality
+            MessageBox.Show("Clear functionality coming soon", "Info", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private async void ButtonChangeModelRepair_Click(object sender, EventArgs e)
+        {
+            // ล้าง datatable
+            _repairRecordsTable.Clear();
+            
+            // รีเซ็ตค่า Repair Serial และ QWID
+            _repairSerialId = -1;
+            _repairSerialNumber = "";
+            _repairQwid = "";
+            
+            LogActivity("เปลี่ยนโมเดล: ล้างข้อมูลและเลือกใหม่");
+            
+            // เปิด RepairQwidDialog เพื่อเลือกใหม่
+            await ShowRepairQwidDialog();
         }
 
         #endregion

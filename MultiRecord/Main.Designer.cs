@@ -48,7 +48,16 @@
             this.buttonDeleteRD = new System.Windows.Forms.Button();
             this.buttonRecordRD = new System.Windows.Forms.Button();
             this.dataGridViewRD = new System.Windows.Forms.DataGridView();
-            this.tab_tools = new System.Windows.Forms.TabPage();
+            this.tab_repair = new System.Windows.Forms.TabPage();
+            this.groupBoxRepairRecord = new System.Windows.Forms.GroupBox();
+            this.buttonDeselectAllRepair = new System.Windows.Forms.Button();
+            this.buttonSelectAllRepair = new System.Windows.Forms.Button();
+            this.buttonChangeModelRepair = new System.Windows.Forms.Button();
+            this.buttonClearRepair = new System.Windows.Forms.Button();
+            this.buttonExportRepair = new System.Windows.Forms.Button();
+            this.buttonDeleteRepair = new System.Windows.Forms.Button();
+            this.buttonRecordRepair = new System.Windows.Forms.Button();
+            this.dataGridViewRepair = new System.Windows.Forms.DataGridView();
             this.tab_settings = new System.Windows.Forms.TabPage();
             this.groupBoxMySQL = new System.Windows.Forms.GroupBox();
             this.labelConnectionStatus = new System.Windows.Forms.Label();
@@ -133,6 +142,9 @@
             this.tab_rd.SuspendLayout();
             this.groupBoxRDRecord.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRD)).BeginInit();
+            this.tab_repair.SuspendLayout();
+            this.groupBoxRepairRecord.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRepair)).BeginInit();
             this.tab_settings.SuspendLayout();
             this.groupBoxMySQL.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
@@ -168,7 +180,7 @@
             // 
             this.tabControl1.Controls.Add(this.tab_datarecording);
             this.tabControl1.Controls.Add(this.tab_rd);
-            this.tabControl1.Controls.Add(this.tab_tools);
+            this.tabControl1.Controls.Add(this.tab_repair);
             this.tabControl1.Controls.Add(this.tab_settings);
             this.tabControl1.Location = new System.Drawing.Point(750, 12);
             this.tabControl1.Name = "tabControl1";
@@ -465,7 +477,7 @@
             this.buttonClearRD.Name = "buttonClearRD";
             this.buttonClearRD.Size = new System.Drawing.Size(124, 33);
             this.buttonClearRD.TabIndex = 3;
-            this.buttonClearRD.Text = "ล้างข้อมูล R&D";
+            this.buttonClearRD.Text = "ล้างข้อมูล";
             this.buttonClearRD.UseVisualStyleBackColor = false;
             // 
             // buttonExportRD
@@ -504,7 +516,7 @@
             this.buttonRecordRD.Name = "buttonRecordRD";
             this.buttonRecordRD.Size = new System.Drawing.Size(119, 33);
             this.buttonRecordRD.TabIndex = 1;
-            this.buttonRecordRD.Text = "บันทึกค่า R&D";
+            this.buttonRecordRD.Text = "บันทึกค่า";
             this.buttonRecordRD.UseVisualStyleBackColor = false;
             // 
             // dataGridViewRD
@@ -540,14 +552,147 @@
             this.dataGridViewRD.Size = new System.Drawing.Size(578, 327);
             this.dataGridViewRD.TabIndex = 0;
             // 
-            // tab_tools
+            // tab_repair
             // 
-            this.tab_tools.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.tab_tools.Location = new System.Drawing.Point(4, 22);
-            this.tab_tools.Name = "tab_tools";
-            this.tab_tools.Size = new System.Drawing.Size(614, 507);
-            this.tab_tools.TabIndex = 3;
-            this.tab_tools.Text = "เครื่องมือ";
+            this.tab_repair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tab_repair.Controls.Add(this.groupBoxRepairRecord);
+            this.tab_repair.Location = new System.Drawing.Point(4, 22);
+            this.tab_repair.Name = "tab_repair";
+            this.tab_repair.Size = new System.Drawing.Size(614, 507);
+            this.tab_repair.TabIndex = 4;
+            this.tab_repair.Text = "Repair";
+            // 
+            // groupBoxRepairRecord
+            // 
+            this.groupBoxRepairRecord.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.groupBoxRepairRecord.Controls.Add(this.buttonDeselectAllRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonSelectAllRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonChangeModelRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonClearRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonExportRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonDeleteRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.buttonRecordRepair);
+            this.groupBoxRepairRecord.Controls.Add(this.dataGridViewRepair);
+            this.groupBoxRepairRecord.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.groupBoxRepairRecord.ForeColor = System.Drawing.Color.White;
+            this.groupBoxRepairRecord.Location = new System.Drawing.Point(11, 11);
+            this.groupBoxRepairRecord.Name = "groupBoxRepairRecord";
+            this.groupBoxRepairRecord.Size = new System.Drawing.Size(597, 482);
+            this.groupBoxRepairRecord.TabIndex = 1;
+            this.groupBoxRepairRecord.TabStop = false;
+            this.groupBoxRepairRecord.Text = "Repair Measurements";
+            // 
+            // buttonDeselectAllRepair
+            // 
+            this.buttonDeselectAllRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonDeselectAllRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonDeselectAllRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDeselectAllRepair.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonDeselectAllRepair.ForeColor = System.Drawing.Color.White;
+            this.buttonDeselectAllRepair.Location = new System.Drawing.Point(100, 68);
+            this.buttonDeselectAllRepair.Name = "buttonDeselectAllRepair";
+            this.buttonDeselectAllRepair.Size = new System.Drawing.Size(95, 26);
+            this.buttonDeselectAllRepair.TabIndex = 7;
+            this.buttonDeselectAllRepair.Text = "☐ Deselect All";
+            this.buttonDeselectAllRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonSelectAllRepair
+            // 
+            this.buttonSelectAllRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonSelectAllRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonSelectAllRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSelectAllRepair.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonSelectAllRepair.ForeColor = System.Drawing.Color.White;
+            this.buttonSelectAllRepair.Location = new System.Drawing.Point(9, 68);
+            this.buttonSelectAllRepair.Name = "buttonSelectAllRepair";
+            this.buttonSelectAllRepair.Size = new System.Drawing.Size(85, 26);
+            this.buttonSelectAllRepair.TabIndex = 6;
+            this.buttonSelectAllRepair.Text = "☑ Select All";
+            this.buttonSelectAllRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonChangeModelRepair
+            // 
+            this.buttonChangeModelRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(156)))), ((int)(((byte)(39)))), ((int)(((byte)(176)))));
+            this.buttonChangeModelRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonChangeModelRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonChangeModelRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonChangeModelRepair.Location = new System.Drawing.Point(459, 22);
+            this.buttonChangeModelRepair.Name = "buttonChangeModelRepair";
+            this.buttonChangeModelRepair.Size = new System.Drawing.Size(124, 33);
+            this.buttonChangeModelRepair.TabIndex = 4;
+            this.buttonChangeModelRepair.Text = "เปลี่ยนโมเดล";
+            this.buttonChangeModelRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonClearRepair
+            // 
+            this.buttonClearRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.buttonClearRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonClearRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonClearRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonClearRepair.Location = new System.Drawing.Point(459, 61);
+            this.buttonClearRepair.Name = "buttonClearRepair";
+            this.buttonClearRepair.Size = new System.Drawing.Size(124, 33);
+            this.buttonClearRepair.TabIndex = 3;
+            this.buttonClearRepair.Text = "ล้างข้อมูล";
+            this.buttonClearRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonExportRepair
+            // 
+            this.buttonExportRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
+            this.buttonExportRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonExportRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonExportRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonExportRepair.Location = new System.Drawing.Point(433, 435);
+            this.buttonExportRepair.Name = "buttonExportRepair";
+            this.buttonExportRepair.Size = new System.Drawing.Size(150, 33);
+            this.buttonExportRepair.TabIndex = 2;
+            this.buttonExportRepair.Text = "ส่งออกไฟล์ CSV";
+            this.buttonExportRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonDeleteRepair
+            // 
+            this.buttonDeleteRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(67)))), ((int)(((byte)(54)))));
+            this.buttonDeleteRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonDeleteRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonDeleteRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonDeleteRepair.Location = new System.Drawing.Point(135, 22);
+            this.buttonDeleteRepair.Name = "buttonDeleteRepair";
+            this.buttonDeleteRepair.Size = new System.Drawing.Size(80, 33);
+            this.buttonDeleteRepair.TabIndex = 4;
+            this.buttonDeleteRepair.Text = "ลบ";
+            this.buttonDeleteRepair.UseVisualStyleBackColor = false;
+            // 
+            // buttonRecordRepair
+            // 
+            this.buttonRecordRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(28)))), ((int)(((byte)(151)))), ((int)(((byte)(234)))));
+            this.buttonRecordRepair.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonRecordRepair.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonRecordRepair.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Bold);
+            this.buttonRecordRepair.Location = new System.Drawing.Point(10, 22);
+            this.buttonRecordRepair.Name = "buttonRecordRepair";
+            this.buttonRecordRepair.Size = new System.Drawing.Size(119, 33);
+            this.buttonRecordRepair.TabIndex = 1;
+            this.buttonRecordRepair.Text = "บันทึกค่า";
+            this.buttonRecordRepair.UseVisualStyleBackColor = false;
+            // 
+            // dataGridViewRepair
+            // 
+            this.dataGridViewRepair.AllowUserToAddRows = false;
+            this.dataGridViewRepair.AllowUserToDeleteRows = false;
+            this.dataGridViewRepair.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dataGridViewRepair.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.dataGridViewRepair.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.dataGridViewRepair.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            this.dataGridViewRepair.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewRepair.DefaultCellStyle = dataGridViewCellStyle4;
+            this.dataGridViewRepair.EnableHeadersVisualStyles = false;
+            this.dataGridViewRepair.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.dataGridViewRepair.Location = new System.Drawing.Point(9, 100);
+            this.dataGridViewRepair.Name = "dataGridViewRepair";
+            this.dataGridViewRepair.RowHeadersVisible = false;
+            this.dataGridViewRepair.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dataGridViewRepair.Size = new System.Drawing.Size(578, 327);
+            this.dataGridViewRepair.TabIndex = 0;
             // 
             // tab_settings
             // 
@@ -1492,6 +1637,9 @@
             this.tab_rd.ResumeLayout(false);
             this.groupBoxRDRecord.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRD)).EndInit();
+            this.tab_repair.ResumeLayout(false);
+            this.groupBoxRepairRecord.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRepair)).EndInit();
             this.tab_settings.ResumeLayout(false);
             this.groupBoxMySQL.ResumeLayout(false);
             this.groupBoxMySQL.PerformLayout();
@@ -1557,7 +1705,7 @@
         private System.Windows.Forms.GroupBox groupBoxRecord;
         private System.Windows.Forms.Button buttonExportCsv;
         private System.Windows.Forms.Button buttonRecord;
-        private System.Windows.Forms.DataGridView dataGridViewRecords;
+        public System.Windows.Forms.DataGridView dataGridViewRecords;
         private System.Windows.Forms.Button buttonDeleteRecord;
         private System.Windows.Forms.Button buttonClearTable;
         private System.Windows.Forms.Panel panelParameters;
@@ -1606,10 +1754,9 @@
         private System.Windows.Forms.Button buttonTestConnection;
         private System.Windows.Forms.Label labelConnectionStatus;
         private System.Windows.Forms.Button buttonMeasurementMode;
-        private System.Windows.Forms.TabPage tab_tools;
         private System.Windows.Forms.TabPage tab_rd;
         private System.Windows.Forms.GroupBox groupBoxRDRecord;
-        private System.Windows.Forms.DataGridView dataGridViewRD;
+        public System.Windows.Forms.DataGridView dataGridViewRD;
         private System.Windows.Forms.Button buttonRecordRD;
         private System.Windows.Forms.Button buttonDeleteRD;
         private System.Windows.Forms.Button buttonExportRD;
@@ -1618,5 +1765,15 @@
         private System.Windows.Forms.Button buttonBatchTolerance;
         private System.Windows.Forms.Button buttonSelectAll;
         private System.Windows.Forms.Button buttonDeselectAll;
+        private System.Windows.Forms.TabPage tab_repair;
+        private System.Windows.Forms.GroupBox groupBoxRepairRecord;
+        public System.Windows.Forms.DataGridView dataGridViewRepair;
+        private System.Windows.Forms.Button buttonRecordRepair;
+        private System.Windows.Forms.Button buttonDeleteRepair;
+        private System.Windows.Forms.Button buttonExportRepair;
+        private System.Windows.Forms.Button buttonClearRepair;
+        private System.Windows.Forms.Button buttonChangeModelRepair;
+        private System.Windows.Forms.Button buttonSelectAllRepair;
+        private System.Windows.Forms.Button buttonDeselectAllRepair;
     }
 }

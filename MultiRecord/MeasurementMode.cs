@@ -226,6 +226,49 @@ namespace MultiRecord
             }
         }
 
+        /// <summary>
+        /// Auto-scroll records DataGridView to the latest (last) record
+        /// </summary>
+        private void ScrollToLatestRecord()
+        {
+            try
+            {
+                // Get the main form reference to access dataGridViewRecords
+                var mainForm = Application.OpenForms.OfType<Main>().FirstOrDefault();
+                if (mainForm?.dataGridViewRecords == null || mainForm.dataGridViewRecords.Rows.Count == 0)
+                {
+                    return;
+                }
+
+                var dataGridView = mainForm.dataGridViewRecords;
+
+                // Check if we need to invoke on UI thread
+                if (dataGridView.InvokeRequired)
+                {
+                    dataGridView.Invoke(new Action(ScrollToLatestRecord));
+                    return;
+                }
+
+                int lastRowIndex = dataGridView.Rows.Count - 1;
+                
+                // Clear current selection
+                dataGridView.ClearSelection();
+                
+                // Select the last row
+                dataGridView.Rows[lastRowIndex].Selected = true;
+                
+                // Scroll to make the last row visible
+                dataGridView.FirstDisplayedScrollingRowIndex = Math.Max(0, lastRowIndex);
+                
+                // Ensure the row is fully visible
+                dataGridView.CurrentCell = dataGridView.Rows[lastRowIndex].Cells[0];
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"Error scrolling to latest record: {ex.Message}");
+            }
+        }
+
         private void ScrollToCurrentRow()
         {
             try
@@ -929,6 +972,9 @@ namespace MultiRecord
             newRow["Tolerance"] = toleranceStatus;
             
             _recordsTable.Rows.Add(newRow);
+            
+            // Auto-scroll to latest record in records table
+            ScrollToLatestRecord();
             
             // Store the recorded value in the measurement point
             currentPoint.RecordValue = measuredValue;

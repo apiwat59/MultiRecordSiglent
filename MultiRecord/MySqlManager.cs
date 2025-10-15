@@ -617,6 +617,39 @@ namespace MultiRecord
                 _disposed = true;
             }
         }
+
+        // Method to scroll DataGridView to latest record
+        public void ScrollRDToLatest(Main mainForm)
+        {
+            try
+            {
+                if (mainForm?.dataGridViewRD?.Rows?.Count > 0)
+                {
+                    var dataGridView = mainForm.dataGridViewRD;
+                    int lastIndex = dataGridView.Rows.Count - 1;
+                    
+                    // Clear current selection
+                    dataGridView.ClearSelection();
+                    
+                    // Select the last row
+                    dataGridView.Rows[lastIndex].Selected = true;
+                    
+                    // Scroll to the last row
+                    dataGridView.FirstDisplayedScrollingRowIndex = lastIndex;
+                    
+                    // Set current cell to the last row
+                    if (dataGridView.Columns.Count > 0)
+                    {
+                        dataGridView.CurrentCell = dataGridView.Rows[lastIndex].Cells[0];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't throw to avoid breaking the main flow
+                System.Diagnostics.Debug.WriteLine($"Error scrolling RD DataGridView: {ex.Message}");
+            }
+        }
     }
 
     public class SoftwareMeasurement
