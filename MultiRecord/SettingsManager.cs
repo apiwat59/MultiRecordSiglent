@@ -41,6 +41,7 @@ namespace MultiRecord
         public static void SetSoundPath(string soundType, string path)
         {
             _soundPaths[soundType] = path;
+            SaveSettings();
         }
 
         // General settings methods
@@ -52,18 +53,19 @@ namespace MultiRecord
         public static void SetSetting(string key, string value)
         {
             _settings[key] = value;
+            SaveSettings();
         }
 
         // MySQL settings
         public static string MySqlHost 
         { 
-            get => GetSetting("MySqlHost", "100.84.90.72"); 
+            get => GetSetting("MySqlHost", "100.83.170.41"); 
             set => SetSetting("MySqlHost", value); 
         }
 
         public static int MySqlPort 
         { 
-            get => int.TryParse(GetSetting("MySqlPort", "33306"), out int port) ? port : 33306; 
+            get => int.TryParse(GetSetting("MySqlPort", "3306"), out int port) ? port : 3306; 
             set => SetSetting("MySqlPort", value.ToString()); 
         }
 
@@ -217,6 +219,15 @@ namespace MultiRecord
             _soundPaths["Beep"] = "sound/beep.mp3";
             _soundPaths["Delete"] = "sound/delete.mp3";
             _soundPaths["Over"] = "sound/over.mp3";
+            
+            _settings.Clear();
+            _settings["MySqlHost"] = "100.83.170.41";
+            _settings["MySqlPort"] = "3306";
+            _settings["MySqlUser"] = "orbitz_portal";
+            _settings["MySqlPassword"] = "Qwaveadmin12.";
+            _settings["MySqlDatabase"] = "Orbitz";
+            _settings["MySqlEnabled"] = "true";
+            
             SaveSettings();
         }
     }

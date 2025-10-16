@@ -4641,6 +4641,102 @@ namespace MultiRecord
             buttonTestConnection.Click += buttonTestConnection_Click;
             
             labelConnectionStatus.Text = "Ready to test connection";
+            
+            // Initialize other settings
+            InitializeSoundSettings();
+            InitializeInstrumentSettings();
+            InitializeQWRecordSettings();
+        }
+        
+        private void InitializeSoundSettings()
+        {
+            // Load sound settings from SettingsManager
+            textBoxBeepSound.Text = SettingsManager.GetSoundPath("Beep");
+            textBoxDeleteSound.Text = SettingsManager.GetSoundPath("Delete");
+            textBoxOverSound.Text = SettingsManager.GetSoundPath("Over");
+            
+            // Add event handlers for sound settings changes
+            textBoxBeepSound.TextChanged += (s, e) => { SettingsManager.SetSoundPath("Beep", textBoxBeepSound.Text); SettingsManager.SaveSettings(); };
+            textBoxDeleteSound.TextChanged += (s, e) => { SettingsManager.SetSoundPath("Delete", textBoxDeleteSound.Text); SettingsManager.SaveSettings(); };
+            textBoxOverSound.TextChanged += (s, e) => { SettingsManager.SetSoundPath("Over", textBoxOverSound.Text); SettingsManager.SaveSettings(); };
+            
+            // Add event handlers for browse buttons
+            buttonBrowseBeep.Click += ButtonBrowseBeep_Click;
+            buttonBrowseDelete.Click += ButtonBrowseDelete_Click;
+            buttonBrowseOver.Click += ButtonBrowseOver_Click;
+            
+            // Add event handlers for test buttons
+            buttonTestBeep.Click += (s, e) => SoundUtil.Beep();
+            buttonTestDelete.Click += (s, e) => SoundUtil.Delete();
+            buttonTestOver.Click += (s, e) => SoundUtil.Over();
+        }
+        
+        private void ButtonBrowseBeep_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Filter = "Audio Files|*.mp3;*.wav;*.m4a;*.aac|All Files|*.*";
+                dialog.Title = "เลือกไฟล์เสียงสำหรับบันทึกข้อมูล";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    textBoxBeepSound.Text = dialog.FileName;
+                }
+            }
+        }
+        
+        private void ButtonBrowseDelete_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Filter = "Audio Files|*.mp3;*.wav;*.m4a;*.aac|All Files|*.*";
+                dialog.Title = "เลือกไฟล์เสียงสำหรับลบข้อมูล";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    textBoxDeleteSound.Text = dialog.FileName;
+                }
+            }
+        }
+        
+        private void ButtonBrowseOver_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Filter = "Audio Files|*.mp3;*.wav;*.m4a;*.aac|All Files|*.*";
+                dialog.Title = "เลือกไฟล์เสียงสำหรับค่าวัดเกิน";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    textBoxOverSound.Text = dialog.FileName;
+                }
+            }
+        }
+        
+        private void InitializeInstrumentSettings()
+        {
+            // Load instrument settings from SettingsManager
+            textBoxInstrumentSerial.Text = SettingsManager.InstrumentSerial;
+            textBoxOperatorID.Text = SettingsManager.OperatorID.ToString();
+            
+            // Add event handlers for instrument settings changes
+            textBoxInstrumentSerial.TextChanged += (s, e) => { SettingsManager.InstrumentSerial = textBoxInstrumentSerial.Text; SettingsManager.SaveSettings(); };
+            textBoxOperatorID.TextChanged += (s, e) => 
+            { 
+                if (int.TryParse(textBoxOperatorID.Text, out int operatorId)) 
+                { 
+                    SettingsManager.OperatorID = operatorId; 
+                    SettingsManager.SaveSettings(); 
+                } 
+            };
+        }
+        
+        private void InitializeQWRecordSettings()
+        {
+            // Load QW record settings from SettingsManager
+            textBoxCurrentQWIDSettings.Text = SettingsManager.CurrentQWID;
+            textBoxCurrentSectionSettings.Text = SettingsManager.CurrentSection;
+            
+            // Add event handlers for QW record settings changes
+            textBoxCurrentQWIDSettings.TextChanged += (s, e) => { SettingsManager.CurrentQWID = textBoxCurrentQWIDSettings.Text; SettingsManager.SaveSettings(); };
+            textBoxCurrentSectionSettings.TextChanged += (s, e) => { SettingsManager.CurrentSection = textBoxCurrentSectionSettings.Text; SettingsManager.SaveSettings(); };
         }
 
         private async void buttonTestConnection_Click(object sender, EventArgs e)

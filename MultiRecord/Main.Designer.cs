@@ -50,6 +50,10 @@
             this.dataGridViewRD = new System.Windows.Forms.DataGridView();
             this.tab_repair = new System.Windows.Forms.TabPage();
             this.groupBoxRepairRecord = new System.Windows.Forms.GroupBox();
+            this.labelRepairSession = new System.Windows.Forms.Label();
+            this.buttonRepairHistory = new System.Windows.Forms.Button();
+            this.buttonNewRepairSession = new System.Windows.Forms.Button();
+            this.comboBoxRepairSession = new System.Windows.Forms.ComboBox();
             this.buttonDeselectAllRepair = new System.Windows.Forms.Button();
             this.buttonSelectAllRepair = new System.Windows.Forms.Button();
             this.buttonChangeModelRepair = new System.Windows.Forms.Button();
@@ -57,12 +61,31 @@
             this.buttonExportRepair = new System.Windows.Forms.Button();
             this.buttonDeleteRepair = new System.Windows.Forms.Button();
             this.buttonRecordRepair = new System.Windows.Forms.Button();
-            this.labelRepairSession = new System.Windows.Forms.Label();
-            this.comboBoxRepairSession = new System.Windows.Forms.ComboBox();
-            this.buttonNewRepairSession = new System.Windows.Forms.Button();
-            this.buttonRepairHistory = new System.Windows.Forms.Button();
             this.dataGridViewRepair = new System.Windows.Forms.DataGridView();
             this.tab_settings = new System.Windows.Forms.TabPage();
+            this.groupBoxQWRecordSettings = new System.Windows.Forms.GroupBox();
+            this.labelCurrentQWIDSettings = new System.Windows.Forms.Label();
+            this.textBoxCurrentQWIDSettings = new System.Windows.Forms.TextBox();
+            this.labelCurrentSectionSettings = new System.Windows.Forms.Label();
+            this.textBoxCurrentSectionSettings = new System.Windows.Forms.TextBox();
+            this.groupBoxInstrument = new System.Windows.Forms.GroupBox();
+            this.labelInstrumentSerial = new System.Windows.Forms.Label();
+            this.textBoxInstrumentSerial = new System.Windows.Forms.TextBox();
+            this.labelOperatorID = new System.Windows.Forms.Label();
+            this.textBoxOperatorID = new System.Windows.Forms.TextBox();
+            this.groupBoxSounds = new System.Windows.Forms.GroupBox();
+            this.buttonTestOver = new System.Windows.Forms.Button();
+            this.buttonBrowseOver = new System.Windows.Forms.Button();
+            this.textBoxOverSound = new System.Windows.Forms.TextBox();
+            this.labelOverSound = new System.Windows.Forms.Label();
+            this.buttonTestDelete = new System.Windows.Forms.Button();
+            this.buttonBrowseDelete = new System.Windows.Forms.Button();
+            this.textBoxDeleteSound = new System.Windows.Forms.TextBox();
+            this.labelDeleteSound = new System.Windows.Forms.Label();
+            this.buttonTestBeep = new System.Windows.Forms.Button();
+            this.buttonBrowseBeep = new System.Windows.Forms.Button();
+            this.textBoxBeepSound = new System.Windows.Forms.TextBox();
+            this.labelBeepSound = new System.Windows.Forms.Label();
             this.groupBoxMySQL = new System.Windows.Forms.GroupBox();
             this.labelConnectionStatus = new System.Windows.Forms.Label();
             this.buttonTestConnection = new System.Windows.Forms.Button();
@@ -150,6 +173,9 @@
             this.groupBoxRepairRecord.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRepair)).BeginInit();
             this.tab_settings.SuspendLayout();
+            this.groupBoxQWRecordSettings.SuspendLayout();
+            this.groupBoxInstrument.SuspendLayout();
+            this.groupBoxSounds.SuspendLayout();
             this.groupBoxMySQL.SuspendLayout();
             this.groupBoxTolerance.SuspendLayout();
             this.panelParameters.SuspendLayout();
@@ -590,6 +616,58 @@
             this.groupBoxRepairRecord.TabStop = false;
             this.groupBoxRepairRecord.Text = "Repair Measurements";
             // 
+            // labelRepairSession
+            // 
+            this.labelRepairSession.AutoSize = true;
+            this.labelRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.labelRepairSession.ForeColor = System.Drawing.Color.White;
+            this.labelRepairSession.Location = new System.Drawing.Point(230, 30);
+            this.labelRepairSession.Name = "labelRepairSession";
+            this.labelRepairSession.Size = new System.Drawing.Size(65, 15);
+            this.labelRepairSession.TabIndex = 11;
+            this.labelRepairSession.Text = "รอบการซ่อม:";
+            // 
+            // buttonRepairHistory
+            // 
+            this.buttonRepairHistory.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
+            this.buttonRepairHistory.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonRepairHistory.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonRepairHistory.Font = new System.Drawing.Font("Segoe UI", 8.25F);
+            this.buttonRepairHistory.ForeColor = System.Drawing.Color.White;
+            this.buttonRepairHistory.Location = new System.Drawing.Point(476, 26);
+            this.buttonRepairHistory.Name = "buttonRepairHistory";
+            this.buttonRepairHistory.Size = new System.Drawing.Size(60, 25);
+            this.buttonRepairHistory.TabIndex = 12;
+            this.buttonRepairHistory.Text = "ประวัติ";
+            this.buttonRepairHistory.UseVisualStyleBackColor = false;
+            // 
+            // buttonNewRepairSession
+            // 
+            this.buttonNewRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
+            this.buttonNewRepairSession.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonNewRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonNewRepairSession.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold);
+            this.buttonNewRepairSession.ForeColor = System.Drawing.Color.White;
+            this.buttonNewRepairSession.Location = new System.Drawing.Point(410, 26);
+            this.buttonNewRepairSession.Name = "buttonNewRepairSession";
+            this.buttonNewRepairSession.Size = new System.Drawing.Size(60, 25);
+            this.buttonNewRepairSession.TabIndex = 9;
+            this.buttonNewRepairSession.Text = "+ สร้าง";
+            this.buttonNewRepairSession.UseVisualStyleBackColor = false;
+            // 
+            // comboBoxRepairSession
+            // 
+            this.comboBoxRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.comboBoxRepairSession.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.comboBoxRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.comboBoxRepairSession.ForeColor = System.Drawing.Color.White;
+            this.comboBoxRepairSession.FormattingEnabled = true;
+            this.comboBoxRepairSession.Location = new System.Drawing.Point(304, 27);
+            this.comboBoxRepairSession.Name = "comboBoxRepairSession";
+            this.comboBoxRepairSession.Size = new System.Drawing.Size(100, 23);
+            this.comboBoxRepairSession.TabIndex = 10;
+            // 
             // buttonDeselectAllRepair
             // 
             this.buttonDeselectAllRepair.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
@@ -617,58 +695,6 @@
             this.buttonSelectAllRepair.TabIndex = 6;
             this.buttonSelectAllRepair.Text = "☑ Select All";
             this.buttonSelectAllRepair.UseVisualStyleBackColor = false;
-            // 
-            // labelRepairSession
-            // 
-            this.labelRepairSession.AutoSize = true;
-            this.labelRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelRepairSession.ForeColor = System.Drawing.Color.White;
-            this.labelRepairSession.Location = new System.Drawing.Point(230, 30);
-            this.labelRepairSession.Name = "labelRepairSession";
-            this.labelRepairSession.Size = new System.Drawing.Size(70, 15);
-            this.labelRepairSession.TabIndex = 11;
-            this.labelRepairSession.Text = "รอบการซ่อม:";
-            // 
-            // comboBoxRepairSession
-            // 
-            this.comboBoxRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.comboBoxRepairSession.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.comboBoxRepairSession.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.comboBoxRepairSession.ForeColor = System.Drawing.Color.White;
-            this.comboBoxRepairSession.FormattingEnabled = true;
-            this.comboBoxRepairSession.Location = new System.Drawing.Point(304, 27);
-            this.comboBoxRepairSession.Name = "comboBoxRepairSession";
-            this.comboBoxRepairSession.Size = new System.Drawing.Size(100, 23);
-            this.comboBoxRepairSession.TabIndex = 10;
-            // 
-            // buttonNewRepairSession
-            // 
-            this.buttonNewRepairSession.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(204)))), ((int)(((byte)(113)))));
-            this.buttonNewRepairSession.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonNewRepairSession.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonNewRepairSession.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold);
-            this.buttonNewRepairSession.ForeColor = System.Drawing.Color.White;
-            this.buttonNewRepairSession.Location = new System.Drawing.Point(410, 26);
-            this.buttonNewRepairSession.Name = "buttonNewRepairSession";
-            this.buttonNewRepairSession.Size = new System.Drawing.Size(60, 25);
-            this.buttonNewRepairSession.TabIndex = 9;
-            this.buttonNewRepairSession.Text = "+ สร้าง";
-            this.buttonNewRepairSession.UseVisualStyleBackColor = false;
-            // 
-            // buttonRepairHistory
-            // 
-            this.buttonRepairHistory.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
-            this.buttonRepairHistory.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.buttonRepairHistory.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonRepairHistory.Font = new System.Drawing.Font("Segoe UI", 8.25F);
-            this.buttonRepairHistory.ForeColor = System.Drawing.Color.White;
-            this.buttonRepairHistory.Location = new System.Drawing.Point(476, 26);
-            this.buttonRepairHistory.Name = "buttonRepairHistory";
-            this.buttonRepairHistory.Size = new System.Drawing.Size(60, 25);
-            this.buttonRepairHistory.TabIndex = 12;
-            this.buttonRepairHistory.Text = "ประวัติ";
-            this.buttonRepairHistory.UseVisualStyleBackColor = false;
             // 
             // buttonChangeModelRepair
             // 
@@ -756,7 +782,11 @@
             // 
             // tab_settings
             // 
+            this.tab_settings.AutoScroll = true;
             this.tab_settings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.tab_settings.Controls.Add(this.groupBoxQWRecordSettings);
+            this.tab_settings.Controls.Add(this.groupBoxInstrument);
+            this.tab_settings.Controls.Add(this.groupBoxSounds);
             this.tab_settings.Controls.Add(this.groupBoxMySQL);
             this.tab_settings.Location = new System.Drawing.Point(4, 22);
             this.tab_settings.Name = "tab_settings";
@@ -764,6 +794,269 @@
             this.tab_settings.Size = new System.Drawing.Size(614, 507);
             this.tab_settings.TabIndex = 1;
             this.tab_settings.Text = "ตั้งค่า";
+            // 
+            // groupBoxQWRecordSettings
+            // 
+            this.groupBoxQWRecordSettings.Controls.Add(this.labelCurrentQWIDSettings);
+            this.groupBoxQWRecordSettings.Controls.Add(this.textBoxCurrentQWIDSettings);
+            this.groupBoxQWRecordSettings.Controls.Add(this.labelCurrentSectionSettings);
+            this.groupBoxQWRecordSettings.Controls.Add(this.textBoxCurrentSectionSettings);
+            this.groupBoxQWRecordSettings.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBoxQWRecordSettings.ForeColor = System.Drawing.Color.White;
+            this.groupBoxQWRecordSettings.Location = new System.Drawing.Point(20, 620);
+            this.groupBoxQWRecordSettings.Name = "groupBoxQWRecordSettings";
+            this.groupBoxQWRecordSettings.Size = new System.Drawing.Size(550, 110);
+            this.groupBoxQWRecordSettings.TabIndex = 3;
+            this.groupBoxQWRecordSettings.TabStop = false;
+            this.groupBoxQWRecordSettings.Text = "QW Record Settings";
+            // 
+            // labelCurrentQWIDSettings
+            // 
+            this.labelCurrentQWIDSettings.AutoSize = true;
+            this.labelCurrentQWIDSettings.Location = new System.Drawing.Point(20, 35);
+            this.labelCurrentQWIDSettings.Name = "labelCurrentQWIDSettings";
+            this.labelCurrentQWIDSettings.Size = new System.Drawing.Size(84, 15);
+            this.labelCurrentQWIDSettings.TabIndex = 0;
+            this.labelCurrentQWIDSettings.Text = "Current QWID:";
+            // 
+            // textBoxCurrentQWIDSettings
+            // 
+            this.textBoxCurrentQWIDSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxCurrentQWIDSettings.ForeColor = System.Drawing.Color.White;
+            this.textBoxCurrentQWIDSettings.Location = new System.Drawing.Point(140, 32);
+            this.textBoxCurrentQWIDSettings.Name = "textBoxCurrentQWIDSettings";
+            this.textBoxCurrentQWIDSettings.Size = new System.Drawing.Size(250, 23);
+            this.textBoxCurrentQWIDSettings.TabIndex = 1;
+            // 
+            // labelCurrentSectionSettings
+            // 
+            this.labelCurrentSectionSettings.AutoSize = true;
+            this.labelCurrentSectionSettings.Location = new System.Drawing.Point(20, 70);
+            this.labelCurrentSectionSettings.Name = "labelCurrentSectionSettings";
+            this.labelCurrentSectionSettings.Size = new System.Drawing.Size(92, 15);
+            this.labelCurrentSectionSettings.TabIndex = 2;
+            this.labelCurrentSectionSettings.Text = "Current Section:";
+            // 
+            // textBoxCurrentSectionSettings
+            // 
+            this.textBoxCurrentSectionSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxCurrentSectionSettings.ForeColor = System.Drawing.Color.White;
+            this.textBoxCurrentSectionSettings.Location = new System.Drawing.Point(140, 67);
+            this.textBoxCurrentSectionSettings.Name = "textBoxCurrentSectionSettings";
+            this.textBoxCurrentSectionSettings.Size = new System.Drawing.Size(250, 23);
+            this.textBoxCurrentSectionSettings.TabIndex = 3;
+            // 
+            // groupBoxInstrument
+            // 
+            this.groupBoxInstrument.Controls.Add(this.labelInstrumentSerial);
+            this.groupBoxInstrument.Controls.Add(this.textBoxInstrumentSerial);
+            this.groupBoxInstrument.Controls.Add(this.labelOperatorID);
+            this.groupBoxInstrument.Controls.Add(this.textBoxOperatorID);
+            this.groupBoxInstrument.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBoxInstrument.ForeColor = System.Drawing.Color.White;
+            this.groupBoxInstrument.Location = new System.Drawing.Point(20, 500);
+            this.groupBoxInstrument.Name = "groupBoxInstrument";
+            this.groupBoxInstrument.Size = new System.Drawing.Size(550, 110);
+            this.groupBoxInstrument.TabIndex = 2;
+            this.groupBoxInstrument.TabStop = false;
+            this.groupBoxInstrument.Text = "Instrument Settings";
+            // 
+            // labelInstrumentSerial
+            // 
+            this.labelInstrumentSerial.AutoSize = true;
+            this.labelInstrumentSerial.Location = new System.Drawing.Point(20, 35);
+            this.labelInstrumentSerial.Name = "labelInstrumentSerial";
+            this.labelInstrumentSerial.Size = new System.Drawing.Size(99, 15);
+            this.labelInstrumentSerial.TabIndex = 0;
+            this.labelInstrumentSerial.Text = "Instrument Serial:";
+            // 
+            // textBoxInstrumentSerial
+            // 
+            this.textBoxInstrumentSerial.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxInstrumentSerial.ForeColor = System.Drawing.Color.White;
+            this.textBoxInstrumentSerial.Location = new System.Drawing.Point(140, 32);
+            this.textBoxInstrumentSerial.Name = "textBoxInstrumentSerial";
+            this.textBoxInstrumentSerial.Size = new System.Drawing.Size(250, 23);
+            this.textBoxInstrumentSerial.TabIndex = 1;
+            // 
+            // labelOperatorID
+            // 
+            this.labelOperatorID.AutoSize = true;
+            this.labelOperatorID.Location = new System.Drawing.Point(20, 70);
+            this.labelOperatorID.Name = "labelOperatorID";
+            this.labelOperatorID.Size = new System.Drawing.Size(71, 15);
+            this.labelOperatorID.TabIndex = 2;
+            this.labelOperatorID.Text = "Operator ID:";
+            // 
+            // textBoxOperatorID
+            // 
+            this.textBoxOperatorID.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxOperatorID.ForeColor = System.Drawing.Color.White;
+            this.textBoxOperatorID.Location = new System.Drawing.Point(140, 67);
+            this.textBoxOperatorID.Name = "textBoxOperatorID";
+            this.textBoxOperatorID.Size = new System.Drawing.Size(100, 23);
+            this.textBoxOperatorID.TabIndex = 3;
+            // 
+            // groupBoxSounds
+            // 
+            this.groupBoxSounds.Controls.Add(this.buttonTestOver);
+            this.groupBoxSounds.Controls.Add(this.buttonBrowseOver);
+            this.groupBoxSounds.Controls.Add(this.textBoxOverSound);
+            this.groupBoxSounds.Controls.Add(this.labelOverSound);
+            this.groupBoxSounds.Controls.Add(this.buttonTestDelete);
+            this.groupBoxSounds.Controls.Add(this.buttonBrowseDelete);
+            this.groupBoxSounds.Controls.Add(this.textBoxDeleteSound);
+            this.groupBoxSounds.Controls.Add(this.labelDeleteSound);
+            this.groupBoxSounds.Controls.Add(this.buttonTestBeep);
+            this.groupBoxSounds.Controls.Add(this.buttonBrowseBeep);
+            this.groupBoxSounds.Controls.Add(this.textBoxBeepSound);
+            this.groupBoxSounds.Controls.Add(this.labelBeepSound);
+            this.groupBoxSounds.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBoxSounds.ForeColor = System.Drawing.Color.White;
+            this.groupBoxSounds.Location = new System.Drawing.Point(20, 310);
+            this.groupBoxSounds.Name = "groupBoxSounds";
+            this.groupBoxSounds.Size = new System.Drawing.Size(550, 180);
+            this.groupBoxSounds.TabIndex = 1;
+            this.groupBoxSounds.TabStop = false;
+            this.groupBoxSounds.Text = "Sound Settings";
+            // 
+            // buttonTestOver
+            // 
+            this.buttonTestOver.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonTestOver.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonTestOver.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonTestOver.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonTestOver.ForeColor = System.Drawing.Color.White;
+            this.buttonTestOver.Location = new System.Drawing.Point(470, 110);
+            this.buttonTestOver.Name = "buttonTestOver";
+            this.buttonTestOver.Size = new System.Drawing.Size(60, 25);
+            this.buttonTestOver.TabIndex = 11;
+            this.buttonTestOver.Text = "Test";
+            this.buttonTestOver.UseVisualStyleBackColor = false;
+            // 
+            // buttonBrowseOver
+            // 
+            this.buttonBrowseOver.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonBrowseOver.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonBrowseOver.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBrowseOver.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonBrowseOver.ForeColor = System.Drawing.Color.White;
+            this.buttonBrowseOver.Location = new System.Drawing.Point(400, 110);
+            this.buttonBrowseOver.Name = "buttonBrowseOver";
+            this.buttonBrowseOver.Size = new System.Drawing.Size(60, 25);
+            this.buttonBrowseOver.TabIndex = 10;
+            this.buttonBrowseOver.Text = "Browse";
+            this.buttonBrowseOver.UseVisualStyleBackColor = false;
+            // 
+            // textBoxOverSound
+            // 
+            this.textBoxOverSound.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxOverSound.ForeColor = System.Drawing.Color.White;
+            this.textBoxOverSound.Location = new System.Drawing.Point(110, 112);
+            this.textBoxOverSound.Name = "textBoxOverSound";
+            this.textBoxOverSound.Size = new System.Drawing.Size(280, 23);
+            this.textBoxOverSound.TabIndex = 9;
+            // 
+            // labelOverSound
+            // 
+            this.labelOverSound.AutoSize = true;
+            this.labelOverSound.Location = new System.Drawing.Point(20, 115);
+            this.labelOverSound.Name = "labelOverSound";
+            this.labelOverSound.Size = new System.Drawing.Size(72, 15);
+            this.labelOverSound.TabIndex = 8;
+            this.labelOverSound.Text = "Over Sound:";
+            // 
+            // buttonTestDelete
+            // 
+            this.buttonTestDelete.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonTestDelete.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonTestDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonTestDelete.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonTestDelete.ForeColor = System.Drawing.Color.White;
+            this.buttonTestDelete.Location = new System.Drawing.Point(470, 70);
+            this.buttonTestDelete.Name = "buttonTestDelete";
+            this.buttonTestDelete.Size = new System.Drawing.Size(60, 25);
+            this.buttonTestDelete.TabIndex = 7;
+            this.buttonTestDelete.Text = "Test";
+            this.buttonTestDelete.UseVisualStyleBackColor = false;
+            // 
+            // buttonBrowseDelete
+            // 
+            this.buttonBrowseDelete.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonBrowseDelete.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonBrowseDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBrowseDelete.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonBrowseDelete.ForeColor = System.Drawing.Color.White;
+            this.buttonBrowseDelete.Location = new System.Drawing.Point(400, 70);
+            this.buttonBrowseDelete.Name = "buttonBrowseDelete";
+            this.buttonBrowseDelete.Size = new System.Drawing.Size(60, 25);
+            this.buttonBrowseDelete.TabIndex = 6;
+            this.buttonBrowseDelete.Text = "Browse";
+            this.buttonBrowseDelete.UseVisualStyleBackColor = false;
+            // 
+            // textBoxDeleteSound
+            // 
+            this.textBoxDeleteSound.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxDeleteSound.ForeColor = System.Drawing.Color.White;
+            this.textBoxDeleteSound.Location = new System.Drawing.Point(110, 72);
+            this.textBoxDeleteSound.Name = "textBoxDeleteSound";
+            this.textBoxDeleteSound.Size = new System.Drawing.Size(280, 23);
+            this.textBoxDeleteSound.TabIndex = 5;
+            // 
+            // labelDeleteSound
+            // 
+            this.labelDeleteSound.AutoSize = true;
+            this.labelDeleteSound.Location = new System.Drawing.Point(20, 75);
+            this.labelDeleteSound.Name = "labelDeleteSound";
+            this.labelDeleteSound.Size = new System.Drawing.Size(80, 15);
+            this.labelDeleteSound.TabIndex = 4;
+            this.labelDeleteSound.Text = "Delete Sound:";
+            // 
+            // buttonTestBeep
+            // 
+            this.buttonTestBeep.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonTestBeep.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonTestBeep.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonTestBeep.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonTestBeep.ForeColor = System.Drawing.Color.White;
+            this.buttonTestBeep.Location = new System.Drawing.Point(470, 30);
+            this.buttonTestBeep.Name = "buttonTestBeep";
+            this.buttonTestBeep.Size = new System.Drawing.Size(60, 25);
+            this.buttonTestBeep.TabIndex = 3;
+            this.buttonTestBeep.Text = "Test";
+            this.buttonTestBeep.UseVisualStyleBackColor = false;
+            // 
+            // buttonBrowseBeep
+            // 
+            this.buttonBrowseBeep.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonBrowseBeep.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.buttonBrowseBeep.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBrowseBeep.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonBrowseBeep.ForeColor = System.Drawing.Color.White;
+            this.buttonBrowseBeep.Location = new System.Drawing.Point(400, 30);
+            this.buttonBrowseBeep.Name = "buttonBrowseBeep";
+            this.buttonBrowseBeep.Size = new System.Drawing.Size(60, 25);
+            this.buttonBrowseBeep.TabIndex = 2;
+            this.buttonBrowseBeep.Text = "Browse";
+            this.buttonBrowseBeep.UseVisualStyleBackColor = false;
+            // 
+            // textBoxBeepSound
+            // 
+            this.textBoxBeepSound.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.textBoxBeepSound.ForeColor = System.Drawing.Color.White;
+            this.textBoxBeepSound.Location = new System.Drawing.Point(110, 32);
+            this.textBoxBeepSound.Name = "textBoxBeepSound";
+            this.textBoxBeepSound.Size = new System.Drawing.Size(280, 23);
+            this.textBoxBeepSound.TabIndex = 1;
+            // 
+            // labelBeepSound
+            // 
+            this.labelBeepSound.AutoSize = true;
+            this.labelBeepSound.Location = new System.Drawing.Point(20, 35);
+            this.labelBeepSound.Name = "labelBeepSound";
+            this.labelBeepSound.Size = new System.Drawing.Size(73, 15);
+            this.labelBeepSound.TabIndex = 0;
+            this.labelBeepSound.Text = "Beep Sound:";
             // 
             // groupBoxMySQL
             // 
@@ -788,7 +1081,6 @@
             this.groupBoxMySQL.TabIndex = 0;
             this.groupBoxMySQL.TabStop = false;
             this.groupBoxMySQL.Text = "MySQL Database Settings";
-            this.groupBoxMySQL.Visible = false;
             // 
             // labelConnectionStatus
             // 
@@ -1699,8 +1991,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRD)).EndInit();
             this.tab_repair.ResumeLayout(false);
             this.groupBoxRepairRecord.ResumeLayout(false);
+            this.groupBoxRepairRecord.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRepair)).EndInit();
             this.tab_settings.ResumeLayout(false);
+            this.groupBoxQWRecordSettings.ResumeLayout(false);
+            this.groupBoxQWRecordSettings.PerformLayout();
+            this.groupBoxInstrument.ResumeLayout(false);
+            this.groupBoxInstrument.PerformLayout();
+            this.groupBoxSounds.ResumeLayout(false);
+            this.groupBoxSounds.PerformLayout();
             this.groupBoxMySQL.ResumeLayout(false);
             this.groupBoxMySQL.PerformLayout();
             this.groupBoxTolerance.ResumeLayout(false);
@@ -1839,5 +2138,28 @@
         private System.Windows.Forms.Button buttonNewRepairSession;
         private System.Windows.Forms.Button buttonRepairHistory;
         private System.Windows.Forms.Label labelRepairSession;
+        private System.Windows.Forms.GroupBox groupBoxSounds;
+        private System.Windows.Forms.Label labelBeepSound;
+        private System.Windows.Forms.TextBox textBoxBeepSound;
+        private System.Windows.Forms.Button buttonBrowseBeep;
+        private System.Windows.Forms.Button buttonTestBeep;
+        private System.Windows.Forms.Label labelDeleteSound;
+        private System.Windows.Forms.TextBox textBoxDeleteSound;
+        private System.Windows.Forms.Button buttonBrowseDelete;
+        private System.Windows.Forms.Button buttonTestDelete;
+        private System.Windows.Forms.Label labelOverSound;
+        private System.Windows.Forms.TextBox textBoxOverSound;
+        private System.Windows.Forms.Button buttonBrowseOver;
+        private System.Windows.Forms.Button buttonTestOver;
+        private System.Windows.Forms.GroupBox groupBoxInstrument;
+        private System.Windows.Forms.Label labelInstrumentSerial;
+        private System.Windows.Forms.TextBox textBoxInstrumentSerial;
+        private System.Windows.Forms.Label labelOperatorID;
+        private System.Windows.Forms.TextBox textBoxOperatorID;
+        private System.Windows.Forms.GroupBox groupBoxQWRecordSettings;
+        private System.Windows.Forms.Label labelCurrentQWIDSettings;
+        private System.Windows.Forms.TextBox textBoxCurrentQWIDSettings;
+        private System.Windows.Forms.Label labelCurrentSectionSettings;
+        private System.Windows.Forms.TextBox textBoxCurrentSectionSettings;
     }
 }
