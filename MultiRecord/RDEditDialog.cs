@@ -24,6 +24,7 @@ namespace MultiRecord
         private Label labelNote;
         private TextBox textBoxNote;
         private Button buttonSave;
+        private Button button1;
         private Button buttonCancel;
 
         public string MeasurementName { get; set; }
@@ -71,6 +72,7 @@ namespace MultiRecord
             this.textBoxNote = new System.Windows.Forms.TextBox();
             this.buttonSave = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.panelToleranceType.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -150,7 +152,7 @@ namespace MultiRecord
             this.textBoxMeasurementValue.ForeColor = System.Drawing.Color.White;
             this.textBoxMeasurementValue.Location = new System.Drawing.Point(129, 113);
             this.textBoxMeasurementValue.Name = "textBoxMeasurementValue";
-            this.textBoxMeasurementValue.Size = new System.Drawing.Size(266, 23);
+            this.textBoxMeasurementValue.Size = new System.Drawing.Size(170, 23);
             this.textBoxMeasurementValue.TabIndex = 5;
             // 
             // checkBoxToleranceEnable
@@ -302,12 +304,27 @@ namespace MultiRecord
             this.buttonCancel.UseVisualStyleBackColor = false;
             this.buttonCancel.Click += new System.EventHandler(this.ButtonCancel_Click);
             // 
+            // button1
+            // 
+            this.button1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(106)))), ((int)(((byte)(153)))), ((int)(((byte)(78)))));
+            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.button1.ForeColor = System.Drawing.Color.White;
+            this.button1.Location = new System.Drawing.Point(305, 110);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(89, 26);
+            this.button1.TabIndex = 13;
+            this.button1.Text = "OVERLOAD";
+            this.button1.UseVisualStyleBackColor = false;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // RDEditDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
             this.ClientSize = new System.Drawing.Size(415, 402);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.labelMeasurementName);
             this.Controls.Add(this.textBoxMeasurementName);
             this.Controls.Add(this.labelFunction);
@@ -449,6 +466,11 @@ namespace MultiRecord
             textBoxUpperLimit.Enabled = enabled;
             labelLowerLimit.Enabled = enabled;
             textBoxLowerLimit.Enabled = enabled;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            textBoxMeasurementValue.Text = "-1000000.0";
         }
     }
 }

@@ -2962,7 +2962,7 @@ namespace MultiRecord
                 string measurement = _isOverload ? "OVERLOAD" : _lastReadingValue.ToString("F4", CultureInfo.InvariantCulture);
                 
                 // สำหรับ OVERLOAD ใช้ค่าพิเศษ -999999.99999999 (ภายในขีดจำกัด DECIMAL(15,8))
-                double valueToSave = _isOverload ? -999999.99999999 : _lastReadingValue;
+                double valueToSave = _isOverload ? -1000000.0 : _lastReadingValue;
                 
                 // ดึงข้อมูล system_info จาก textBoxSystemInfo
                 string systemInfo = textBoxSystemInfo.Text ?? "";
