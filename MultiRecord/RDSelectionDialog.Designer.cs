@@ -48,6 +48,19 @@ namespace MultiRecord
             this.groupBoxModelSelection.TabStop = false;
             this.groupBoxModelSelection.Text = "ค้นหา Model";
             // 
+            // listBoxModelResults
+            // 
+            this.listBoxModelResults.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.listBoxModelResults.ForeColor = System.Drawing.Color.White;
+            this.listBoxModelResults.FormattingEnabled = true;
+            this.listBoxModelResults.Location = new System.Drawing.Point(70, 48);
+            this.listBoxModelResults.Name = "listBoxModelResults";
+            this.listBoxModelResults.Size = new System.Drawing.Size(370, 121);
+            this.listBoxModelResults.TabIndex = 2;
+            this.listBoxModelResults.Visible = false;
+            this.listBoxModelResults.SelectedIndexChanged += new System.EventHandler(this.ListBoxModelResults_SelectedIndexChanged);
+            this.listBoxModelResults.DoubleClick += new System.EventHandler(this.ListBoxModelResults_DoubleClick);
+            // 
             // labelModel
             // 
             this.labelModel.AutoSize = true;
@@ -67,19 +80,6 @@ namespace MultiRecord
             this.textBoxModelSearch.Size = new System.Drawing.Size(370, 20);
             this.textBoxModelSearch.TabIndex = 1;
             this.textBoxModelSearch.TextChanged += new System.EventHandler(this.TextBoxModelSearch_TextChanged);
-            // 
-            // listBoxModelResults
-            // 
-            this.listBoxModelResults.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
-            this.listBoxModelResults.ForeColor = System.Drawing.Color.White;
-            this.listBoxModelResults.FormattingEnabled = true;
-            this.listBoxModelResults.Location = new System.Drawing.Point(70, 48);
-            this.listBoxModelResults.Name = "listBoxModelResults";
-            this.listBoxModelResults.Size = new System.Drawing.Size(370, 121);
-            this.listBoxModelResults.TabIndex = 2;
-            this.listBoxModelResults.Visible = false;
-            this.listBoxModelResults.SelectedIndexChanged += new System.EventHandler(this.ListBoxModelResults_SelectedIndexChanged);
-            this.listBoxModelResults.DoubleClick += new System.EventHandler(this.ListBoxModelResults_DoubleClick);
             // 
             // groupBoxAction
             // 
@@ -103,7 +103,7 @@ namespace MultiRecord
             this.buttonCreateNew.Name = "buttonCreateNew";
             this.buttonCreateNew.Size = new System.Drawing.Size(200, 40);
             this.buttonCreateNew.TabIndex = 0;
-            this.buttonCreateNew.Text = "สร้าง Serial Number ใหม่";
+            this.buttonCreateNew.Text = "สร้าง ชุดทดสอบ ใหม่";
             this.buttonCreateNew.UseVisualStyleBackColor = false;
             this.buttonCreateNew.Click += new System.EventHandler(this.ButtonCreateNew_Click);
             // 
@@ -118,7 +118,7 @@ namespace MultiRecord
             this.buttonLoadExisting.Name = "buttonLoadExisting";
             this.buttonLoadExisting.Size = new System.Drawing.Size(200, 40);
             this.buttonLoadExisting.TabIndex = 1;
-            this.buttonLoadExisting.Text = "โหลด Serial Number ที่มีอยู่";
+            this.buttonLoadExisting.Text = "โหลด ชุดทดสอบ ที่มีอยู่";
             this.buttonLoadExisting.UseVisualStyleBackColor = false;
             this.buttonLoadExisting.Click += new System.EventHandler(this.ButtonLoadExisting_Click);
             // 
@@ -133,7 +133,7 @@ namespace MultiRecord
             this.groupBoxExistingSerial.Size = new System.Drawing.Size(460, 100);
             this.groupBoxExistingSerial.TabIndex = 1;
             this.groupBoxExistingSerial.TabStop = false;
-            this.groupBoxExistingSerial.Text = "Serial Numbers ที่มีอยู่";
+            this.groupBoxExistingSerial.Text = "ชื่อชุดทดสอบ ";
             // 
             // labelSerialNumber
             // 
@@ -141,9 +141,9 @@ namespace MultiRecord
             this.labelSerialNumber.ForeColor = System.Drawing.Color.White;
             this.labelSerialNumber.Location = new System.Drawing.Point(15, 25);
             this.labelSerialNumber.Name = "labelSerialNumber";
-            this.labelSerialNumber.Size = new System.Drawing.Size(77, 13);
+            this.labelSerialNumber.Size = new System.Drawing.Size(73, 13);
             this.labelSerialNumber.TabIndex = 0;
-            this.labelSerialNumber.Text = "Serial Number:";
+            this.labelSerialNumber.Text = "ชื่อชุดทดสอบ :";
             // 
             // comboBoxSerialNumbers
             // 
@@ -162,7 +162,7 @@ namespace MultiRecord
             this.labelSerialInfo.ForeColor = System.Drawing.Color.Gray;
             this.labelSerialInfo.Location = new System.Drawing.Point(15, 55);
             this.labelSerialInfo.Name = "labelSerialInfo";
-            this.labelSerialInfo.Size = new System.Drawing.Size(142, 13);
+            this.labelSerialInfo.Size = new System.Drawing.Size(123, 13);
             this.labelSerialInfo.TabIndex = 2;
             this.labelSerialInfo.Text = "กรุณาเลือก Model ก่อน...";
             // 
@@ -187,9 +187,9 @@ namespace MultiRecord
             this.labelTitle.ForeColor = System.Drawing.Color.White;
             this.labelTitle.Location = new System.Drawing.Point(12, 15);
             this.labelTitle.Name = "labelTitle";
-            this.labelTitle.Size = new System.Drawing.Size(258, 20);
+            this.labelTitle.Size = new System.Drawing.Size(203, 20);
             this.labelTitle.TabIndex = 4;
-            this.labelTitle.Text = "เลือก Model และ Serial Number";
+            this.labelTitle.Text = "เลือก Model และ ชุดทดสอบ";
             // 
             // RDSelectionDialog
             // 
@@ -207,7 +207,7 @@ namespace MultiRecord
             this.MinimizeBox = false;
             this.Name = "RDSelectionDialog";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "R&D - เลือก Model และ Serial Number";
+            this.Text = "R&D - เลือก Model และ ชุดทดสอบ";
             this.groupBoxModelSelection.ResumeLayout(false);
             this.groupBoxModelSelection.PerformLayout();
             this.groupBoxAction.ResumeLayout(false);

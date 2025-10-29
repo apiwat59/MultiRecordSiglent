@@ -35,9 +35,9 @@ namespace MultiRecord
             this.labelTitle.ForeColor = System.Drawing.Color.White;
             this.labelTitle.Location = new System.Drawing.Point(12, 15);
             this.labelTitle.Name = "labelTitle";
-            this.labelTitle.Size = new System.Drawing.Size(188, 20);
+            this.labelTitle.Size = new System.Drawing.Size(169, 20);
             this.labelTitle.TabIndex = 0;
-            this.labelTitle.Text = "สร้าง Serial Number ใหม่";
+            this.labelTitle.Text = "สร้าง ชื่อชุดทดสอบ ใหม่";
             // 
             // labelModelName
             // 
@@ -60,7 +60,7 @@ namespace MultiRecord
             this.groupBoxSerialInput.Size = new System.Drawing.Size(400, 100);
             this.groupBoxSerialInput.TabIndex = 2;
             this.groupBoxSerialInput.TabStop = false;
-            this.groupBoxSerialInput.Text = "ข้อมูล Serial Number";
+            this.groupBoxSerialInput.Text = "ชื่อชุดทดสอบ";
             // 
             // labelSerialNumber
             // 
@@ -68,9 +68,9 @@ namespace MultiRecord
             this.labelSerialNumber.ForeColor = System.Drawing.Color.White;
             this.labelSerialNumber.Location = new System.Drawing.Point(15, 25);
             this.labelSerialNumber.Name = "labelSerialNumber";
-            this.labelSerialNumber.Size = new System.Drawing.Size(77, 13);
+            this.labelSerialNumber.Size = new System.Drawing.Size(73, 13);
             this.labelSerialNumber.TabIndex = 0;
-            this.labelSerialNumber.Text = "Serial Number:";
+            this.labelSerialNumber.Text = "ชื่อชุดทดสอบ :";
             // 
             // textBoxSerialNumber
             // 
@@ -90,8 +90,7 @@ namespace MultiRecord
             this.labelInstructions.Name = "labelInstructions";
             this.labelInstructions.Size = new System.Drawing.Size(365, 30);
             this.labelInstructions.TabIndex = 2;
-            this.labelInstructions.Text = "ใส่ Serial Number ที่ต้องการสร้าง (ต้องไม่ซ้ำกับที่มีอยู่)\r\nกด Enter เพื่อสร้าง หรือ" +
-    " Escape เพื่อยกเลิก";
+            this.labelInstructions.Text = "ใส่ชื่อชุดทดสอบที่ต้องการสร้าง \r\nกด Enter เพื่อสร้าง หรือ Escape เพื่อยกเลิก";
             // 
             // buttonCreate
             // 

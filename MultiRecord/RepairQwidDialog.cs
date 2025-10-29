@@ -41,146 +41,126 @@ namespace MultiRecord
 
         private void InitializeComponent()
         {
-            this.textBoxQwid = new TextBox();
-            this.labelQwid = new Label();
-            this.labelModelInfo = new Label();
-            this.labelSerial = new Label();
-            this.textBoxSerial = new TextBox();
-            this.buttonCreate = new Button();
-            this.buttonCancel = new Button();
-            this.listBoxQwidSuggestions = new ListBox();
-            this.listBoxSerialSuggestions = new ListBox();
+            this.textBoxQwid = new System.Windows.Forms.TextBox();
+            this.labelQwid = new System.Windows.Forms.Label();
+            this.labelModelInfo = new System.Windows.Forms.Label();
+            this.labelSerial = new System.Windows.Forms.Label();
+            this.textBoxSerial = new System.Windows.Forms.TextBox();
+            this.buttonCreate = new System.Windows.Forms.Button();
+            this.buttonCancel = new System.Windows.Forms.Button();
+            this.listBoxQwidSuggestions = new System.Windows.Forms.ListBox();
+            this.listBoxSerialSuggestions = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
-
+            // 
+            // textBoxQwid
+            // 
+            this.textBoxQwid.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxQwid.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.textBoxQwid.ForeColor = System.Drawing.Color.White;
+            this.textBoxQwid.Location = new System.Drawing.Point(20, 45);
+            this.textBoxQwid.Name = "textBoxQwid";
+            this.textBoxQwid.Size = new System.Drawing.Size(360, 25);
+            this.textBoxQwid.TabIndex = 1;
             // 
             // labelQwid
             // 
             this.labelQwid.AutoSize = true;
-            this.labelQwid.Font = new Font("Segoe UI", 10F);
-            this.labelQwid.ForeColor = Color.White;
-            this.labelQwid.Location = new Point(20, 20);
+            this.labelQwid.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.labelQwid.ForeColor = System.Drawing.Color.White;
+            this.labelQwid.Location = new System.Drawing.Point(20, 20);
             this.labelQwid.Name = "labelQwid";
-            this.labelQwid.Size = new Size(100, 19);
+            this.labelQwid.Size = new System.Drawing.Size(50, 19);
             this.labelQwid.TabIndex = 0;
             this.labelQwid.Text = "QWID:";
-
-            // 
-            // textBoxQwid
-            // 
-            this.textBoxQwid.BackColor = Color.FromArgb(30, 30, 30);
-            this.textBoxQwid.ForeColor = Color.White;
-            this.textBoxQwid.Font = new Font("Segoe UI", 10F);
-            this.textBoxQwid.Location = new Point(20, 45);
-            this.textBoxQwid.Name = "textBoxQwid";
-            this.textBoxQwid.Size = new Size(360, 25);
-            this.textBoxQwid.TabIndex = 1;
-            this.textBoxQwid.TextChanged += TextBoxQwid_TextChanged;
-            this.textBoxQwid.KeyDown += TextBoxQwid_KeyDown;
-
-            // 
-            // listBoxQwidSuggestions
-            // 
-            this.listBoxQwidSuggestions.BackColor = Color.FromArgb(45, 45, 48);
-            this.listBoxQwidSuggestions.ForeColor = Color.White;
-            this.listBoxQwidSuggestions.Font = new Font("Segoe UI", 9F);
-            this.listBoxQwidSuggestions.Location = new Point(20, 70);
-            this.listBoxQwidSuggestions.Name = "listBoxQwidSuggestions";
-            this.listBoxQwidSuggestions.Size = new Size(360, 120);
-            this.listBoxQwidSuggestions.TabIndex = 2;
-            this.listBoxQwidSuggestions.Visible = false;
-            this.listBoxQwidSuggestions.Click += ListBoxQwidSuggestions_Click;
-            this.listBoxQwidSuggestions.KeyDown += ListBoxQwidSuggestions_KeyDown;
-
             // 
             // labelModelInfo
             // 
-            this.labelModelInfo.AutoSize = false;
-            this.labelModelInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            this.labelModelInfo.ForeColor = Color.LightGreen;
-            this.labelModelInfo.Location = new Point(20, 195);
+            this.labelModelInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.labelModelInfo.ForeColor = System.Drawing.Color.LightGreen;
+            this.labelModelInfo.Location = new System.Drawing.Point(20, 195);
             this.labelModelInfo.Name = "labelModelInfo";
-            this.labelModelInfo.Size = new Size(360, 20);
+            this.labelModelInfo.Size = new System.Drawing.Size(360, 20);
             this.labelModelInfo.TabIndex = 8;
-            this.labelModelInfo.Text = "";
             this.labelModelInfo.Visible = false;
-
             // 
             // labelSerial
             // 
             this.labelSerial.AutoSize = true;
-            this.labelSerial.Font = new Font("Segoe UI", 10F);
-            this.labelSerial.ForeColor = Color.White;
-            this.labelSerial.Location = new Point(20, 220);
+            this.labelSerial.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.labelSerial.ForeColor = System.Drawing.Color.White;
+            this.labelSerial.Location = new System.Drawing.Point(20, 220);
             this.labelSerial.Name = "labelSerial";
-            this.labelSerial.Size = new Size(100, 19);
+            this.labelSerial.Size = new System.Drawing.Size(71, 19);
             this.labelSerial.TabIndex = 3;
-            this.labelSerial.Text = "Serial Number:";
-
+            this.labelSerial.Text = "ชุดทดสอบ :";
             // 
             // textBoxSerial
             // 
-            this.textBoxSerial.BackColor = Color.FromArgb(30, 30, 30);
-            this.textBoxSerial.ForeColor = Color.White;
-            this.textBoxSerial.Font = new Font("Segoe UI", 10F);
-            this.textBoxSerial.Location = new Point(20, 245);
+            this.textBoxSerial.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.textBoxSerial.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.textBoxSerial.ForeColor = System.Drawing.Color.White;
+            this.textBoxSerial.Location = new System.Drawing.Point(20, 245);
             this.textBoxSerial.Name = "textBoxSerial";
-            this.textBoxSerial.Size = new Size(360, 25);
+            this.textBoxSerial.Size = new System.Drawing.Size(360, 25);
             this.textBoxSerial.TabIndex = 4;
-            this.textBoxSerial.TextChanged += TextBoxSerial_TextChanged;
-            this.textBoxSerial.KeyDown += TextBoxSerial_KeyDown;
-
-            // 
-            // listBoxSerialSuggestions
-            // 
-            this.listBoxSerialSuggestions.BackColor = Color.FromArgb(45, 45, 48);
-            this.listBoxSerialSuggestions.ForeColor = Color.White;
-            this.listBoxSerialSuggestions.Font = new Font("Segoe UI", 9F);
-            this.listBoxSerialSuggestions.Location = new Point(20, 270);
-            this.listBoxSerialSuggestions.Name = "listBoxSerialSuggestions";
-            this.listBoxSerialSuggestions.Size = new Size(360, 120);
-            this.listBoxSerialSuggestions.TabIndex = 5;
-            this.listBoxSerialSuggestions.Visible = false;
-            this.listBoxSerialSuggestions.Click += ListBoxSerialSuggestions_Click;
-            this.listBoxSerialSuggestions.KeyDown += ListBoxSerialSuggestions_KeyDown;
-
             // 
             // buttonCreate
             // 
-            this.buttonCreate.BackColor = Color.FromArgb(0, 122, 204);
-            this.buttonCreate.FlatStyle = FlatStyle.Flat;
-            this.buttonCreate.Font = new Font("Segoe UI", 9F);
-            this.buttonCreate.ForeColor = Color.White;
-            this.buttonCreate.Location = new Point(180, 380);
+            this.buttonCreate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(122)))), ((int)(((byte)(204)))));
+            this.buttonCreate.Enabled = false;
+            this.buttonCreate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonCreate.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonCreate.ForeColor = System.Drawing.Color.White;
+            this.buttonCreate.Location = new System.Drawing.Point(180, 380);
             this.buttonCreate.Name = "buttonCreate";
-            this.buttonCreate.Size = new Size(100, 35);
+            this.buttonCreate.Size = new System.Drawing.Size(100, 35);
             this.buttonCreate.TabIndex = 6;
             this.buttonCreate.Text = "สร้าง";
             this.buttonCreate.UseVisualStyleBackColor = false;
-            this.buttonCreate.Enabled = false;
-            this.buttonCreate.Click += ButtonCreate_Click;
-
             // 
             // buttonCancel
             // 
-            this.buttonCancel.BackColor = Color.FromArgb(63, 63, 70);
-            this.buttonCancel.FlatStyle = FlatStyle.Flat;
-            this.buttonCancel.Font = new Font("Segoe UI", 9F);
-            this.buttonCancel.ForeColor = Color.White;
-            this.buttonCancel.Location = new Point(290, 380);
+            this.buttonCancel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonCancel.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.buttonCancel.ForeColor = System.Drawing.Color.White;
+            this.buttonCancel.Location = new System.Drawing.Point(290, 380);
             this.buttonCancel.Name = "buttonCancel";
-            this.buttonCancel.Size = new Size(90, 35);
+            this.buttonCancel.Size = new System.Drawing.Size(90, 35);
             this.buttonCancel.TabIndex = 7;
             this.buttonCancel.Text = "ยกเลิก";
             this.buttonCancel.UseVisualStyleBackColor = false;
-            this.buttonCancel.Click += ButtonCancel_Click;
-
+            // 
+            // listBoxQwidSuggestions
+            // 
+            this.listBoxQwidSuggestions.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.listBoxQwidSuggestions.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.listBoxQwidSuggestions.ForeColor = System.Drawing.Color.White;
+            this.listBoxQwidSuggestions.ItemHeight = 15;
+            this.listBoxQwidSuggestions.Location = new System.Drawing.Point(20, 70);
+            this.listBoxQwidSuggestions.Name = "listBoxQwidSuggestions";
+            this.listBoxQwidSuggestions.Size = new System.Drawing.Size(360, 109);
+            this.listBoxQwidSuggestions.TabIndex = 2;
+            this.listBoxQwidSuggestions.Visible = false;
+            // 
+            // listBoxSerialSuggestions
+            // 
+            this.listBoxSerialSuggestions.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.listBoxSerialSuggestions.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.listBoxSerialSuggestions.ForeColor = System.Drawing.Color.White;
+            this.listBoxSerialSuggestions.ItemHeight = 15;
+            this.listBoxSerialSuggestions.Location = new System.Drawing.Point(20, 270);
+            this.listBoxSerialSuggestions.Name = "listBoxSerialSuggestions";
+            this.listBoxSerialSuggestions.Size = new System.Drawing.Size(360, 109);
+            this.listBoxSerialSuggestions.TabIndex = 5;
+            this.listBoxSerialSuggestions.Visible = false;
             // 
             // RepairQwidDialog
             // 
-            this.AutoScaleDimensions = new SizeF(6F, 13F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.BackColor = Color.FromArgb(45, 45, 48);
-            this.ClientSize = new Size(400, 450);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.ClientSize = new System.Drawing.Size(400, 450);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonCreate);
             this.Controls.Add(this.listBoxSerialSuggestions);
@@ -190,14 +170,15 @@ namespace MultiRecord
             this.Controls.Add(this.listBoxQwidSuggestions);
             this.Controls.Add(this.textBoxQwid);
             this.Controls.Add(this.labelQwid);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "RepairQwidDialog";
-            this.StartPosition = FormStartPosition.CenterParent;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "เลือก QWID สำหรับ Repair";
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
 
         private void InitializeSearchTimers()
@@ -485,14 +466,14 @@ namespace MultiRecord
                     else
                     {
                         listBoxSerialSuggestions.Items.Clear();
-                        listBoxSerialSuggestions.Items.Add("❌ ไม่พบ Serial สำหรับ Model นี้");
+                        listBoxSerialSuggestions.Items.Add("❌ ไม่พบ ชุดทดสอบ สำหรับ Model นี้");
                         listBoxSerialSuggestions.Visible = true;
                     }
                 }
                 else
                 {
                     listBoxSerialSuggestions.Items.Clear();
-                    listBoxSerialSuggestions.Items.Add("❌ ไม่พบ Serial สำหรับ Model นี้");
+                    listBoxSerialSuggestions.Items.Add("❌ ไม่พบ ชุดทดสอบ สำหรับ Model นี้");
                     listBoxSerialSuggestions.Visible = true;
                 }
             }
@@ -813,7 +794,7 @@ namespace MultiRecord
                     // Serial doesn't exist หรือไม่ตรงกับ model
                     if (_selectedModelId > 0)
                     {
-                        MessageBox.Show($"ไม่พบ Serial Number นี้สำหรับ Model ที่เลือก", 
+                        MessageBox.Show($"ไม่พบ ชุดทดสอบ นี้สำหรับ Model ที่เลือก", 
                             "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                     buttonCreate.Enabled = false;

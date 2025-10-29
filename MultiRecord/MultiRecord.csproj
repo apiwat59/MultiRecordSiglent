@@ -150,6 +150,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MySqlHelper.cs" />
+    <EmbeddedResource Include="CreateSerialDialog.resx">
+      <DependentUpon>CreateSerialDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
     </EmbeddedResource>
@@ -170,6 +173,12 @@
     </Compile>
     <EmbeddedResource Include="RDEditDialog.resx">
       <DependentUpon>RDEditDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RDSelectionDialog.resx">
+      <DependentUpon>RDSelectionDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RepairQwidDialog.resx">
+      <DependentUpon>RepairQwidDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>

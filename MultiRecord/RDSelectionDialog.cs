@@ -208,12 +208,12 @@ namespace MultiRecord
                 
                 if (_serialNumbers.Count == 0)
                 {
-                    labelSerialInfo.Text = "ไม่มี Serial Number สำหรับ Model นี้";
+                    labelSerialInfo.Text = "ไม่มี ชุดทดสอบ สำหรับ Model นี้";
                     labelSerialInfo.ForeColor = Color.Orange;
                 }
                 else
                 {
-                    labelSerialInfo.Text = $"พบ {_serialNumbers.Count} Serial Numbers";
+                    labelSerialInfo.Text = $"พบ {_serialNumbers.Count} ชุดทดสอบ";
                     labelSerialInfo.ForeColor = Color.Green;
                 }
             }
@@ -250,7 +250,7 @@ namespace MultiRecord
             }
             catch (Exception ex)
             {
-                throw new Exception($"ไม่สามารถโหลด Serial Numbers จาก database: {ex.Message}");
+                throw new Exception($"ไม่สามารถโหลด ชุดทดสอบ จาก database: {ex.Message}");
             }
             
             return serialNumbers;
@@ -310,7 +310,7 @@ namespace MultiRecord
 
             if (comboBoxSerialNumbers.SelectedItem == null)
             {
-                MessageBox.Show("กรุณาเลือก Serial Number ก่อน", "ต้องเลือก Serial Number", 
+                MessageBox.Show("กรุณาเลือก ชุดทดสอบ ก่อน", "ต้องเลือก ชุดทดสอบ", 
                               MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
