@@ -1490,27 +1490,74 @@ namespace MultiRecord
             
             if (absValue >= 1000000) // Mega
             {
-                return $"{(value / 1000000):F3} M{unit}";
+                return $"{(value / 1000000).ToString("N3", CultureInfo.InvariantCulture)} M{unit}";
             }
             else if (absValue >= 1000) // Kilo
             {
-                return $"{(value / 1000):F3} k{unit}";
+                return $"{(value / 1000).ToString("N3", CultureInfo.InvariantCulture)} k{unit}";
             }
             else if (absValue >= 1) // Standard
             {
-                return $"{value:F4} {unit}";
+                return $"{value.ToString("N4", CultureInfo.InvariantCulture)} {unit}";
             }
             else if (absValue >= 0.001) // milli
             {
-                return $"{(value * 1000):F3} m{unit}";
+                return $"{(value * 1000).ToString("N3", CultureInfo.InvariantCulture)} m{unit}";
             }
             else if (absValue >= 0.000001) // micro
             {
-                return $"{(value * 1000000):F3} µ{unit}";
+                return $"{(value * 1000000).ToString("N3", CultureInfo.InvariantCulture)} µ{unit}";
             }
             else // nano or smaller
             {
-                return $"{value:F6} {unit}";
+                return $"{value.ToString("N6", CultureInfo.InvariantCulture)} {unit}";
+            }
+        }
+
+        // Helper method to format values for R&D table (custom format like 100k, 1M)
+        private string FormatRDTableValue(double value, string functionName)
+        {
+            // สำหรับโหมด RES2W, RES4W, Resistance2W, Resistance4W ให้ใช้ format แบบ 100k, 1M
+            if (functionName != null && 
+                (functionName.ToUpper().Contains("RES2W") || 
+                 functionName.ToUpper().Contains("RES4W") ||
+                 functionName.ToUpper().Contains("RESISTANCE2W") || 
+                 functionName.ToUpper().Contains("RESISTANCE4W")))
+            {
+                double absValue = Math.Abs(value);
+                
+                if (absValue >= 1000000) // Mega (M)
+                {
+                    double megaValue = value / 1000000;
+                    // แสดงทศนิยม 4 ตำแหน่งเสมอ เช่น 3.0211M, 1.0000M
+                    return $"{megaValue:0.0000}M";
+                }
+                else if (absValue >= 1000) // Kilo (k)
+                {
+                    double kiloValue = value / 1000;
+                    // แสดงทศนิยม 4 ตำแหน่งเสมอ เช่น 100.0000k, 4.6355k
+                    return $"{kiloValue:0.0000}k";
+                }
+                else if (absValue >= 1) // Standard (Ω)
+                {
+                    // ค่าตั้งแต่ 1 ขึ้นไป แสดงไม่มีทศนิยม เช่น 100, 470
+                    if (Math.Abs(value - Math.Round(value)) < 0.01)
+                    {
+                        return $"{Math.Round(value)}";
+                    }
+                    // ถ้ามีทศนิยม แสดง 1 ตำแหน่ง
+                    return $"{value:0.#}";
+                }
+                else
+                {
+                    // ค่าน้อยกว่า 1 แสดง 2 ทศนิยม
+                    return value.ToString("0.##", CultureInfo.InvariantCulture);
+                }
+            }
+            else
+            {
+                // สำหรับโหมดอื่นๆ ใช้ format แบบปกติ (มี comma คั่นหลักพัน)
+                return value.ToString("N4", CultureInfo.InvariantCulture);
             }
         }
 
@@ -2302,7 +2349,8 @@ namespace MultiRecord
             _rdRecordsTable.Columns.Add("No", typeof(int));
             _rdRecordsTable.Columns.Add("Name", typeof(string)); // เพิ่มชื่อจุดวัด
             _rdRecordsTable.Columns.Add("Function", typeof(string));
-            _rdRecordsTable.Columns.Add("Measurement", typeof(string));
+            _rdRecordsTable.Columns.Add("Measurement", typeof(string)); // สำหรับแสดงผล (formatted)
+            _rdRecordsTable.Columns.Add("RawValue", typeof(double)); // เก็บค่าตัวเลขจริง (สำหรับ Export/Edit)
             _rdRecordsTable.Columns.Add("Upper", typeof(string));
             _rdRecordsTable.Columns.Add("Lower", typeof(string));
             _rdRecordsTable.Columns.Add("Type", typeof(string)); // Percent or Absolute
@@ -2345,7 +2393,8 @@ namespace MultiRecord
             dataGridViewRD.Columns["Lower"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             dataGridViewRD.Columns["Lower"].ReadOnly = true;
             
-            // ซ่อนคอลัมน์ Type, Note และ ID (เก็บไว้ใน data แต่ไม่แสดง)
+            // ซ่อนคอลัมน์ RawValue, Type, Note และ ID (เก็บไว้ใน data แต่ไม่แสดง)
+            dataGridViewRD.Columns["RawValue"].Visible = false;
             dataGridViewRD.Columns["Type"].Visible = false;
             dataGridViewRD.Columns["Note"].Visible = false;
             dataGridViewRD.Columns["ID"].Visible = false;
@@ -2360,6 +2409,7 @@ namespace MultiRecord
             // เพิ่ม Event Handler
             dataGridViewRD.CellClick += DataGridViewRD_CellClick;
             dataGridViewRD.CurrentCellDirtyStateChanged += DataGridViewRD_CurrentCellDirtyStateChanged;
+            dataGridViewRD.CellFormatting += DataGridViewRD_CellFormatting;
         }
 
         private void InitializeRDTab()
@@ -2576,14 +2626,28 @@ namespace MultiRecord
                         newRow["Function"] = row["function_name"]?.ToString() ?? "";
                         
                         // จัดการกับค่า NULL และ DBNull
-                        // ถ้าค่าเป็นค่าพิเศษ (< -9E37) แสดงว่าเป็น OVERLOAD
+                        // ถ้าค่าเป็น -999999.99999999 แสดงว่าเป็น OVERLOAD
                         if (row["measurement_value"] != DBNull.Value)
                         {
                             double measurementValue = Convert.ToDouble(row["measurement_value"]);
-                            newRow["Measurement"] = measurementValue < -9E37 ? "OVERLOAD" : measurementValue.ToString("F4", CultureInfo.InvariantCulture);
+                            // เก็บ raw value ไว้ใน RawValue column
+                            newRow["RawValue"] = measurementValue;
+                            
+                            // ถ้าค่าเป็น -999999.99999999 (OVERLOAD constant) ให้แสดง "OVERLOAD"
+                            if (Math.Abs(measurementValue - (-999999.99999999)) < 0.001 || measurementValue <= -999999.0)
+                            {
+                                newRow["Measurement"] = "OVERLOAD";
+                            }
+                            else
+                            {
+                                // ใช้ FormatRDTableValue() เพื่อ format ตามโหมดการวัด
+                                string functionName = row["function_name"]?.ToString() ?? "";
+                                newRow["Measurement"] = FormatRDTableValue(measurementValue, functionName);
+                            }
                         }
                         else
                         {
+                            newRow["RawValue"] = 0.0;
                             newRow["Measurement"] = "0.0000";
                         }
                         
@@ -2959,10 +3023,20 @@ namespace MultiRecord
             {
                 int newNo = _rdRecordsTable.Rows.Count + 1;
                 string function = _currentFunction.ToString();
-                string measurement = _isOverload ? "OVERLOAD" : _lastReadingValue.ToString("F4", CultureInfo.InvariantCulture);
                 
                 // สำหรับ OVERLOAD ใช้ค่าพิเศษ -999999.99999999 (ภายในขีดจำกัด DECIMAL(15,8))
-                double valueToSave = _isOverload ? -1000000.0 : _lastReadingValue;
+                double valueToSave = _isOverload ? -999999.99999999 : _lastReadingValue;
+                
+                // สร้าง formatted value สำหรับแสดงผล (ใช้ FormatRDTableValue ถ้าไม่ OVERLOAD)
+                string measurementFormatted;
+                if (_isOverload)
+                {
+                    measurementFormatted = "OVERLOAD";
+                }
+                else
+                {
+                    measurementFormatted = FormatRDTableValue(_lastReadingValue, function);
+                }
                 
                 // ดึงข้อมูล system_info จาก textBoxSystemInfo
                 string systemInfo = textBoxSystemInfo.Text ?? "";
@@ -2976,7 +3050,8 @@ namespace MultiRecord
                 newRow["No"] = newNo;
                 newRow["Name"] = autoName; // ใช้ชื่ออัตโนมัติ
                 newRow["Function"] = function;
-                newRow["Measurement"] = measurement;
+                newRow["Measurement"] = measurementFormatted; // แสดงผลแบบ formatted
+                newRow["RawValue"] = valueToSave; // เก็บค่าตัวเลขจริง
                 newRow["Upper"] = "0%"; // ค่าเริ่มต้นแบบ formatted
                 newRow["Lower"] = "0%"; // ค่าเริ่มต้นแบบ formatted
                 newRow["Type"] = "percent"; // ค่าเริ่มต้น
@@ -2997,7 +3072,7 @@ namespace MultiRecord
                 // Auto-scroll to latest record
                 _mysqlManager.ScrollRDToLatest(this);
                 
-                LogActivity($"บันทึกค่า R&D No. {newNo}: {function}, {measurement}");
+                LogActivity($"บันทึกค่า R&D No. {newNo}: {function}, {measurementFormatted}");
                 SoundUtil.Beep();
             }
             catch (Exception ex)
@@ -3076,6 +3151,36 @@ namespace MultiRecord
             }
         }
 
+        private void DataGridViewRD_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            // Format Measurement column with k/M suffixes for Resistance
+            if (dataGridViewRD.Columns[e.ColumnIndex].Name == "Measurement")
+            {
+                if (e.RowIndex >= 0 && e.RowIndex < dataGridViewRD.Rows.Count)
+                {
+                    var row = dataGridViewRD.Rows[e.RowIndex];
+                    string measurement = e.Value?.ToString() ?? "";
+                    string functionName = row.Cells["Function"].Value?.ToString() ?? "";
+
+                    // ถ้าเป็น OVERLOAD ไม่ต้อง format
+                    if (measurement == "OVERLOAD")
+                    {
+                        e.Value = "OVERLOAD";
+                        e.FormattingApplied = true;
+                        return;
+                    }
+
+                    // Parse และ format ใหม่สำหรับ Resistance
+                    if (double.TryParse(measurement, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+                    {
+                        string formattedValue = FormatRDTableValue(value, functionName);
+                        e.Value = formattedValue;
+                        e.FormattingApplied = true;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Auto-scroll DataGridView to the latest (last) record
         /// </summary>
@@ -3123,7 +3228,27 @@ namespace MultiRecord
                 int measurementId = Convert.ToInt32(row.Cells["ID"].Value);
                 string currentName = row.Cells["Name"].Value?.ToString() ?? "";
                 string currentFunction = row.Cells["Function"].Value?.ToString() ?? "";
-                string currentMeasurementValue = row.Cells["Measurement"].Value?.ToString() ?? "";
+                
+                // ใช้ RawValue แทน Measurement เพื่อให้ได้ค่าตัวเลขจริง
+                string currentMeasurementValue;
+                if (row.Cells["RawValue"].Value != null && row.Cells["RawValue"].Value != DBNull.Value)
+                {
+                    double rawValue = Convert.ToDouble(row.Cells["RawValue"].Value);
+                    // ถ้าเป็น OVERLOAD ให้แสดง "OVERLOAD"
+                    if (Math.Abs(rawValue - (-999999.99999999)) < 0.001 || rawValue <= -999999.0)
+                    {
+                        currentMeasurementValue = "OVERLOAD";
+                    }
+                    else
+                    {
+                        currentMeasurementValue = rawValue.ToString("F8", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                }
+                else
+                {
+                    currentMeasurementValue = "0.00000000";
+                }
+                
                 bool currentToleranceEnable = row.Cells["ToleranceEnable"].Value != null && 
                                             row.Cells["ToleranceEnable"].Value != DBNull.Value && 
                                             Convert.ToBoolean(row.Cells["ToleranceEnable"].Value);
@@ -3151,7 +3276,31 @@ namespace MultiRecord
                         // อัพเดทข้อมูลใน DataGridView with formatted values
                         row.Cells["Name"].Value = dialog.MeasurementName;
                         row.Cells["Function"].Value = dialog.Function;
-                        row.Cells["Measurement"].Value = dialog.MeasurementValue;
+                        
+                        // แปลงค่า measurement - handle OVERLOAD case
+                        double rawValueToSave;
+                        string displayMeasurementValue;
+                        
+                        if (dialog.MeasurementValue.ToUpper() == "OVERLOAD")
+                        {
+                            rawValueToSave = -999999.99999999;
+                            displayMeasurementValue = "OVERLOAD";
+                        }
+                        else if (double.TryParse(dialog.MeasurementValue, out double parsedValue))
+                        {
+                            rawValueToSave = parsedValue;
+                            // Format ตามโหมดการวัด
+                            displayMeasurementValue = FormatRDTableValue(parsedValue, dialog.Function);
+                        }
+                        else
+                        {
+                            rawValueToSave = 0.0;
+                            displayMeasurementValue = "0.0000";
+                        }
+                        
+                        row.Cells["RawValue"].Value = rawValueToSave;
+                        row.Cells["Measurement"].Value = displayMeasurementValue;
+                        
                         row.Cells["ToleranceEnable"].Value = dialog.ToleranceEnable;
                         row.Cells["Type"].Value = dialog.ToleranceType;
                         
@@ -3301,11 +3450,31 @@ namespace MultiRecord
                         
                         foreach (DataRow row in _rdRecordsTable.Rows)
                         {
+                            // ใช้ RawValue แทน Measurement เพื่อให้ได้ค่าตัวเลขจริง
+                            string measurementValue;
+                            if (row["RawValue"] != DBNull.Value)
+                            {
+                                double rawValue = Convert.ToDouble(row["RawValue"]);
+                                // ถ้าเป็น OVERLOAD (-999999.99999999) ให้แสดงเป็น OVERLOAD
+                                if (Math.Abs(rawValue - (-999999.99999999)) < 0.001 || rawValue <= -999999.0)
+                                {
+                                    measurementValue = "OVERLOAD";
+                                }
+                                else
+                                {
+                                    measurementValue = rawValue.ToString("F8", CultureInfo.InvariantCulture);
+                                }
+                            }
+                            else
+                            {
+                                measurementValue = "0.00000000";
+                            }
+                            
                             string csvLine = string.Join(",",
                                 $"\"{row["No"]}\"",
                                 $"\"{row["Name"]}\"",
                                 $"\"{row["Function"]}\"",
-                                $"\"{row["Measurement"]}\"",
+                                $"\"{measurementValue}\"",
                                 $"\"{row["Upper"]}\"",
                                 $"\"{row["Lower"]}\"",
                                 $"\"{row["Type"]}\"",
@@ -3654,8 +3823,10 @@ namespace MultiRecord
                 if (_repairSessions == null || _repairSessions.Count == 0)
                 {
                     var confirmResult = MessageBox.Show(
-                        "ไม่พบรอบการซ่อมสำหรับ Serial Number นี้\n\nต้องการสร้างรอบการซ่อมครั้งแรกหรือไม่?",
-                        "ไม่พบข้อมูล",
+                        $"QWID: {_repairQwid}\nชุดทดสอบ: {_repairSerialNumber}\n\n" +
+                        "นี่เป็นครั้งแรกที่ทำการวัดด้วยชุดทดสอบนี้\n\n" +
+                        "ต้องการสร้างรอบการซ่อมครั้งแรกหรือไม่?",
+                        "ครั้งแรกสำหรับชุดทดสอบนี้",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Question);
 
@@ -3664,6 +3835,18 @@ namespace MultiRecord
                         // สร้าง session แรกโดยอัตโนมัติ
                         await CreateFirstRepairSession();
                     }
+                }
+                else
+                {
+                    // แจ้งเตือนว่ามีการวัดอยู่แล้ว
+                    int sessionCount = _repairSessions.Count;
+                    MessageBox.Show(
+                        $"QWID: {_repairQwid}\nชุดทดสอบ: {_repairSerialNumber}\n\n" +
+                        $"พบรอบการวัดที่มีอยู่แล้ว: {sessionCount} รอบ\n\n" +
+                        "สามารถสร้างรอบการซ่อมใหม่ได้จากปุ่ม 'สร้างรอบซ่อมใหม่'",
+                        $"การวัดครั้งที่ {sessionCount}",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
@@ -3815,10 +3998,10 @@ namespace MultiRecord
                 if (success)
                 {
                     // อัพเดต UI
-                    selectedRow["Value"] = measuredValue.ToString("F4");
+                    selectedRow["Value"] = measuredValue.ToString("N4", CultureInfo.InvariantCulture);
                     selectedRow["Status"] = status;
 
-                    LogActivity($"บันทึกค่า Repair Measurement สำเร็จ: {measuredValue:F4} ({status})");
+                    LogActivity($"บันทึกค่า Repair Measurement สำเร็จ: {measuredValue.ToString("N4", CultureInfo.InvariantCulture)} ({status})");
 
                     // เล่นเสียงตาม Status
                     if (isPass)
@@ -4017,6 +4200,18 @@ namespace MultiRecord
                     return;
                 }
 
+                // ตรวจสอบว่ามี session อยู่แล้วหรือไม่
+                var existingSessions = await _mysqlManager.GetRepairSessionsBySerialIdAsync(_repairSerialId, _repairQwid);
+                if (existingSessions != null && existingSessions.Count > 0)
+                {
+                    MessageBox.Show(
+                        "มีรอบการซ่อมอยู่แล้ว\n\nกรุณาใช้ปุ่ม 'สร้างรอบซ่อมใหม่' แทน",
+                        "แจ้งเตือน",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
                 // สร้าง session ครั้งแรก
                 int sessionId = await _mysqlManager.CreateRepairSessionAsync(
                     _repairQwid, 
@@ -4056,8 +4251,8 @@ namespace MultiRecord
                     return;
                 }
 
-                // ดึง session number ถัดไป
-                int nextSessionNumber = await _mysqlManager.GetNextRepairSessionNumberAsync(_repairSerialId);
+                // ดึง session number ถัดไป (กรองตาม QWID ด้วย)
+                int nextSessionNumber = await _mysqlManager.GetNextRepairSessionNumberAsync(_repairSerialId, _repairQwid);
 
                 // แสดง dialog สร้าง session ใหม่
                 using (var dialog = new NewRepairSessionDialog(_repairQwid, _repairSerialNumber, nextSessionNumber))
@@ -4157,7 +4352,7 @@ namespace MultiRecord
                 if (_repairSerialId <= 0)
                     return;
 
-                _repairSessions = await _mysqlManager.GetRepairSessionsBySerialIdAsync(_repairSerialId);
+                _repairSessions = await _mysqlManager.GetRepairSessionsBySerialIdAsync(_repairSerialId, _repairQwid);
                 
                 comboBoxRepairSession.DataSource = null;
                 comboBoxRepairSession.DataSource = _repairSessions;
@@ -4174,13 +4369,17 @@ namespace MultiRecord
                     
                     // เลือก session แรก (ล่าสุด)
                     comboBoxRepairSession.SelectedIndex = 0;
+                    
+                    // แจ้ง user ว่านี่คือการวัดครั้งที่เท่าไหร่
+                    int sessionCount = _repairSessions.Count;
+                    LogActivity($"พบรอบการซ่อม {sessionCount} รอบสำหรับ QWID: {_repairQwid}, Serial: {_repairSerialNumber}");
                 }
                 else
                 {
-                    // ถ้าไม่มี session ให้แสดงแค่ปุ่มสร้าง
-                    labelRepairSession.Visible = true;
+                    // ถ้าไม่มี session ให้ซ่อนทุกปุ่ม (จะให้สร้างรอบแรกผ่าน LoadRepairRecordsFromDatabase)
+                    labelRepairSession.Visible = false;
                     comboBoxRepairSession.Visible = false;
-                    buttonNewRepairSession.Visible = true;
+                    buttonNewRepairSession.Visible = false;
                     buttonRepairHistory.Visible = false;
                 }
                 
@@ -4218,8 +4417,8 @@ namespace MultiRecord
                     row["No"] = measurement.MeasurementNo;
                     row["Name"] = measurement.MeasurementName ?? "";
                     row["Function"] = measurement.FunctionName;
-                    row["RefValue"] = measurement.MeasurementValue.ToString("F4"); // ค่าอ้างอิงจาก template (format เป็น string)
-                    row["Value"] = measurement.ActualMeasuredValue?.ToString("F4") ?? "-"; // ค่าที่วัดได้จริง (ถ้ามี) หรือ - (ถ้ายังไม่ได้วัด)
+                    row["RefValue"] = measurement.MeasurementValue.ToString("N4", CultureInfo.InvariantCulture); // ค่าอ้างอิงจาก template (format เป็น string)
+                    row["Value"] = measurement.ActualMeasuredValue?.ToString("N4", CultureInfo.InvariantCulture) ?? "-"; // ค่าที่วัดได้จริง (ถ้ามี) หรือ - (ถ้ายังไม่ได้วัด)
                     row["TolEnabled"] = measurement.ToleranceEnabled;
                     row["TolerancePercentage"] = measurement.TolerancePercentage ?? 0m;
                     row["SystemInfo"] = measurement.SystemInfo ?? "";

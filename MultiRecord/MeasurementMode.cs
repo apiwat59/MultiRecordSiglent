@@ -462,36 +462,36 @@ namespace MultiRecord
             {
                 case "VDC":
                 case "VAC":
-                    return $"{value:F3} V";
+                    return $"{value.ToString("N3", System.Globalization.CultureInfo.InvariantCulture)} V";
                 case "ADC":
                 case "AAC":
-                    return $"{value:F6} A";
+                    return $"{value.ToString("N6", System.Globalization.CultureInfo.InvariantCulture)} A";
                 case "RES2W":
                 case "RES4W":
                     if (value >= 1000000)
-                        return $"{value / 1000000:F2} MΩ";
+                        return $"{(value / 1000000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} MΩ";
                     else if (value >= 1000)
-                        return $"{value / 1000:F2} kΩ";
+                        return $"{(value / 1000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} kΩ";
                     else
-                        return $"{value:F2} Ω";
+                        return $"{value.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} Ω";
                 case "CAP":
                     if (value >= 1e-3)
-                        return $"{value * 1000:F2} mF";
+                        return $"{(value * 1000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} mF";
                     else if (value >= 1e-6)
-                        return $"{value * 1000000:F2} µF";
+                        return $"{(value * 1000000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} µF";
                     else if (value >= 1e-9)
-                        return $"{value * 1000000000:F2} nF";
+                        return $"{(value * 1000000000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} nF";
                     else
-                        return $"{value * 1000000000000:F2} pF";
+                        return $"{(value * 1000000000000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} pF";
                 case "FREQ":
                     if (value >= 1000000)
-                        return $"{value / 1000000:F2} MHz";
+                        return $"{(value / 1000000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} MHz";
                     else if (value >= 1000)
-                        return $"{value / 1000:F2} kHz";
+                        return $"{(value / 1000).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} kHz";
                     else
-                        return $"{value:F2} Hz";
+                        return $"{value.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} Hz";
                 default:
-                    return value.ToString("F6");
+                    return value.ToString("N6", System.Globalization.CultureInfo.InvariantCulture);
             }
         }
 
@@ -966,7 +966,7 @@ namespace MultiRecord
             DataRow newRow = _recordsTable.NewRow();
             newRow["No"] = _recordsTable.Rows.Count + 1;
             newRow["Function"] = currentPoint.MeasurementType;
-            newRow["Measurement"] = measuredValue.ToString("F6");
+            newRow["Measurement"] = measuredValue.ToString("N6", System.Globalization.CultureInfo.InvariantCulture);
             newRow["Unit"] = GetUnitFromMeasurementType(currentPoint.MeasurementType);
             newRow["Timestamp"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             newRow["Tolerance"] = toleranceStatus;

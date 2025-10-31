@@ -61,6 +61,8 @@ namespace MultiRecord
             this.textBoxQwid.Name = "textBoxQwid";
             this.textBoxQwid.Size = new System.Drawing.Size(360, 25);
             this.textBoxQwid.TabIndex = 1;
+            this.textBoxQwid.TextChanged += new System.EventHandler(this.TextBoxQwid_TextChanged);
+            this.textBoxQwid.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextBoxQwid_KeyDown);
             // 
             // labelQwid
             // 
@@ -103,6 +105,8 @@ namespace MultiRecord
             this.textBoxSerial.Name = "textBoxSerial";
             this.textBoxSerial.Size = new System.Drawing.Size(360, 25);
             this.textBoxSerial.TabIndex = 4;
+            this.textBoxSerial.TextChanged += new System.EventHandler(this.TextBoxSerial_TextChanged);
+            this.textBoxSerial.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextBoxSerial_KeyDown);
             // 
             // buttonCreate
             // 
@@ -111,12 +115,13 @@ namespace MultiRecord
             this.buttonCreate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonCreate.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.buttonCreate.ForeColor = System.Drawing.Color.White;
-            this.buttonCreate.Location = new System.Drawing.Point(180, 380);
+            this.buttonCreate.Location = new System.Drawing.Point(180, 395);
             this.buttonCreate.Name = "buttonCreate";
             this.buttonCreate.Size = new System.Drawing.Size(100, 35);
             this.buttonCreate.TabIndex = 6;
             this.buttonCreate.Text = "สร้าง";
             this.buttonCreate.UseVisualStyleBackColor = false;
+            this.buttonCreate.Click += new System.EventHandler(this.ButtonCreate_Click);
             // 
             // buttonCancel
             // 
@@ -124,12 +129,13 @@ namespace MultiRecord
             this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonCancel.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.buttonCancel.ForeColor = System.Drawing.Color.White;
-            this.buttonCancel.Location = new System.Drawing.Point(290, 380);
+            this.buttonCancel.Location = new System.Drawing.Point(290, 395);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(90, 35);
             this.buttonCancel.TabIndex = 7;
             this.buttonCancel.Text = "ยกเลิก";
             this.buttonCancel.UseVisualStyleBackColor = false;
+            this.buttonCancel.Click += new System.EventHandler(this.ButtonCancel_Click);
             // 
             // listBoxQwidSuggestions
             // 
@@ -142,6 +148,8 @@ namespace MultiRecord
             this.listBoxQwidSuggestions.Size = new System.Drawing.Size(360, 109);
             this.listBoxQwidSuggestions.TabIndex = 2;
             this.listBoxQwidSuggestions.Visible = false;
+            this.listBoxQwidSuggestions.Click += new System.EventHandler(this.ListBoxQwidSuggestions_Click);
+            this.listBoxQwidSuggestions.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListBoxQwidSuggestions_KeyDown);
             // 
             // listBoxSerialSuggestions
             // 
@@ -154,6 +162,8 @@ namespace MultiRecord
             this.listBoxSerialSuggestions.Size = new System.Drawing.Size(360, 109);
             this.listBoxSerialSuggestions.TabIndex = 5;
             this.listBoxSerialSuggestions.Visible = false;
+            this.listBoxSerialSuggestions.Click += new System.EventHandler(this.ListBoxSerialSuggestions_Click);
+            this.listBoxSerialSuggestions.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListBoxSerialSuggestions_KeyDown);
             // 
             // RepairQwidDialog
             // 
@@ -196,6 +206,13 @@ namespace MultiRecord
         {
             try
             {
+                // Check if _mySqlManager is null
+                if (_mySqlManager == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ _mySqlManager is null in LoadQwidData");
+                    return;
+                }
+                
                 string sql = @"SELECT io.id as io_id, io.qwid, io.serial, io.model_id 
                               FROM spaze.io 
                               WHERE io.qwid IS NOT NULL 
@@ -217,10 +234,20 @@ namespace MultiRecord
                             ModelId = row["model_id"] != DBNull.Value ? Convert.ToInt32(row["model_id"]) : 0
                         });
                     }
+                    System.Diagnostics.Debug.WriteLine($"✅ โหลด QWID สำเร็จ: {_qwidList.Count} รายการ");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ ไม่สามารถโหลด QWID: Success={result.Success}, Data={result.Data != null}");
+                    if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error: {result.ErrorMessage}");
+                    }
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ Exception ในการโหลด QWID: {ex.Message}");
                 MessageBox.Show($"เกิดข้อผิดพลาดในการโหลดข้อมูล QWID: {ex.Message}", 
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -230,6 +257,13 @@ namespace MultiRecord
         {
             try
             {
+                // Check if _mySqlManager is null
+                if (_mySqlManager == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ _mySqlManager is null in LoadSerialData");
+                    return;
+                }
+                
                 string sql = @"SELECT id, serial_number, model_id, status, created_at 
                               FROM Orbitz.software_serial_numbers 
                               WHERE status = 'active'
@@ -251,10 +285,20 @@ namespace MultiRecord
                             Status = row["status"]?.ToString() ?? ""
                         });
                     }
+                    System.Diagnostics.Debug.WriteLine($"✅ โหลด Serial สำเร็จ: {_serialList.Count} รายการ");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ ไม่สามารถโหลด Serial: Success={result.Success}, Data={result.Data != null}");
+                    if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error: {result.ErrorMessage}");
+                    }
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ Exception ในการโหลด Serial: {ex.Message}");
                 MessageBox.Show($"เกิดข้อผิดพลาดในการโหลดข้อมูล Serial: {ex.Message}", 
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -287,6 +331,7 @@ namespace MultiRecord
         private async void FilterQwidSuggestions()
         {
             string searchText = textBoxQwid.Text.Trim();
+            System.Diagnostics.Debug.WriteLine($"🔍 FilterQwidSuggestions: searchText='{searchText}'");
             
             if (string.IsNullOrEmpty(searchText))
             {
@@ -294,11 +339,22 @@ namespace MultiRecord
                 return;
             }
 
+            if (_qwidList == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ _qwidList is null!");
+                listBoxQwidSuggestions.Visible = false;
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"📊 _qwidList มี {_qwidList.Count} รายการ");
+
             // ค้นหาใน buffer ก่อน
             var filteredFromBuffer = _qwidList
                 .Where(q => q.Qwid.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
                 .Take(10)
                 .ToList();
+
+            System.Diagnostics.Debug.WriteLine($"📋 พบ {filteredFromBuffer.Count} รายการใน buffer");
 
             listBoxQwidSuggestions.Items.Clear();
             
@@ -309,9 +365,11 @@ namespace MultiRecord
                     listBoxQwidSuggestions.Items.Add($"{item.Qwid} - {item.Serial}");
                 }
                 listBoxQwidSuggestions.Visible = true;
+                System.Diagnostics.Debug.WriteLine($"✅ แสดง listBoxQwidSuggestions");
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine($"🔎 ไม่พบใน buffer, ค้นหาใน database...");
                 // ถ้าไม่พบใน buffer ให้ค้นหาใน database
                 await SearchQwidFromDatabase(searchText);
             }
@@ -593,6 +651,9 @@ namespace MultiRecord
                 // Clear serial selection เพื่อให้เลือกใหม่
                 textBoxSerial.Clear();
                 
+                // แสดง ListBox ของชุดทดสอบทันทีหลังจากเลือก QWID
+                await ShowAllSerialSuggestionsForModel(_selectedModelId);
+                
                 // ถ้ามี Serial Number อยู่แล้ว ให้เปิดปุ่ม Create
                 if (!string.IsNullOrEmpty(textBoxSerial.Text.Trim()))
                 {
@@ -608,6 +669,91 @@ namespace MultiRecord
             {
                 // ถ้าไม่พบใน buffer ให้ค้นหาใน database
                 await ValidateQwidFromDatabase(qwid);
+            }
+        }
+
+        private async Task ShowAllSerialSuggestionsForModel(int modelId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"📋 แสดง Serial ทั้งหมดสำหรับ Model ID: {modelId}");
+                
+                if (modelId <= 0)
+                {
+                    listBoxSerialSuggestions.Visible = false;
+                    return;
+                }
+
+                // ค้นหาใน buffer ก่อน
+                var serialsForModel = _serialList?
+                    .Where(s => s.ModelId == modelId)
+                    .Take(20)
+                    .ToList();
+
+                listBoxSerialSuggestions.Items.Clear();
+                
+                if (serialsForModel != null && serialsForModel.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"✅ พบ {serialsForModel.Count} Serial ใน buffer");
+                    foreach (var item in serialsForModel)
+                    {
+                        listBoxSerialSuggestions.Items.Add(item.SerialNumber);
+                    }
+                    listBoxSerialSuggestions.Visible = true;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"🔎 ไม่พบใน buffer, ค้นหาใน database...");
+                    // ถ้าไม่พบใน buffer ให้ค้นหาใน database
+                    await LoadSerialFromDatabaseByModel(modelId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Exception: {ex.Message}");
+                listBoxSerialSuggestions.Visible = false;
+            }
+        }
+
+        private async Task LoadSerialFromDatabaseByModel(int modelId)
+        {
+            try
+            {
+                string sql = $@"SELECT id, serial_number, model_id, status, created_at 
+                              FROM Orbitz.software_serial_numbers 
+                              WHERE status = 'active'
+                              AND model_id = {modelId}
+                              ORDER BY created_at DESC 
+                              LIMIT 20";
+                
+                var result = await _mySqlManager.ExecuteQuery(sql);
+                
+                if (result.Success && result.Data != null && result.Data.Rows.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"✅ พบ {result.Data.Rows.Count} Serial ใน database");
+                    
+                    listBoxSerialSuggestions.Items.Clear();
+                    foreach (DataRow row in result.Data.Rows)
+                    {
+                        string serialNumber = row["serial_number"]?.ToString() ?? "";
+                        listBoxSerialSuggestions.Items.Add(serialNumber);
+                    }
+                    listBoxSerialSuggestions.Visible = true;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ ไม่พบ Serial สำหรับ Model ID: {modelId}");
+                    listBoxSerialSuggestions.Items.Clear();
+                    listBoxSerialSuggestions.Items.Add("❌ ไม่พบชุดทดสอบสำหรับ Model นี้");
+                    listBoxSerialSuggestions.Visible = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Exception: {ex.Message}");
+                listBoxSerialSuggestions.Items.Clear();
+                listBoxSerialSuggestions.Items.Add("❌ เกิดข้อผิดพลาดในการโหลดข้อมูล");
+                listBoxSerialSuggestions.Visible = true;
             }
         }
 
@@ -632,6 +778,9 @@ namespace MultiRecord
                     
                     // Clear serial selection เพื่อให้เลือกใหม่
                     textBoxSerial.Clear();
+                    
+                    // แสดง ListBox ของชุดทดสอบทันทีหลังจากเลือก QWID
+                    await ShowAllSerialSuggestionsForModel(_selectedModelId);
                     
                     // ถ้ามี Serial Number อยู่แล้ว ให้เปิดปุ่ม Create
                     if (!string.IsNullOrEmpty(textBoxSerial.Text.Trim()))

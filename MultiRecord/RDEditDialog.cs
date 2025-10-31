@@ -358,7 +358,17 @@ namespace MultiRecord
         private void LoadCurrentValues()
         {
             textBoxMeasurementName.Text = MeasurementName;
-            textBoxMeasurementValue.Text = MeasurementValue;
+            
+            // ถ้าค่าเป็น -1000000.0 หรือ -1000000 ให้แสดงเป็น "Overload"
+            if (MeasurementValue == "-1000000.0" || MeasurementValue == "-1000000")
+            {
+                textBoxMeasurementValue.Text = "Overload";
+            }
+            else
+            {
+                textBoxMeasurementValue.Text = MeasurementValue;
+            }
+            
             textBoxNote.Text = Note;
             checkBoxToleranceEnable.Checked = ToleranceEnable;
             
@@ -389,13 +399,24 @@ namespace MultiRecord
         {
             MeasurementName = textBoxMeasurementName.Text.Trim();
             Function = comboBoxFunction.SelectedItem?.ToString() ?? "";
-            MeasurementValue = textBoxMeasurementValue.Text.Trim();
+            
+            // ถ้าค่าเป็น "Overload" (case insensitive) ให้แปลงเป็น -1000000.0
+            string inputValue = textBoxMeasurementValue.Text.Trim();
+            if (inputValue.Equals("Overload", StringComparison.OrdinalIgnoreCase) || inputValue.Equals("OVERLOAD", StringComparison.OrdinalIgnoreCase))
+            {
+                MeasurementValue = "-1000000.0";
+            }
+            else
+            {
+                MeasurementValue = inputValue;
+            }
+            
             ToleranceEnable = checkBoxToleranceEnable.Checked;
             ToleranceType = radioButtonPercent.Checked ? "percent" : "absolute";
             Note = textBoxNote.Text.Trim();
             
             // Validate measurement value if provided
-            if (!string.IsNullOrWhiteSpace(MeasurementValue) && MeasurementValue != "OVERLOAD")
+            if (!string.IsNullOrWhiteSpace(MeasurementValue) && MeasurementValue != "-1000000.0")
             {
                 if (!decimal.TryParse(MeasurementValue, out _))
                 {
@@ -470,7 +491,7 @@ namespace MultiRecord
 
         private void button1_Click(object sender, EventArgs e)
         {
-            textBoxMeasurementValue.Text = "-1000000.0";
+            textBoxMeasurementValue.Text = "Overload";
         }
     }
 }

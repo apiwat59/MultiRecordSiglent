@@ -505,18 +505,29 @@ namespace MultiRecord
         // ==================== Repair Sessions Management ====================
         
         /// <summary>
-        /// Get the next session number for a given serial_id
+        /// Get the next session number for a given serial_id and qw_id
         /// </summary>
-        public async Task<int> GetNextRepairSessionNumberAsync(int serialId)
+        public async Task<int> GetNextRepairSessionNumberAsync(int serialId, string qwId = null)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
                 
                 var sql = "SELECT COALESCE(MAX(session_number), 0) + 1 FROM software_repair_sessions WHERE serial_id = @serialId";
+                
+                // ถ้ามี qwId ให้กรองด้วย
+                if (!string.IsNullOrEmpty(qwId))
+                {
+                    sql += " AND qw_id = @qwId";
+                }
+                
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@serialId", serialId);
+                    if (!string.IsNullOrEmpty(qwId))
+                    {
+                        command.Parameters.AddWithValue("@qwId", qwId);
+                    }
                     var result = await command.ExecuteScalarAsync();
                     return Convert.ToInt32(result);
                 }
@@ -585,9 +596,9 @@ namespace MultiRecord
         }
 
         /// <summary>
-        /// Get all repair sessions for a specific serial_id
+        /// Get all repair sessions for a specific serial_id and qw_id
         /// </summary>
-        public async Task<List<RepairSession>> GetRepairSessionsBySerialIdAsync(int serialId)
+        public async Task<List<RepairSession>> GetRepairSessionsBySerialIdAsync(int serialId, string qwId = null)
         {
             var sessions = new List<RepairSession>();
             
@@ -598,12 +609,23 @@ namespace MultiRecord
                 var sql = @"
                     SELECT id, qw_id, serial_id, session_number, session_note, status, created_by, created_at, updated_at, completed_at
                     FROM software_repair_sessions
-                    WHERE serial_id = @serialId
-                    ORDER BY session_number DESC";
+                    WHERE serial_id = @serialId";
+                
+                // ถ้ามี qwId ให้กรองด้วย
+                if (!string.IsNullOrEmpty(qwId))
+                {
+                    sql += " AND qw_id = @qwId";
+                }
+                
+                sql += " ORDER BY session_number DESC";
                 
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@serialId", serialId);
+                    if (!string.IsNullOrEmpty(qwId))
+                    {
+                        command.Parameters.AddWithValue("@qwId", qwId);
+                    }
                     
                     using (var reader = await command.ExecuteReaderAsync())
                     {
