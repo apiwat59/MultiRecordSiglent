@@ -3678,6 +3678,7 @@ namespace MultiRecord
             _repairRecordsTable.Columns.Add("Name", typeof(string)); // ชื่อจุดวัด
             _repairRecordsTable.Columns.Add("Function", typeof(string));
             _repairRecordsTable.Columns.Add("RefValue", typeof(string)); // ค่าอ้างอิง (จาก template) - เปลี่ยนเป็น string เพื่อรองรับ "-" และ "<->"
+            _repairRecordsTable.Columns.Add("RawValue", typeof(decimal)); // ค่าดิบที่วัดได้จริง (สำหรับ export และคำนวณ) - รองรับ -1000000.0 สำหรับ OVERLOAD
             _repairRecordsTable.Columns.Add("Value", typeof(string)); // ค่าที่วัดได้ (ต้องวัดใหม่) - เปลี่ยนเป็น string เพื่อรองรับ "-" และ "<->"
             _repairRecordsTable.Columns.Add("Status", typeof(string)); // PASS/FAIL status
             _repairRecordsTable.Columns.Add("TolEnabled", typeof(bool)); // Tolerance Enable/Disable
@@ -3728,6 +3729,7 @@ namespace MultiRecord
             
             // ซ่อนคอลัมน์ที่ไม่ต้องแสดง
             dataGridViewRepair.Columns["Select"].Visible = false; // ใช้ row selection แทน checkbox
+            dataGridViewRepair.Columns["RawValue"].Visible = false; // ซ่อนค่าดิบ (ใช้สำหรับ export และคำนวณเท่านั้น)
             dataGridViewRepair.Columns["TolEnabled"].Visible = false;
             dataGridViewRepair.Columns["TolerancePercentage"].Visible = false;
             dataGridViewRepair.Columns["SystemInfo"].Visible = false;
@@ -3864,10 +3866,392 @@ namespace MultiRecord
                 // Handle Action button click
                 if (columnName == "Action")
                 {
-                    // TODO: Implement edit functionality
-                    MessageBox.Show("Edit functionality coming soon", "Info", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ShowRepairEditDialog(e.RowIndex);
                 }
+            }
+        }
+
+        private void ShowRepairEditDialog(int rowIndex)
+        {
+            try
+            {
+                if (rowIndex < 0 || rowIndex >= _repairRecordsTable.Rows.Count)
+                    return;
+
+                var dataRow = _repairRecordsTable.Rows[rowIndex];
+                
+                // ดึงข้อมูลปัจจุบัน
+                string name = dataRow["Name"]?.ToString() ?? "";
+                string function = dataRow["Function"]?.ToString() ?? "";
+                string refValue = dataRow["RefValue"]?.ToString() ?? "";
+                string currentValue = dataRow["Value"]?.ToString() ?? "-";
+                decimal currentRawValue = dataRow["RawValue"] != DBNull.Value ? Convert.ToDecimal(dataRow["RawValue"]) : 0;
+                
+                // สร้าง Edit Dialog
+                using (var editForm = new Form())
+                {
+                    editForm.Text = $"แก้ไขค่าวัด - {name}";
+                    editForm.Size = new Size(450, 250);
+                    editForm.StartPosition = FormStartPosition.CenterParent;
+                    editForm.BackColor = Color.FromArgb(45, 45, 48);
+                    editForm.ForeColor = Color.White;
+                    editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    editForm.MaximizeBox = false;
+                    editForm.MinimizeBox = false;
+
+                    // Labels
+                    var lblName = new Label 
+                    { 
+                        Text = $"จุดวัด: {name}", 
+                        Location = new Point(20, 20), 
+                        Size = new Size(400, 25),
+                        ForeColor = Color.LightGray
+                    };
+                    
+                    var lblFunction = new Label 
+                    { 
+                        Text = $"Function: {function}", 
+                        Location = new Point(20, 45), 
+                        Size = new Size(400, 25),
+                        ForeColor = Color.LightGray
+                    };
+                    
+                    var lblRefValue = new Label 
+                    { 
+                        Text = $"ค่าอ้างอิง: {refValue}", 
+                        Location = new Point(20, 70), 
+                        Size = new Size(400, 25),
+                        ForeColor = Color.LightGray
+                    };
+                    
+                    var lblValue = new Label 
+                    { 
+                        Text = "ค่าใหม่:", 
+                        Location = new Point(20, 100), 
+                        Size = new Size(80, 25),
+                        ForeColor = Color.White
+                    };
+
+                    // TextBox สำหรับกรอกค่าใหม่
+                    var txtValue = new TextBox 
+                    { 
+                        Location = new Point(110, 98), 
+                        Size = new Size(300, 25),
+                        BackColor = Color.FromArgb(60, 60, 60),
+                        ForeColor = Color.White,
+                        BorderStyle = BorderStyle.FixedSingle
+                    };
+                    
+                    // ใส่ค่าเดิมลงไป (แปลงจาก display format เป็นค่าดิบ)
+                    if (currentRawValue == -1000000.0m)
+                    {
+                        txtValue.Text = "OVERLOAD";
+                    }
+                    else if (currentValue != "-")
+                    {
+                        txtValue.Text = GetRawValueFromRepairDisplay(currentValue);
+                    }
+
+                    // Buttons
+                    var btnOK = new Button 
+                    { 
+                        Text = "บันทึก", 
+                        Location = new Point(200, 150), 
+                        Size = new Size(100, 35),
+                        BackColor = Color.FromArgb(0, 122, 204),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat
+                    };
+                    
+                    var btnCancel = new Button 
+                    { 
+                        Text = "ยกเลิก", 
+                        Location = new Point(310, 150), 
+                        Size = new Size(100, 35),
+                        BackColor = Color.FromArgb(80, 80, 80),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat
+                    };
+                    
+                    btnOK.Click += (s, args) => 
+                    {
+                        string newValue = txtValue.Text.Trim();
+                        
+                        // Validate input
+                        if (string.IsNullOrEmpty(newValue))
+                        {
+                            MessageBox.Show("กรุณากรอกค่า", "ข้อผิดพลาด", 
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                        
+                        // Update the repair record
+                        UpdateRepairRecord(rowIndex, newValue, function);
+                        editForm.DialogResult = DialogResult.OK;
+                        editForm.Close();
+                    };
+                    
+                    btnCancel.Click += (s, args) => 
+                    {
+                        editForm.DialogResult = DialogResult.Cancel;
+                        editForm.Close();
+                    };
+                    
+                    // Add controls
+                    editForm.Controls.AddRange(new Control[] { 
+                        lblName, lblFunction, lblRefValue, lblValue, txtValue, btnOK, btnCancel 
+                    });
+                    
+                    // Set focus and show dialog
+                    txtValue.Focus();
+                    txtValue.SelectAll();
+                    editForm.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการแก้ไขค่าวัด: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private string GetRawValueFromRepairDisplay(string displayValue)
+        {
+            try
+            {
+                // ถ้าเป็น OVERLOAD
+                if (displayValue == "OVERLOAD")
+                {
+                    return "-1000000.0";
+                }
+                
+                // ถ้าเป็น "-" (ยังไม่ได้วัด)
+                if (displayValue == "-" || displayValue == "<->")
+                {
+                    return displayValue;
+                }
+                
+                // แปลงจาก format "100.0000k" → "100000"
+                displayValue = displayValue.Trim();
+                
+                // ตรวจสอบ M (Mega)
+                if (displayValue.EndsWith("M", StringComparison.OrdinalIgnoreCase))
+                {
+                    string numStr = displayValue.Substring(0, displayValue.Length - 1);
+                    if (double.TryParse(numStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
+                    {
+                        return (num * 1000000).ToString(CultureInfo.InvariantCulture);
+                    }
+                }
+                
+                // ตรวจสอบ k (Kilo)
+                if (displayValue.EndsWith("k", StringComparison.OrdinalIgnoreCase))
+                {
+                    string numStr = displayValue.Substring(0, displayValue.Length - 1);
+                    if (double.TryParse(numStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
+                    {
+                        return (num * 1000).ToString(CultureInfo.InvariantCulture);
+                    }
+                }
+                
+                // ถ้าไม่มี suffix ให้คืนค่าเดิม
+                return displayValue;
+            }
+            catch
+            {
+                return displayValue;
+            }
+        }
+
+        private async void UpdateRepairRecord(int rowIndex, string newValueStr, string function)
+        {
+            try
+            {
+                if (rowIndex < 0 || rowIndex >= _repairRecordsTable.Rows.Count)
+                    return;
+
+                var dataRow = _repairRecordsTable.Rows[rowIndex];
+                
+                decimal newRawValue;
+                string newDisplayValue;
+                bool? isPass = null;
+                
+                // จัดการค่าพิเศษ
+                if (newValueStr.ToUpper() == "OVERLOAD")
+                {
+                    newRawValue = -1000000.0m;
+                    newDisplayValue = "OVERLOAD";
+                }
+                else if (newValueStr == "-" || newValueStr == "<->")
+                {
+                    newRawValue = 0;
+                    newDisplayValue = "-";
+                }
+                else
+                {
+                    // แปลงค่าจาก string เป็น decimal
+                    // รองรับการพิมพ์แบบ "100k", "1M" หรือค่าตัวเลขปกติ
+                    double parsedValue;
+                    
+                    if (newValueStr.EndsWith("M", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string numStr = newValueStr.Substring(0, newValueStr.Length - 1);
+                        parsedValue = double.Parse(numStr, CultureInfo.InvariantCulture) * 1000000;
+                    }
+                    else if (newValueStr.EndsWith("k", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string numStr = newValueStr.Substring(0, newValueStr.Length - 1);
+                        parsedValue = double.Parse(numStr, CultureInfo.InvariantCulture) * 1000;
+                    }
+                    else
+                    {
+                        parsedValue = double.Parse(newValueStr, NumberStyles.Any, CultureInfo.InvariantCulture);
+                    }
+                    
+                    newRawValue = (decimal)parsedValue;
+                    
+                    // Format ค่าสำหรับการแสดงผล (จะถูก format อีกครั้งโดย CellFormatting)
+                    if (function.ToUpper().Contains("RES2W") || 
+                        function.ToUpper().Contains("RES4W") ||
+                        function.ToUpper().Contains("RESISTANCE2W") || 
+                        function.ToUpper().Contains("RESISTANCE4W"))
+                    {
+                        newDisplayValue = FormatRDTableValue(parsedValue, function);
+                    }
+                    else
+                    {
+                        newDisplayValue = parsedValue.ToString("N4", CultureInfo.InvariantCulture);
+                    }
+                }
+                
+                // อัพเดทค่าใน DataTable
+                dataRow["RawValue"] = newRawValue;
+                dataRow["Value"] = newDisplayValue;
+                
+                // คำนวณ Status ใหม่
+                RecalculateRepairStatus(dataRow);
+                
+                // ดึง Status สำหรับบันทึกลง database
+                string status = dataRow["Status"]?.ToString() ?? "";
+                if (status == "PASS")
+                {
+                    isPass = true;
+                }
+                else if (status == "FAIL")
+                {
+                    isPass = false;
+                }
+                // else isPass = null (สำหรับ N/A หรือ "-")
+                
+                // บันทึกลง database
+                int measurementId = dataRow["MeasurementId"] != DBNull.Value ? Convert.ToInt32(dataRow["MeasurementId"]) : 0;
+                if (measurementId > 0 && _mysqlManager != null)
+                {
+                    bool saveSuccess = await _mysqlManager.UpdateRepairMeasurementAsync(measurementId, newRawValue, isPass);
+                    if (saveSuccess)
+                    {
+                        LogActivity($"✓ บันทึกค่าวัดลง database สำเร็จ - ID: {measurementId}, Value: {newDisplayValue}, Status: {status}");
+                    }
+                    else
+                    {
+                        LogActivity($"✗ บันทึกค่าวัดลง database ล้มเหลว - ID: {measurementId}", true);
+                        MessageBox.Show("แก้ไขค่าสำเร็จ แต่บันทึกลง database ล้มเหลว", "คำเตือน", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else if (measurementId <= 0)
+                {
+                    LogActivity($"⚠ ไม่พบ MeasurementId สำหรับแถวที่ {rowIndex + 1} - ข้อมูลจะไม่ถูกบันทึกลง database", true);
+                }
+                else if (_mysqlManager == null)
+                {
+                    LogActivity($"⚠ MySQL ไม่ได้เชื่อมต่อ - ข้อมูลจะไม่ถูกบันทึกลง database", true);
+                }
+                
+                // Refresh DataGridView
+                dataGridViewRepair.Refresh();
+                
+                LogActivity($"แก้ไขค่าวัดแถวที่ {rowIndex + 1}: {newDisplayValue}");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการอัพเดทค่าวัด: {ex.Message}", true);
+                MessageBox.Show($"ไม่สามารถอัพเดทค่าได้: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void RecalculateRepairStatus(DataRow dataRow)
+        {
+            try
+            {
+                string refValueStr = dataRow["RefValue"]?.ToString() ?? "";
+                decimal rawValue = dataRow["RawValue"] != DBNull.Value ? Convert.ToDecimal(dataRow["RawValue"]) : 0;
+                bool tolEnabled = dataRow["TolEnabled"] != DBNull.Value ? Convert.ToBoolean(dataRow["TolEnabled"]) : false;
+                decimal tolerancePercentage = dataRow["TolerancePercentage"] != DBNull.Value ? Convert.ToDecimal(dataRow["TolerancePercentage"]) : 0;
+                
+                // ถ้ายังไม่ได้วัด
+                if (dataRow["Value"]?.ToString() == "-")
+                {
+                    dataRow["Status"] = "-";
+                    return;
+                }
+                
+                // ถ้าเป็น OVERLOAD
+                if (rawValue == -1000000.0m)
+                {
+                    dataRow["Status"] = "FAIL";
+                    return;
+                }
+                
+                // ถ้าไม่มีค่าอ้างอิง หรือเป็น "-" หรือ "<->"
+                if (string.IsNullOrEmpty(refValueStr) || refValueStr == "-" || refValueStr == "<->")
+                {
+                    dataRow["Status"] = "N/A";
+                    return;
+                }
+                
+                // Parse ค่าอ้างอิง
+                if (!double.TryParse(refValueStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double refValue))
+                {
+                    dataRow["Status"] = "N/A";
+                    return;
+                }
+                
+                // คำนวณ tolerance
+                if (tolEnabled && tolerancePercentage > 0)
+                {
+                    double tolerance = Math.Abs(refValue * (double)tolerancePercentage / 100.0);
+                    double measuredValue = (double)rawValue;
+                    double difference = Math.Abs(measuredValue - refValue);
+                    
+                    if (difference <= tolerance)
+                    {
+                        dataRow["Status"] = "PASS";
+                    }
+                    else
+                    {
+                        dataRow["Status"] = "FAIL";
+                    }
+                }
+                else
+                {
+                    // ไม่มี tolerance - เปรียบเทียบค่าตรงๆ
+                    if (Math.Abs((double)rawValue - refValue) < 0.0001)
+                    {
+                        dataRow["Status"] = "PASS";
+                    }
+                    else
+                    {
+                        dataRow["Status"] = "FAIL";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการคำนวณ Status: {ex.Message}", true);
+                dataRow["Status"] = "ERROR";
             }
         }
 
@@ -3885,6 +4269,51 @@ namespace MultiRecord
 
         private void DataGridViewRepair_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
+            // จัดการ Value column - แปลง RawValue = -1000000.0 เป็น "OVERLOAD" และ format ค่า 2W
+            if (dataGridViewRepair.Columns[e.ColumnIndex].Name == "Value")
+            {
+                if (e.RowIndex >= 0 && e.RowIndex < dataGridViewRepair.Rows.Count)
+                {
+                    var row = dataGridViewRepair.Rows[e.RowIndex];
+                    if (row.DataBoundItem is DataRowView rowView)
+                    {
+                        var dataRow = rowView.Row;
+                        
+                        // ถ้ายังไม่ได้วัด (Value = "-") ไม่ต้อง format
+                        string valueStr = e.Value?.ToString() ?? "";
+                        if (valueStr == "-")
+                        {
+                            return;
+                        }
+                        
+                        // ตรวจสอบ OVERLOAD
+                        if (!dataRow.IsNull("RawValue"))
+                        {
+                            decimal rawValue = Convert.ToDecimal(dataRow["RawValue"]);
+                            if (rawValue == -1000000.0m)
+                            {
+                                e.Value = "OVERLOAD";
+                                e.FormattingApplied = true;
+                                return;
+                            }
+                            
+                            // Format สำหรับ Resistance 2W/4W
+                            string functionName = dataRow["Function"]?.ToString() ?? "";
+                            if (functionName.ToUpper().Contains("RES2W") || 
+                                functionName.ToUpper().Contains("RES4W") ||
+                                functionName.ToUpper().Contains("RESISTANCE2W") || 
+                                functionName.ToUpper().Contains("RESISTANCE4W"))
+                            {
+                                double value = (double)rawValue;
+                                string formattedValue = FormatRDTableValue(value, functionName);
+                                e.Value = formattedValue;
+                                e.FormattingApplied = true;
+                            }
+                        }
+                    }
+                }
+            }
+            
             // จัดการสีสำหรับ Status column
             if (dataGridViewRepair.Columns[e.ColumnIndex].Name == "Status")
             {
@@ -3930,7 +4359,7 @@ namespace MultiRecord
             }
 
             // ตรวจสอบว่าได้อ่านค่าจาก DMM หรือไม่
-            if (double.IsNaN(_lastReadingValue) || _isOverload)
+            if (double.IsNaN(_lastReadingValue))
             {
                 MessageBox.Show("กรุณาอ่านค่าจาก DMM ก่อนบันทึก", "ไม่มีค่าที่วัดได้",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -3956,7 +4385,16 @@ namespace MultiRecord
 
             try
             {
-                decimal measuredValue = (decimal)_lastReadingValue;
+                // ตรวจสอบว่าเป็น OVERLOAD หรือไม่
+                decimal measuredValue;
+                if (_isOverload)
+                {
+                    measuredValue = -1000000.0m; // บันทึกค่าพิเศษสำหรับ OVERLOAD
+                }
+                else
+                {
+                    measuredValue = (decimal)_lastReadingValue;
+                }
 
                 // หาแถวที่เลือก - ใช้ CurrentRow
                 DataGridViewRow selectedGridRow = dataGridViewRepair.CurrentRow;
@@ -3988,9 +4426,19 @@ namespace MultiRecord
                     return;
                 }
 
-                // คำนวณ Status
-                string status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage);
-                bool isPass = status == "PASS";
+                // คำนวณ Status (OVERLOAD จะถือว่า FAIL เสมอ)
+                string status;
+                bool isPass;
+                if (_isOverload)
+                {
+                    status = "FAIL";
+                    isPass = false;
+                }
+                else
+                {
+                    status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage);
+                    isPass = status == "PASS";
+                }
 
                 // บันทึกลง Database
                 bool success = await _mysqlManager.UpdateRepairMeasurementAsync(measurementId, measuredValue, isPass);
@@ -3998,10 +4446,19 @@ namespace MultiRecord
                 if (success)
                 {
                     // อัพเดต UI
-                    selectedRow["Value"] = measuredValue.ToString("N4", CultureInfo.InvariantCulture);
+                    selectedRow["RawValue"] = measuredValue; // เก็บค่าดิบ
+                    if (_isOverload)
+                    {
+                        selectedRow["Value"] = "OVERLOAD"; // แสดงเป็น OVERLOAD
+                    }
+                    else
+                    {
+                        selectedRow["Value"] = measuredValue.ToString("N4", CultureInfo.InvariantCulture);
+                    }
                     selectedRow["Status"] = status;
 
-                    LogActivity($"บันทึกค่า Repair Measurement สำเร็จ: {measuredValue.ToString("N4", CultureInfo.InvariantCulture)} ({status})");
+                    string displayValue = _isOverload ? "OVERLOAD" : measuredValue.ToString("N4", CultureInfo.InvariantCulture);
+                    LogActivity($"บันทึกค่า Repair Measurement สำเร็จ: {displayValue} ({status})");
 
                     // เล่นเสียงตาม Status
                     if (isPass)
@@ -4133,9 +4590,78 @@ namespace MultiRecord
 
         private void ButtonExportRepair_Click(object sender, EventArgs e)
         {
-            // TODO: Implement export functionality
-            MessageBox.Show("Export functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // Export Repair data to CSV
+            if (_repairRecordsTable.Rows.Count == 0)
+            {
+                MessageBox.Show("ไม่มีข้อมูล Repair ให้ส่งออก", "แจ้งเตือน", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Filter = "CSV File (*.csv)|*.csv";
+                saveFileDialog.FileName = $"Repair_Data_{_repairQwid}_{_repairSerialNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var lines = new List<string>();
+                        
+                        // Header
+                        lines.Add("No,Name,Function,RefValue,MeasuredValue,Status");
+                        
+                        foreach (DataRow row in _repairRecordsTable.Rows)
+                        {
+                            string no = row["No"].ToString();
+                            string name = row["Name"].ToString();
+                            string function = row["Function"].ToString();
+                            string refValue = row["RefValue"].ToString();
+                            
+                            // ใช้ RawValue สำหรับ export (ค่าดิบที่แท้จริง)
+                            string measuredValue;
+                            if (row.IsNull("RawValue"))
+                            {
+                                measuredValue = "-"; // ยังไม่ได้วัด
+                            }
+                            else
+                            {
+                                decimal rawValue = Convert.ToDecimal(row["RawValue"]);
+                                if (rawValue == -1000000.0m)
+                                {
+                                    measuredValue = "OVERLOAD";
+                                }
+                                else
+                                {
+                                    measuredValue = rawValue.ToString("F8", CultureInfo.InvariantCulture); // ส่งออกเป็นทศนิยม 8 ตำแหน่ง
+                                }
+                            }
+                            
+                            string status = row["Status"].ToString();
+                            
+                            string csvLine = string.Join(",",
+                                $"\"{no}\"",
+                                $"\"{name}\"",
+                                $"\"{function}\"",
+                                $"\"{refValue}\"",
+                                $"\"{measuredValue}\"",
+                                $"\"{status}\""
+                            );
+                            lines.Add(csvLine);
+                        }
+                        
+                        File.WriteAllLines(saveFileDialog.FileName, lines, Encoding.UTF8);
+                        LogActivity($"ส่งออกข้อมูล Repair ไปยัง {saveFileDialog.FileName} สำเร็จ");
+                        MessageBox.Show("ส่งออกข้อมูลสำเร็จ!", "สำเร็จ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogActivity($"เกิดข้อผิดพลาดในการส่งออกข้อมูล: {ex.Message}", true);
+                        MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
 
         private void ButtonSelectAllRepair_Click(object sender, EventArgs e)
@@ -4266,6 +4792,7 @@ namespace MultiRecord
                             _repairSerialNumber, 
                             nextSessionNumber, 
                             dialog.Description,
+                            dialog.RepairType,
                             AuthManager.CurrentUser?.Username);
 
                         // Clone measurements จาก template
@@ -4305,16 +4832,19 @@ namespace MultiRecord
 
                 using (var dialog = new RepairHistoryDialog(_repairSessions, _mysqlManager, _repairQwid, _repairSerialNumber))
                 {
-                    if (dialog.ShowDialog() == DialogResult.OK && dialog.SelectedSession != null)
+                    var result = dialog.ShowDialog();
+                    
+                    // ถ้ามีการลบหรือเปลี่ยนประเภท ให้โหลดใหม่เสมอ
+                    if (dialog.SessionDeleted || dialog.SessionTypeChanged)
                     {
-                        // เลือก session ที่เลือกจาก history
+                        await LoadRepairSessions();
+                    }
+                    
+                    // ถ้ากด OK และเลือก session ให้ไปที่ session นั้น
+                    if (result == DialogResult.OK && dialog.SelectedSession != null)
+                    {
                         SelectRepairSession(dialog.SelectedSession.Id);
                         LogActivity($"เลือกรอบการซ่อมครั้งที่ {dialog.SelectedSession.SessionNumber}");
-                    }
-                    else if (dialog.SessionDeleted)
-                    {
-                        // ถ้ามีการลบ session ให้โหลดใหม่
-                        await LoadRepairSessions();
                     }
                 }
             }
@@ -4356,7 +4886,7 @@ namespace MultiRecord
                 
                 comboBoxRepairSession.DataSource = null;
                 comboBoxRepairSession.DataSource = _repairSessions;
-                comboBoxRepairSession.DisplayMember = "SessionNumber";
+                comboBoxRepairSession.DisplayMember = "DisplayText";
                 comboBoxRepairSession.ValueMember = "Id";
 
                 if (_repairSessions.Count > 0)
@@ -4418,7 +4948,28 @@ namespace MultiRecord
                     row["Name"] = measurement.MeasurementName ?? "";
                     row["Function"] = measurement.FunctionName;
                     row["RefValue"] = measurement.MeasurementValue.ToString("N4", CultureInfo.InvariantCulture); // ค่าอ้างอิงจาก template (format เป็น string)
-                    row["Value"] = measurement.ActualMeasuredValue?.ToString("N4", CultureInfo.InvariantCulture) ?? "-"; // ค่าที่วัดได้จริง (ถ้ามี) หรือ - (ถ้ายังไม่ได้วัด)
+                    
+                    // จัดการ RawValue และ Value
+                    if (measurement.ActualMeasuredValue.HasValue)
+                    {
+                        row["RawValue"] = measurement.ActualMeasuredValue.Value; // เก็บค่าดิบ
+                        
+                        // ถ้าเป็น -1000000.0 แสดงเป็น OVERLOAD, ถ้าไม่ใช่แสดงเป็นตัวเลข
+                        if (measurement.ActualMeasuredValue.Value == -1000000.0m)
+                        {
+                            row["Value"] = "OVERLOAD";
+                        }
+                        else
+                        {
+                            row["Value"] = measurement.ActualMeasuredValue.Value.ToString("N4", CultureInfo.InvariantCulture);
+                        }
+                    }
+                    else
+                    {
+                        row["RawValue"] = DBNull.Value; // ยังไม่มีค่า
+                        row["Value"] = "-"; // ยังไม่ได้วัด
+                    }
+                    
                     row["TolEnabled"] = measurement.ToleranceEnabled;
                     row["TolerancePercentage"] = measurement.TolerancePercentage ?? 0m;
                     row["SystemInfo"] = measurement.SystemInfo ?? "";
@@ -4427,12 +4978,20 @@ namespace MultiRecord
                     // คำนวณ Status โดยใช้ ActualMeasuredValue ถ้ามี
                     if (measurement.ActualMeasuredValue.HasValue)
                     {
-                        row["Status"] = CalculateRepairStatus(
-                            measurement.ActualMeasuredValue.Value,
-                            measurement.MeasurementValue,
-                            measurement.ToleranceEnabled,
-                            measurement.TolerancePercentage ?? 0m
-                        );
+                        // ถ้าเป็น OVERLOAD จะถือว่า FAIL เสมอ
+                        if (measurement.ActualMeasuredValue.Value == -1000000.0m)
+                        {
+                            row["Status"] = "FAIL";
+                        }
+                        else
+                        {
+                            row["Status"] = CalculateRepairStatus(
+                                measurement.ActualMeasuredValue.Value,
+                                measurement.MeasurementValue,
+                                measurement.ToleranceEnabled,
+                                measurement.TolerancePercentage ?? 0m
+                            );
+                        }
                     }
                     else
                     {

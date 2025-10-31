@@ -14,9 +14,11 @@ namespace MultiRecord
         private Button buttonClose;
         private Button buttonSelect;
         private Button buttonDelete;
+        private Button buttonChangeType;
 
         public RepairSession SelectedSession { get; private set; }
         public bool SessionDeleted { get; private set; }
+        public bool SessionTypeChanged { get; private set; }
 
         private List<RepairSession> _sessions;
         private MySqlManager _mysqlManager;
@@ -102,6 +104,14 @@ namespace MultiRecord
 
             dataGridViewHistory.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "RepairType",
+                HeaderText = "ประเภท",
+                DataPropertyName = "RepairType",
+                FillWeight = 20
+            });
+
+            dataGridViewHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "SessionNote",
                 HeaderText = "หมายเหตุ",
                 DataPropertyName = "SessionNote",
@@ -145,6 +155,21 @@ namespace MultiRecord
             buttonDelete.FlatAppearance.BorderSize = 0;
             buttonDelete.Click += ButtonDelete_Click;
 
+            buttonChangeType = new Button
+            {
+                Text = "เปลี่ยนประเภท",
+                Font = new Font("Segoe UI", 10F),
+                Location = new Point(130, 410),
+                Size = new Size(120, 35),
+                BackColor = Color.FromArgb(52, 152, 219),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            buttonChangeType.FlatAppearance.BorderSize = 0;
+            buttonChangeType.Click += ButtonChangeType_Click;
+
             buttonClose = new Button
             {
                 Text = "ปิด",
@@ -182,6 +207,7 @@ namespace MultiRecord
                 labelInfo,
                 dataGridViewHistory,
                 buttonDelete,
+                buttonChangeType,
                 buttonClose,
                 buttonSelect
             });
@@ -192,6 +218,19 @@ namespace MultiRecord
                 if (e.RowIndex >= 0)
                 {
                     ButtonSelect_Click(s, e);
+                }
+            };
+            
+            dataGridViewHistory.CellFormatting += (s, e) =>
+            {
+                if (e.ColumnIndex >= 0 && dataGridViewHistory.Columns[e.ColumnIndex].Name == "RepairType")
+                {
+                    if (e.Value != null)
+                    {
+                        string repairType = e.Value.ToString();
+                        e.Value = repairType == "before_repair" ? "ก่อนซ่อม" : "หลังซ่อม";
+                        e.FormattingApplied = true;
+                    }
                 }
             };
         }
@@ -212,6 +251,7 @@ namespace MultiRecord
                 {
                     SessionNumber = s.SessionNumber,
                     CreatedAt = s.CreatedAt,
+                    RepairType = s.RepairType,
                     SessionNote = string.IsNullOrEmpty(s.SessionNote) ? "-" : s.SessionNote,
                     Status = GetStatusText(s.Status),
                     Session = s
@@ -321,6 +361,69 @@ namespace MultiRecord
             else
             {
                 MessageBox.Show("กรุณาเลือกรอบการซ่อมที่ต้องการลบ", "แจ้งเตือน", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private async void ButtonChangeType_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewHistory.SelectedRows.Count > 0)
+            {
+                var selectedRow = dataGridViewHistory.SelectedRows[0];
+                if (selectedRow.DataBoundItem != null)
+                {
+                    var item = selectedRow.DataBoundItem;
+                    var sessionProperty = item.GetType().GetProperty("Session");
+                    if (sessionProperty != null)
+                    {
+                        var session = (RepairSession)sessionProperty.GetValue(item);
+                        
+                        // Toggle repair type
+                        string newType = session.RepairType == "before_repair" ? "after_repair" : "before_repair";
+                        string newTypeText = newType == "before_repair" ? "ก่อนซ่อม" : "หลังซ่อม";
+                        string currentTypeText = session.RepairType == "before_repair" ? "ก่อนซ่อม" : "หลังซ่อม";
+                        
+                        // Show dialog to input note
+                        using (var noteDialog = new ChangeTypeNoteDialog(currentTypeText, newTypeText))
+                        {
+                            if (noteDialog.ShowDialog(this) == DialogResult.OK)
+                            {
+                                string note = noteDialog.Note;
+                                
+                                try
+                                {
+                                    bool updated = await _mysqlManager.UpdateRepairSessionTypeAsync(session.Id, newType, note);
+                                    if (updated)
+                                    {
+                                        MessageBox.Show($"เปลี่ยนประเภทเป็น '{newTypeText}' สำเร็จ", "สำเร็จ", 
+                                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        
+                                        // Update session in memory
+                                        session.RepairType = newType;
+                                        LoadSessions();
+                                        
+                                        // Set flag for Main.cs to reload
+                                        SessionTypeChanged = true;
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("ไม่สามารถเปลี่ยนประเภทได้", "ข้อผิดพลาด", 
+                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "ข้อผิดพลาด", 
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("กรุณาเลือกรอบการซ่อมที่ต้องการเปลี่ยนประเภท", "แจ้งเตือน", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }

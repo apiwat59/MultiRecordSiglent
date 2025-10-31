@@ -10,15 +10,18 @@ namespace MultiRecord
         private Label labelQwid;
         private Label labelSerialNumber;
         private Label labelSessionNumber;
+        private Label labelRepairType;
         private Label labelDescription;
         private TextBox textBoxQwid;
         private TextBox textBoxSerialNumber;
         private NumericUpDown numericSessionNumber;
+        private ComboBox comboBoxRepairType;
         private TextBox textBoxDescription;
         private Button buttonCreate;
         private Button buttonCancel;
 
         public int SessionNumber => (int)numericSessionNumber.Value;
+        public string RepairType => comboBoxRepairType.SelectedValue?.ToString() ?? "before_repair";
         public string Description => textBoxDescription.Text.Trim();
 
         public NewRepairSessionDialog(string qwId, string serialNumber, int nextSessionNumber)
@@ -38,7 +41,7 @@ namespace MultiRecord
 
             // Form settings
             this.Text = "สร้างรอบการซ่อมใหม่";
-            this.Size = new Size(500, 350);
+            this.Size = new Size(500, 400);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -113,11 +116,34 @@ namespace MultiRecord
             };
             this.Controls.Add(numericSessionNumber);
 
+            // Repair Type Label
+            labelRepairType = new Label
+            {
+                Text = "ประเภท:",
+                Location = new Point(30, 175),
+                Size = new Size(120, 23),
+                TextAlign = ContentAlignment.MiddleRight
+            };
+            this.Controls.Add(labelRepairType);
+
+            comboBoxRepairType = new ComboBox
+            {
+                Location = new Point(160, 175),
+                Size = new Size(200, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            comboBoxRepairType.Items.Add(new { Text = "ก่อนซ่อม", Value = "before_repair" });
+            comboBoxRepairType.Items.Add(new { Text = "หลังซ่อม", Value = "after_repair" });
+            comboBoxRepairType.DisplayMember = "Text";
+            comboBoxRepairType.ValueMember = "Value";
+            comboBoxRepairType.SelectedIndex = 0;
+            this.Controls.Add(comboBoxRepairType);
+
             // Description Label
             labelDescription = new Label
             {
                 Text = "คำอธิบาย:",
-                Location = new Point(30, 175),
+                Location = new Point(30, 210),
                 Size = new Size(120, 23),
                 TextAlign = ContentAlignment.MiddleRight
             };
@@ -125,7 +151,7 @@ namespace MultiRecord
 
             textBoxDescription = new TextBox
             {
-                Location = new Point(160, 175),
+                Location = new Point(160, 210),
                 Size = new Size(300, 60),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical
@@ -136,7 +162,7 @@ namespace MultiRecord
             buttonCreate = new Button
             {
                 Text = "สร้าง",
-                Location = new Point(250, 260),
+                Location = new Point(250, 300),
                 Size = new Size(100, 35),
                 BackColor = Color.FromArgb(0, 122, 204),
                 ForeColor = Color.White,
@@ -151,7 +177,7 @@ namespace MultiRecord
             buttonCancel = new Button
             {
                 Text = "ยกเลิก",
-                Location = new Point(360, 260),
+                Location = new Point(360, 300),
                 Size = new Size(100, 35),
                 BackColor = Color.Gray,
                 ForeColor = Color.White,

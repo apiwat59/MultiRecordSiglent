@@ -537,7 +537,7 @@ namespace MultiRecord
         /// <summary>
         /// Create a new repair session
         /// </summary>
-        public async Task<int> CreateRepairSessionAsync(string qwId, int serialId, string serialNumber, int sessionNumber, string sessionNote, string createdBy = null)
+        public async Task<int> CreateRepairSessionAsync(string qwId, int serialId, string serialNumber, int sessionNumber, string sessionNote, string repairType = "before_repair", string createdBy = null)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -545,8 +545,8 @@ namespace MultiRecord
                 
                 var sql = @"
                     INSERT INTO software_repair_sessions 
-                    (qw_id, serial_id, session_number, session_note, status, created_by, created_at)
-                    VALUES (@qwId, @serialId, @sessionNumber, @sessionNote, 'in_progress', @createdBy, NOW());
+                    (qw_id, serial_id, session_number, session_note, repair_type, status, created_by, created_at)
+                    VALUES (@qwId, @serialId, @sessionNumber, @sessionNote, @repairType, 'in_progress', @createdBy, NOW());
                     SELECT LAST_INSERT_ID();";
                 
                 using (var command = new MySqlCommand(sql, connection))
@@ -555,6 +555,7 @@ namespace MultiRecord
                     command.Parameters.AddWithValue("@serialId", serialId);
                     command.Parameters.AddWithValue("@sessionNumber", sessionNumber);
                     command.Parameters.AddWithValue("@sessionNote", !string.IsNullOrEmpty(sessionNote) ? (object)sessionNote : DBNull.Value);
+                    command.Parameters.AddWithValue("@repairType", repairType);
                     command.Parameters.AddWithValue("@createdBy", !string.IsNullOrEmpty(createdBy) ? (object)createdBy : DBNull.Value);
                     
                     var result = await command.ExecuteScalarAsync();
@@ -607,7 +608,7 @@ namespace MultiRecord
                 await connection.OpenAsync();
                 
                 var sql = @"
-                    SELECT id, qw_id, serial_id, session_number, session_note, status, created_by, created_at, updated_at, completed_at
+                    SELECT id, qw_id, serial_id, session_number, session_note, repair_type, status, created_by, created_at, updated_at, completed_at
                     FROM software_repair_sessions
                     WHERE serial_id = @serialId";
                 
@@ -638,6 +639,7 @@ namespace MultiRecord
                                 SerialId = Convert.ToInt32(reader["serial_id"]),
                                 SessionNumber = Convert.ToInt32(reader["session_number"]),
                                 SessionNote = reader["session_note"]?.ToString(),
+                                RepairType = reader["repair_type"]?.ToString() ?? "before_repair",
                                 Status = reader["status"].ToString(),
                                 CreatedBy = reader["created_by"]?.ToString(),
                                 CreatedAt = Convert.ToDateTime(reader["created_at"]),
@@ -752,6 +754,42 @@ namespace MultiRecord
                 {
                     command.Parameters.AddWithValue("@sessionId", sessionId);
                     command.Parameters.AddWithValue("@status", status);
+                    
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update repair session type (before_repair or after_repair) with optional note
+        /// </summary>
+        public async Task<bool> UpdateRepairSessionTypeAsync(int sessionId, string repairType, string note = null)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                // Build SQL based on whether note is provided
+                var sql = string.IsNullOrEmpty(note) 
+                    ? @"UPDATE software_repair_sessions
+                        SET repair_type = @repairType
+                        WHERE id = @sessionId"
+                    : @"UPDATE software_repair_sessions
+                        SET repair_type = @repairType,
+                            session_note = CONCAT(IFNULL(session_note, ''), 
+                                                  CASE WHEN IFNULL(session_note, '') = '' THEN '' ELSE '\n' END,
+                                                  '[เปลี่ยนประเภท] ', @note)
+                        WHERE id = @sessionId";
+                
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@sessionId", sessionId);
+                    command.Parameters.AddWithValue("@repairType", repairType);
+                    if (!string.IsNullOrEmpty(note))
+                    {
+                        command.Parameters.AddWithValue("@note", note);
+                    }
                     
                     var rowsAffected = await command.ExecuteNonQueryAsync();
                     return rowsAffected > 0;
@@ -955,11 +993,15 @@ namespace MultiRecord
         public int SerialId { get; set; }
         public int SessionNumber { get; set; }
         public string SessionNote { get; set; }
+        public string RepairType { get; set; } = "before_repair"; // before_repair or after_repair
         public string Status { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
+        
+        // Property สำหรับแสดงใน ComboBox
+        public string DisplayText => $"รอบที่ {SessionNumber} ({(RepairType == "before_repair" ? "ก่อนซ่อม" : "หลังซ่อม")})";
     }
 
     public class RepairMeasurement
