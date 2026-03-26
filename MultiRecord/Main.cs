@@ -4740,11 +4740,12 @@ namespace MultiRecord
 
                 // สร้าง session ครั้งแรก
                 int sessionId = await _mysqlManager.CreateRepairSessionAsync(
-                    _repairQwid, 
-                    _repairSerialId, 
-                    _repairSerialNumber, 
-                    1, 
+                    _repairQwid,
+                    _repairSerialId,
+                    _repairSerialNumber,
+                    1,
                     "รอบการซ่อมครั้งแรก",
+                    "before_repair",
                     AuthManager.CurrentUser?.Username);
 
                 // Clone measurements
