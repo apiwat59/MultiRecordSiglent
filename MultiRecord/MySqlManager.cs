@@ -492,7 +492,7 @@ namespace MultiRecord
                                 Note = reader["note"]?.ToString(),
                                 SystemInfo = reader["system_info"]?.ToString(),
                                 IsPass = reader["is_pass"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["is_pass"]),
-                                MeasuredAt = Convert.ToDateTime(reader["measured_at"])
+                                MeasuredAt = reader["measured_at"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(reader["measured_at"])
                             });
                         }
                     }
@@ -697,7 +697,7 @@ namespace MultiRecord
                                 Note = reader["note"]?.ToString(),
                                 SystemInfo = reader["system_info"]?.ToString(),
                                 IsPass = reader["is_pass"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(reader["is_pass"]),
-                                MeasuredAt = Convert.ToDateTime(reader["measured_at"])
+                                MeasuredAt = reader["measured_at"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(reader["measured_at"])
                             });
                         }
                     }
@@ -729,6 +729,56 @@ namespace MultiRecord
                     command.Parameters.AddWithValue("@actualMeasuredValue", actualMeasuredValue);
                     command.Parameters.AddWithValue("@isPass", isPass.HasValue ? (object)isPass.Value : DBNull.Value);
                     
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clear a single repair measurement value (undo)
+        /// </summary>
+        public async Task<bool> ClearRepairMeasurementValueAsync(int measurementId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    UPDATE software_repair_measurements
+                    SET actual_measured_value = NULL,
+                        is_pass = NULL,
+                        measured_at = NULL
+                    WHERE id = @measurementId";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@measurementId", measurementId);
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clear all repair measurement values for a session (ล้างข้อมูลทั้งหมด)
+        /// </summary>
+        public async Task<bool> ClearRepairSessionMeasurementsAsync(int sessionId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    UPDATE software_repair_measurements
+                    SET actual_measured_value = NULL,
+                        is_pass = NULL,
+                        measured_at = NULL
+                    WHERE repair_session_id = @sessionId";
+
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@sessionId", sessionId);
                     var rowsAffected = await command.ExecuteNonQueryAsync();
                     return rowsAffected > 0;
                 }

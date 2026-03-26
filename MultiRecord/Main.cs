@@ -51,6 +51,14 @@ namespace MultiRecord
         private List<RepairSession> _repairSessions = new List<RepairSession>();
         private List<RepairMeasurement> _currentRepairMeasurements = new List<RepairMeasurement>();
 
+        // Repair sequential measurement enforcement
+        private int _currentRepairRowIndex = -1;
+        private bool _isProgrammaticallySelectingRepairRow = false;
+
+        // Repair edit mode
+        private bool _isRepairEditMode = false;
+        private int _repairEditRowIndex = -1;
+
         // Tolerance settings
         private bool _toleranceEnabled = false;
         private double _toleranceValueDC = 0.5;
@@ -382,9 +390,11 @@ namespace MultiRecord
                 await Task.Delay(100);
 
                 _currentFunction = function;
-                _activeButton = clickedButton;
-
-                UpdateButtonStyles(clickedButton);
+                if (clickedButton != null)
+                {
+                    _activeButton = clickedButton;
+                    UpdateButtonStyles(clickedButton);
+                }
                 UpdateParameterControls(function);
 
                 lblMeasurementType.Text = function.ToString().ToUpper();
@@ -3685,6 +3695,8 @@ namespace MultiRecord
             _repairRecordsTable.Columns.Add("TolerancePercentage", typeof(decimal)); // เก็บ tolerance % ไว้คำนวณ
             _repairRecordsTable.Columns.Add("SystemInfo", typeof(string)); // System Info
             _repairRecordsTable.Columns.Add("MeasurementId", typeof(int)); // เก็บ measurement ID
+            _repairRecordsTable.Columns.Add("UpperLimit", typeof(decimal)); // R&D Upper Limit
+            _repairRecordsTable.Columns.Add("LowerLimit", typeof(decimal)); // R&D Lower Limit
 
             dataGridViewRepair.DataSource = _repairRecordsTable;
 
@@ -3734,10 +3746,12 @@ namespace MultiRecord
             dataGridViewRepair.Columns["TolerancePercentage"].Visible = false;
             dataGridViewRepair.Columns["SystemInfo"].Visible = false;
             dataGridViewRepair.Columns["MeasurementId"].Visible = false;
+            dataGridViewRepair.Columns["UpperLimit"].Visible = false;
+            dataGridViewRepair.Columns["LowerLimit"].Visible = false;
 
             // ตั้งค่า DataGridView
             dataGridViewRepair.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridViewRepair.MultiSelect = true; // เลือกได้หลายแถว (สำหรับ Delete)
+            dataGridViewRepair.MultiSelect = false; // บังคับวัดตามลำดับ ไม่ให้เลือกหลายแถว
             dataGridViewRepair.AllowUserToDeleteRows = false;
             dataGridViewRepair.AllowUserToAddRows = false;
             dataGridViewRepair.ReadOnly = false; // เปลี่ยนเป็น false เพื่อให้ checkbox แก้ไขได้
@@ -3746,7 +3760,15 @@ namespace MultiRecord
             dataGridViewRepair.CellClick += DataGridViewRepair_CellClick;
             dataGridViewRepair.CurrentCellDirtyStateChanged += DataGridViewRepair_CurrentCellDirtyStateChanged;
             dataGridViewRepair.CellFormatting += DataGridViewRepair_CellFormatting;
+            dataGridViewRepair.SelectionChanged += DataGridViewRepair_SelectionChanged;
         }
+
+        // Repair Range/Speed controls (สร้าง programmatically)
+        private ComboBox comboBoxRepairRange;
+        private ComboBox comboBoxRepairSpeed;
+        private Label labelRepairRange;
+        private Label labelRepairSpeed;
+        private Label labelRepairEditMode;
 
         private void InitializeRepairTab()
         {
@@ -3754,23 +3776,128 @@ namespace MultiRecord
             buttonRecordRepair.Click += ButtonRecordRepair_Click;
             buttonDeleteRepair.Click += ButtonDeleteRepair_Click;
             buttonExportRepair.Click += ButtonExportRepair_Click;
-            buttonSelectAllRepair.Click += ButtonSelectAllRepair_Click;
-            buttonDeselectAllRepair.Click += ButtonDeselectAllRepair_Click;
+            // ซ่อนปุ่ม Select All / Deselect All (ไม่จำเป็นแล้วเพราะบังคับวัดตามลำดับ)
+            buttonSelectAllRepair.Visible = false;
+            buttonDeselectAllRepair.Visible = false;
             buttonClearRepair.Click += ButtonClearRepair_Click;
             buttonChangeModelRepair.Click += ButtonChangeModelRepair_Click;
-            
+
             // เพิ่ม Event Handlers สำหรับ Repair Sessions
             buttonNewRepairSession.Click += ButtonNewRepairSession_Click;
             buttonRepairHistory.Click += ButtonRepairHistory_Click;
             comboBoxRepairSession.SelectedIndexChanged += ComboBoxRepairSession_SelectedIndexChanged;
-            
+
             // ซ่อน session controls เริ่มต้น
             labelRepairSession.Visible = false;
             comboBoxRepairSession.Visible = false;
             buttonNewRepairSession.Visible = false;
             buttonRepairHistory.Visible = false;
-            
+
+            // สร้าง Range/Speed controls (แทนที่ Select All/Deselect All ที่ซ่อนไป)
+            CreateRepairParameterControls();
+
             LogActivity("เริ่มต้น Repair Tab สำเร็จ");
+        }
+
+        private void CreateRepairParameterControls()
+        {
+            // Label Range
+            labelRepairRange = new Label
+            {
+                Text = "Range:",
+                Location = new Point(9, 71),
+                Size = new Size(45, 20),
+                ForeColor = Color.LightGray,
+                Font = new Font("Segoe UI", 9F)
+            };
+
+            // ComboBox Range
+            comboBoxRepairRange = new ComboBox
+            {
+                Location = new Point(55, 68),
+                Size = new Size(110, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(63, 63, 70),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F)
+            };
+            comboBoxRepairRange.SelectedIndexChanged += comboBoxRepairRange_SelectedIndexChanged;
+
+            // Label Speed
+            labelRepairSpeed = new Label
+            {
+                Text = "Speed:",
+                Location = new Point(175, 71),
+                Size = new Size(45, 20),
+                ForeColor = Color.LightGray,
+                Font = new Font("Segoe UI", 9F)
+            };
+
+            // ComboBox Speed
+            comboBoxRepairSpeed = new ComboBox
+            {
+                Location = new Point(222, 68),
+                Size = new Size(100, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(63, 63, 70),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9F)
+            };
+            comboBoxRepairSpeed.SelectedIndexChanged += comboBoxRepairSpeed_SelectedIndexChanged;
+
+            // Label Edit Mode indicator
+            labelRepairEditMode = new Label
+            {
+                Text = "",
+                Location = new Point(330, 71),
+                Size = new Size(250, 20),
+                ForeColor = Color.Yellow,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Visible = false
+            };
+
+            // เพิ่มเข้า groupBox
+            groupBoxRepairRecord.Controls.Add(labelRepairRange);
+            groupBoxRepairRecord.Controls.Add(comboBoxRepairRange);
+            groupBoxRepairRecord.Controls.Add(labelRepairSpeed);
+            groupBoxRepairRecord.Controls.Add(comboBoxRepairSpeed);
+            groupBoxRepairRecord.Controls.Add(labelRepairEditMode);
+        }
+
+        private async void comboBoxRepairRange_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isProgrammaticallyChangingParams || _dmm == null || !_dmm.IsConnected) return;
+            if (comboBoxRepairRange.SelectedItem == null) return;
+
+            try
+            {
+                string selectedRange = ((KeyValuePair<string, string>)comboBoxRepairRange.SelectedItem).Key;
+                await _dmm.SetMeasurementRangeAsync(_currentFunction, selectedRange);
+                LogActivity($"เปลี่ยน Range (Repair): {selectedRange}");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการเปลี่ยน Range: {ex.Message}", true);
+            }
+        }
+
+        private async void comboBoxRepairSpeed_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isProgrammaticallyChangingParams || _dmm == null || !_dmm.IsConnected) return;
+            if (comboBoxRepairSpeed.SelectedItem == null) return;
+
+            try
+            {
+                string selectedSpeed = ((KeyValuePair<string, string>)comboBoxRepairSpeed.SelectedItem).Key;
+                await _dmm.SetMeasurementSpeedAsync(_currentFunction, selectedSpeed);
+                LogActivity($"เปลี่ยน Speed (Repair): {selectedSpeed}");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการเปลี่ยน Speed: {ex.Message}", true);
+            }
         }
 
         private async Task<bool> ShowRepairQwidDialog()
@@ -3857,13 +3984,40 @@ namespace MultiRecord
             }
         }
 
+        private void DataGridViewRepair_SelectionChanged(object sender, EventArgs e)
+        {
+            // บังคับวัดตามลำดับ: ถ้า user คลิกเปลี่ยน row เอง ให้บังคับกลับไป row ปัจจุบัน
+            if (_isProgrammaticallySelectingRepairRow || _currentRepairRowIndex < 0) return;
+            if (_isRepairEditMode) return; // ขณะ edit mode อนุญาตให้เลือก row อื่นได้
+
+            if (dataGridViewRepair.CurrentRow != null &&
+                dataGridViewRepair.CurrentRow.Index != _currentRepairRowIndex)
+            {
+                // บังคับกลับไป row ที่กำหนด
+                _isProgrammaticallySelectingRepairRow = true;
+                try
+                {
+                    if (_currentRepairRowIndex < dataGridViewRepair.Rows.Count)
+                    {
+                        dataGridViewRepair.ClearSelection();
+                        dataGridViewRepair.Rows[_currentRepairRowIndex].Selected = true;
+                        dataGridViewRepair.CurrentCell = dataGridViewRepair.Rows[_currentRepairRowIndex].Cells["Name"];
+                    }
+                }
+                finally
+                {
+                    _isProgrammaticallySelectingRepairRow = false;
+                }
+            }
+        }
+
         private void DataGridViewRepair_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
                 string columnName = dataGridViewRepair.Columns[e.ColumnIndex].Name;
-                
-                // Handle Action button click
+
+                // Handle Action button click (อนุญาตให้กดแก้ไขทุก row ได้)
                 if (columnName == "Action")
                 {
                     ShowRepairEditDialog(e.RowIndex);
@@ -3871,7 +4025,7 @@ namespace MultiRecord
             }
         }
 
-        private void ShowRepairEditDialog(int rowIndex)
+        private async void ShowRepairEditDialog(int rowIndex)
         {
             try
             {
@@ -3879,139 +4033,56 @@ namespace MultiRecord
                     return;
 
                 var dataRow = _repairRecordsTable.Rows[rowIndex];
-                
-                // ดึงข้อมูลปัจจุบัน
                 string name = dataRow["Name"]?.ToString() ?? "";
                 string function = dataRow["Function"]?.ToString() ?? "";
-                string refValue = dataRow["RefValue"]?.ToString() ?? "";
-                string currentValue = dataRow["Value"]?.ToString() ?? "-";
-                decimal currentRawValue = dataRow["RawValue"] != DBNull.Value ? Convert.ToDecimal(dataRow["RawValue"]) : 0;
-                
-                // สร้าง Edit Dialog
-                using (var editForm = new Form())
+
+                // เข้า Edit Mode — ไม่เปิด dialog แต่ใช้ Ctrl+Q เพื่อใส่ค่าจากเครื่องวัดเท่านั้น
+                _isRepairEditMode = true;
+                _repairEditRowIndex = rowIndex;
+
+                // เลือก row ที่จะแก้ไข (bypass sequential enforcement)
+                _isProgrammaticallySelectingRepairRow = true;
+                try
                 {
-                    editForm.Text = $"แก้ไขค่าวัด - {name}";
-                    editForm.Size = new Size(450, 250);
-                    editForm.StartPosition = FormStartPosition.CenterParent;
-                    editForm.BackColor = Color.FromArgb(45, 45, 48);
-                    editForm.ForeColor = Color.White;
-                    editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
-                    editForm.MaximizeBox = false;
-                    editForm.MinimizeBox = false;
-
-                    // Labels
-                    var lblName = new Label 
-                    { 
-                        Text = $"จุดวัด: {name}", 
-                        Location = new Point(20, 20), 
-                        Size = new Size(400, 25),
-                        ForeColor = Color.LightGray
-                    };
-                    
-                    var lblFunction = new Label 
-                    { 
-                        Text = $"Function: {function}", 
-                        Location = new Point(20, 45), 
-                        Size = new Size(400, 25),
-                        ForeColor = Color.LightGray
-                    };
-                    
-                    var lblRefValue = new Label 
-                    { 
-                        Text = $"ค่าอ้างอิง: {refValue}", 
-                        Location = new Point(20, 70), 
-                        Size = new Size(400, 25),
-                        ForeColor = Color.LightGray
-                    };
-                    
-                    var lblValue = new Label 
-                    { 
-                        Text = "ค่าใหม่:", 
-                        Location = new Point(20, 100), 
-                        Size = new Size(80, 25),
-                        ForeColor = Color.White
-                    };
-
-                    // TextBox สำหรับกรอกค่าใหม่
-                    var txtValue = new TextBox 
-                    { 
-                        Location = new Point(110, 98), 
-                        Size = new Size(300, 25),
-                        BackColor = Color.FromArgb(60, 60, 60),
-                        ForeColor = Color.White,
-                        BorderStyle = BorderStyle.FixedSingle
-                    };
-                    
-                    // ใส่ค่าเดิมลงไป (แปลงจาก display format เป็นค่าดิบ)
-                    if (currentRawValue == -1000000.0m)
-                    {
-                        txtValue.Text = "OVERLOAD";
-                    }
-                    else if (currentValue != "-")
-                    {
-                        txtValue.Text = GetRawValueFromRepairDisplay(currentValue);
-                    }
-
-                    // Buttons
-                    var btnOK = new Button 
-                    { 
-                        Text = "บันทึก", 
-                        Location = new Point(200, 150), 
-                        Size = new Size(100, 35),
-                        BackColor = Color.FromArgb(0, 122, 204),
-                        ForeColor = Color.White,
-                        FlatStyle = FlatStyle.Flat
-                    };
-                    
-                    var btnCancel = new Button 
-                    { 
-                        Text = "ยกเลิก", 
-                        Location = new Point(310, 150), 
-                        Size = new Size(100, 35),
-                        BackColor = Color.FromArgb(80, 80, 80),
-                        ForeColor = Color.White,
-                        FlatStyle = FlatStyle.Flat
-                    };
-                    
-                    btnOK.Click += (s, args) => 
-                    {
-                        string newValue = txtValue.Text.Trim();
-                        
-                        // Validate input
-                        if (string.IsNullOrEmpty(newValue))
-                        {
-                            MessageBox.Show("กรุณากรอกค่า", "ข้อผิดพลาด", 
-                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            return;
-                        }
-                        
-                        // Update the repair record
-                        UpdateRepairRecord(rowIndex, newValue, function);
-                        editForm.DialogResult = DialogResult.OK;
-                        editForm.Close();
-                    };
-                    
-                    btnCancel.Click += (s, args) => 
-                    {
-                        editForm.DialogResult = DialogResult.Cancel;
-                        editForm.Close();
-                    };
-                    
-                    // Add controls
-                    editForm.Controls.AddRange(new Control[] { 
-                        lblName, lblFunction, lblRefValue, lblValue, txtValue, btnOK, btnCancel 
-                    });
-                    
-                    // Set focus and show dialog
-                    txtValue.Focus();
-                    txtValue.SelectAll();
-                    editForm.ShowDialog(this);
+                    dataGridViewRepair.ClearSelection();
+                    dataGridViewRepair.Rows[rowIndex].Selected = true;
+                    dataGridViewRepair.CurrentCell = dataGridViewRepair.Rows[rowIndex].Cells["Name"];
+                    dataGridViewRepair.FirstDisplayedScrollingRowIndex = rowIndex;
                 }
+                finally
+                {
+                    _isProgrammaticallySelectingRepairRow = false;
+                }
+
+                // เปลี่ยน DMM function ให้ตรงกับ row ที่จะแก้ไข
+                if (!string.IsNullOrEmpty(function) &&
+                    Enum.TryParse<MeasurementFunction>(function, out var func))
+                {
+                    if (func != _currentFunction && _dmm != null && _dmm.IsConnected)
+                    {
+                        await SetActiveMeasurementAsync(func, null);
+                        UpdateRepairParameterControls(func);
+                    }
+                }
+
+                // Refresh สี row ให้เป็นสี Edit Mode (สีส้ม/เหลือง)
+                dataGridViewRepair.Invalidate();
+
+                // แสดง Edit Mode indicator
+                if (labelRepairEditMode != null)
+                {
+                    labelRepairEditMode.Text = $"✏ Edit Mode: {name} | Ctrl+Q=บันทึก, ESC=ยกเลิก";
+                    labelRepairEditMode.Visible = true;
+                }
+
+                LogActivity($"เข้า Edit Mode: จุดวัด {dataRow["No"]} - {name} | กด Ctrl+Q เพื่อบันทึกค่าใหม่ หรือ ESC เพื่อยกเลิก");
             }
             catch (Exception ex)
             {
-                LogActivity($"เกิดข้อผิดพลาดในการแก้ไขค่าวัด: {ex.Message}", true);
-                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error", 
+                _isRepairEditMode = false;
+                _repairEditRowIndex = -1;
+                LogActivity($"เกิดข้อผิดพลาดในการเข้า Edit Mode: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -4269,6 +4340,23 @@ namespace MultiRecord
 
         private void DataGridViewRepair_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
+            // Highlight row ปัจจุบัน (row ที่กำลังจะวัด)
+            if (e.RowIndex >= 0)
+            {
+                if (_isRepairEditMode && e.RowIndex == _repairEditRowIndex)
+                {
+                    // Edit mode: สีส้ม/เหลือง
+                    e.CellStyle.BackColor = Color.FromArgb(100, 80, 20);
+                    e.CellStyle.ForeColor = Color.Yellow;
+                }
+                else if (e.RowIndex == _currentRepairRowIndex)
+                {
+                    // Row ปัจจุบัน: สีน้ำเงินเข้ม
+                    e.CellStyle.BackColor = Color.FromArgb(60, 80, 120);
+                    e.CellStyle.ForeColor = Color.White;
+                }
+            }
+
             // จัดการ Value column - แปลง RawValue = -1000000.0 เป็น "OVERLOAD" และ format ค่า 2W
             if (dataGridViewRepair.Columns[e.ColumnIndex].Name == "Value")
             {
@@ -4366,19 +4454,11 @@ namespace MultiRecord
                 return;
             }
 
-            // ตรวจสอบว่ามีการเลือกแถวใน DataGridView หรือไม่
-            // ใช้ CurrentRow แทน SelectedRows เพื่อให้แน่ใจว่ามีแถวที่ active อยู่
-            if (dataGridViewRepair.CurrentRow == null)
+            // ตรวจสอบว่ามี row ที่จะบันทึก
+            int targetRowIndex = _isRepairEditMode ? _repairEditRowIndex : _currentRepairRowIndex;
+            if (targetRowIndex < 0 || targetRowIndex >= dataGridViewRepair.Rows.Count)
             {
-                MessageBox.Show("กรุณาเลือกอย่างน้อย 1 แถวก่อนบันทึก", "ไม่มีแถวที่เลือก",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // ตรวจสอบว่าเลือกมากกว่า 1 แถวหรือไม่
-            if (dataGridViewRepair.SelectedRows.Count > 1)
-            {
-                MessageBox.Show("กรุณาเลือกเพียง 1 แถวต่อการบันทึก", "เลือกมากเกินไป",
+                MessageBox.Show("ไม่มีแถวที่จะบันทึก กรุณาเลือก Session ก่อน", "ไม่มีแถวที่เลือก",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -4396,8 +4476,8 @@ namespace MultiRecord
                     measuredValue = (decimal)_lastReadingValue;
                 }
 
-                // หาแถวที่เลือก - ใช้ CurrentRow
-                DataGridViewRow selectedGridRow = dataGridViewRepair.CurrentRow;
+                // หาแถวที่จะบันทึก — ใช้ targetRowIndex
+                DataGridViewRow selectedGridRow = dataGridViewRepair.Rows[targetRowIndex];
                 DataRowView rowView = selectedGridRow.DataBoundItem as DataRowView;
                 if (rowView == null)
                 {
@@ -4436,7 +4516,9 @@ namespace MultiRecord
                 }
                 else
                 {
-                    status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage);
+                    decimal? upperLimit = selectedRow["UpperLimit"] != DBNull.Value ? Convert.ToDecimal(selectedRow["UpperLimit"]) : (decimal?)null;
+                    decimal? lowerLimit = selectedRow["LowerLimit"] != DBNull.Value ? Convert.ToDecimal(selectedRow["LowerLimit"]) : (decimal?)null;
+                    status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage, upperLimit, lowerLimit);
                     isPass = status == "PASS";
                 }
 
@@ -4470,8 +4552,17 @@ namespace MultiRecord
                         SoundUtil.Over();
                     }
 
+                    // ถ้าอยู่ใน Edit Mode → ออก Edit Mode แล้วกลับไป sequential row
+                    if (_isRepairEditMode)
+                    {
+                        _isRepairEditMode = false;
+                        _repairEditRowIndex = -1;
+                        dataGridViewRepair.Invalidate();
+                        LogActivity("ออกจาก Edit Mode หลังบันทึกค่าแก้ไขสำเร็จ");
+                    }
+
                     // เลื่อนไป row ถัดไป
-                    MoveToNextRepairRow();
+                    await MoveToNextRepairRowAsync();
                 }
                 else
                 {
@@ -4676,11 +4767,55 @@ namespace MultiRecord
             LogActivity("ยกเลิกการเลือกทั้งหมดใน Repair Tab");
         }
 
-        private void ButtonClearRepair_Click(object sender, EventArgs e)
+        private async void ButtonClearRepair_Click(object sender, EventArgs e)
         {
-            // TODO: Implement clear functionality
-            MessageBox.Show("Clear functionality coming soon", "Info", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (_currentRepairSessionId == -1)
+            {
+                MessageBox.Show("กรุณาเลือก Repair Session ก่อน", "ข้อมูลไม่ครบ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // ออก Edit Mode ก่อน (ถ้ามี)
+            if (_isRepairEditMode)
+            {
+                _isRepairEditMode = false;
+                _repairEditRowIndex = -1;
+            }
+
+            var confirmResult = MessageBox.Show(
+                "ต้องการล้างค่าวัดทั้งหมดของรอบนี้?\n\nค่าวัดทั้งหมดจะถูก reset เป็น '-'",
+                "ยืนยันการล้างข้อมูล",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            try
+            {
+                bool success = await _mysqlManager.ClearRepairSessionMeasurementsAsync(_currentRepairSessionId);
+                if (success)
+                {
+                    // โหลดข้อมูลใหม่ (จะ reset ทุก Value เป็น "-" และ Status เป็น "-")
+                    await LoadRepairMeasurementsBySession(_currentRepairSessionId);
+
+                    SoundUtil.Delete();
+                    LogActivity("ล้างค่าวัดทั้งหมดของรอบนี้สำเร็จ");
+                    MessageBox.Show("ล้างข้อมูลสำเร็จ", "สำเร็จ",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("ล้างข้อมูลล้มเหลว", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการล้างข้อมูล: {ex.Message}", true);
+                MessageBox.Show($"เกิดข้อผิดพลาด: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void ButtonChangeModelRepair_Click(object sender, EventArgs e)
@@ -4975,6 +5110,8 @@ namespace MultiRecord
                     row["TolerancePercentage"] = measurement.TolerancePercentage ?? 0m;
                     row["SystemInfo"] = measurement.SystemInfo ?? "";
                     row["MeasurementId"] = measurement.Id;
+                    row["UpperLimit"] = measurement.UpperLimit.HasValue ? (object)measurement.UpperLimit.Value : DBNull.Value;
+                    row["LowerLimit"] = measurement.LowerLimit.HasValue ? (object)measurement.LowerLimit.Value : DBNull.Value;
                     
                     // คำนวณ Status โดยใช้ ActualMeasuredValue ถ้ามี
                     if (measurement.ActualMeasuredValue.HasValue)
@@ -4990,7 +5127,9 @@ namespace MultiRecord
                                 measurement.ActualMeasuredValue.Value,
                                 measurement.MeasurementValue,
                                 measurement.ToleranceEnabled,
-                                measurement.TolerancePercentage ?? 0m
+                                measurement.TolerancePercentage ?? 0m,
+                                measurement.UpperLimit,
+                                measurement.LowerLimit
                             );
                         }
                     }
@@ -5003,6 +5142,9 @@ namespace MultiRecord
                 }
 
                 LogActivity($"โหลด Repair Measurements สำเร็จ ({_currentRepairMeasurements.Count} measurements)");
+
+                // ตั้ง row เริ่มต้น (row แรกที่ยังไม่ได้วัด) + เปลี่ยน Function อัตโนมัติ
+                await MoveToNextRepairRowAsync();
             }
             catch (Exception ex)
             {
@@ -5011,47 +5153,70 @@ namespace MultiRecord
         }
 
         /// <summary>
-        /// เลื่อนไป row ถัดไปที่ยังไม่ได้วัด
+        /// เลื่อนไป row ถัดไปที่ยังไม่ได้วัด (บังคับตามลำดับ) + เปลี่ยน Function อัตโนมัติ
         /// </summary>
-        private void MoveToNextRepairRow()
+        private async Task MoveToNextRepairRowAsync()
         {
             try
             {
+                _isProgrammaticallySelectingRepairRow = true;
+
                 // หา row ถัดไปที่ยังไม่ได้วัด (Value = "-")
                 for (int i = 0; i < dataGridViewRepair.Rows.Count; i++)
                 {
                     var row = dataGridViewRepair.Rows[i];
                     string value = row.Cells["Value"].Value?.ToString() ?? "";
-                    
+
                     if (value == "-" || value == "<->") // ยังไม่ได้วัด
                     {
                         // เลือก row นี้
                         dataGridViewRepair.ClearSelection();
                         row.Selected = true;
-                        
+                        _currentRepairRowIndex = i;
+
                         // เลื่อน view ไปที่ row นี้
                         dataGridViewRepair.FirstDisplayedScrollingRowIndex = i;
                         dataGridViewRepair.CurrentCell = row.Cells["Name"];
-                        
+
                         LogActivity($"เลื่อนไป row ถัดไป: {row.Cells["No"].Value} - {row.Cells["Name"].Value}");
+
+                        // เปลี่ยน Function เครื่องวัดอัตโนมัติตามจุดวัดลำดับปัจจุบัน
+                        string expectedFunction = row.Cells["Function"].Value?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(expectedFunction) &&
+                            Enum.TryParse<MeasurementFunction>(expectedFunction, out var func))
+                        {
+                            if (func != _currentFunction && _dmm != null && _dmm.IsConnected)
+                            {
+                                await SetActiveMeasurementAsync(func, null);
+                                // อัปเดต Range/Speed controls สำหรับ Repair tab
+                                UpdateRepairParameterControls(func);
+                            }
+                        }
+
                         return;
                     }
                 }
-                
-                // ถ้าไม่เจอ row ที่ยังไม่ได้วัด
-                LogActivity("ไม่พบ row ที่ยังไม่ได้วัด");
+
+                // ถ้าไม่เจอ row ที่ยังไม่ได้วัด — วัดครบทุกจุดแล้ว
+                _currentRepairRowIndex = -1;
+                LogActivity("วัดครบทุกจุดแล้ว ไม่พบ row ที่ยังไม่ได้วัด");
             }
             catch (Exception ex)
             {
                 LogActivity($"เกิดข้อผิดพลาดในการเลื่อนไป row ถัดไป: {ex.Message}", true);
+            }
+            finally
+            {
+                _isProgrammaticallySelectingRepairRow = false;
             }
         }
 
         /// <summary>
         /// คำนวณ Status (PASS/FAIL) สำหรับ Repair Measurement
         /// </summary>
-        private string CalculateRepairStatus(decimal actualValue, decimal refValue, 
-            bool tolEnabled, decimal tolPercentage)
+        private string CalculateRepairStatus(decimal actualValue, decimal refValue,
+            bool tolEnabled, decimal tolPercentage,
+            decimal? upperLimit = null, decimal? lowerLimit = null)
         {
             // ถ้าไม่ได้เปิด tolerance ให้ผ่านทันที
             if (!tolEnabled)
@@ -5059,7 +5224,13 @@ namespace MultiRecord
                 return "PASS";
             }
 
-            // คำนวณ tolerance range จาก reference value
+            // ใช้ UpperLimit/LowerLimit จาก R&D ถ้ามี
+            if (upperLimit.HasValue && lowerLimit.HasValue)
+            {
+                return (actualValue >= lowerLimit.Value && actualValue <= upperLimit.Value) ? "PASS" : "FAIL";
+            }
+
+            // Fallback: คำนวณ tolerance range จาก reference value
             decimal toleranceRange = Math.Abs(refValue * tolPercentage / 100m);
             decimal calculatedUpper = refValue + toleranceRange;
             decimal calculatedLower = refValue - toleranceRange;
@@ -5073,6 +5244,139 @@ namespace MultiRecord
             {
                 return "FAIL";
             }
+        }
+
+        /// <summary>
+        /// Undo ค่าวัดล่าสุดใน Repair tab (Ctrl+Q double press)
+        /// </summary>
+        private async Task UndoLastRepairRecordAsync()
+        {
+            try
+            {
+                if (_currentRepairSessionId == -1 || _repairRecordsTable.Rows.Count == 0)
+                {
+                    LogActivity("ไม่มีข้อมูลให้ย้อนกลับ");
+                    return;
+                }
+
+                // หา row ล่าสุดที่มีค่าวัดแล้ว (iterate จากท้ายมา)
+                for (int i = _repairRecordsTable.Rows.Count - 1; i >= 0; i--)
+                {
+                    DataRow dataRow = _repairRecordsTable.Rows[i];
+                    string value = dataRow["Value"]?.ToString() ?? "";
+
+                    if (value != "-" && value != "<->") // มีค่าวัดแล้ว
+                    {
+                        int measurementId = Convert.ToInt32(dataRow["MeasurementId"]);
+                        string measurementName = dataRow["Name"]?.ToString() ?? "";
+
+                        // ล้างค่าใน DB
+                        bool success = await _mysqlManager.ClearRepairMeasurementValueAsync(measurementId);
+                        if (success)
+                        {
+                            // ล้างค่าใน DataTable
+                            dataRow["RawValue"] = DBNull.Value;
+                            dataRow["Value"] = "-";
+                            dataRow["Status"] = "-";
+
+                            LogActivity($"ย้อนกลับค่าวัดจุด: {dataRow["No"]} - {measurementName}");
+                            SoundUtil.Delete();
+
+                            // เลื่อนไป row ที่เพิ่งล้าง
+                            await MoveToNextRepairRowAsync();
+                        }
+                        else
+                        {
+                            LogActivity("ย้อนกลับล้มเหลว: ไม่สามารถอัปเดต Database", true);
+                        }
+                        return;
+                    }
+                }
+
+                LogActivity("ไม่พบ row ที่มีค่าวัดให้ย้อนกลับ");
+            }
+            catch (Exception ex)
+            {
+                LogActivity($"เกิดข้อผิดพลาดในการย้อนกลับ: {ex.Message}", true);
+            }
+        }
+
+        /// <summary>
+        /// อัปเดต Range/Speed controls สำหรับ Repair tab ตาม Function ปัจจุบัน
+        /// </summary>
+        private void UpdateRepairParameterControls(MeasurementFunction func)
+        {
+            if (comboBoxRepairRange == null || comboBoxRepairSpeed == null) return;
+
+            _isProgrammaticallyChangingParams = true;
+            try
+            {
+                // อัปเดต Range options
+                var rangeOptions = GetRangeOptions(func);
+                comboBoxRepairRange.DataSource = null;
+                comboBoxRepairRange.Items.Clear();
+
+                if (rangeOptions.Count > 0)
+                {
+                    comboBoxRepairRange.DataSource = new BindingSource(rangeOptions, null);
+                    comboBoxRepairRange.DisplayMember = "Value";
+                    comboBoxRepairRange.ValueMember = "Key";
+                    comboBoxRepairRange.SelectedIndex = 0; // Auto
+                    comboBoxRepairRange.Visible = true;
+                    labelRepairRange.Visible = true;
+                }
+                else
+                {
+                    comboBoxRepairRange.Visible = false;
+                    labelRepairRange.Visible = false;
+                }
+
+                // อัปเดต Speed options
+                var speedOptions = GetSpeedOptions(func);
+                comboBoxRepairSpeed.DataSource = null;
+                comboBoxRepairSpeed.Items.Clear();
+
+                if (speedOptions.Count > 0)
+                {
+                    comboBoxRepairSpeed.DataSource = new BindingSource(speedOptions, null);
+                    comboBoxRepairSpeed.DisplayMember = "Value";
+                    comboBoxRepairSpeed.ValueMember = "Key";
+                    comboBoxRepairSpeed.SelectedIndex = 0; // Fast
+                    comboBoxRepairSpeed.Visible = true;
+                    labelRepairSpeed.Visible = true;
+                }
+                else
+                {
+                    comboBoxRepairSpeed.Visible = false;
+                    labelRepairSpeed.Visible = false;
+                }
+            }
+            finally
+            {
+                _isProgrammaticallyChangingParams = false;
+            }
+        }
+
+        /// <summary>
+        /// ออกจาก Repair Edit Mode และกลับไป sequential row
+        /// </summary>
+        private async void ExitRepairEditMode()
+        {
+            _isRepairEditMode = false;
+            _repairEditRowIndex = -1;
+
+            // ซ่อน Edit Mode label
+            if (labelRepairEditMode != null)
+            {
+                labelRepairEditMode.Text = "";
+                labelRepairEditMode.Visible = false;
+            }
+
+            dataGridViewRepair.Invalidate(); // refresh สีทั้งหมด
+            LogActivity("ออกจาก Edit Mode");
+
+            // กลับไปที่ row ปัจจุบันตามลำดับ
+            await MoveToNextRepairRowAsync();
         }
 
         #endregion
@@ -5168,8 +5472,16 @@ namespace MultiRecord
                     }
                     else if (isRepairTab)
                     {
-                        // TODO: เพิ่ม function ลบข้อมูล Repair ถ้ามี
-                        LogActivity("ฟีเจอร์ลบข้อมูล Repair ยังไม่รองรับ", true);
+                        if (_isRepairEditMode)
+                        {
+                            // Double Ctrl+Q ขณะ Edit Mode = ยกเลิก Edit Mode
+                            ExitRepairEditMode();
+                        }
+                        else
+                        {
+                            // Double Ctrl+Q = ย้อนกลับค่าวัดล่าสุด
+                            await UndoLastRepairRecordAsync();
+                        }
                     }
                 }
                 else
@@ -5201,6 +5513,13 @@ namespace MultiRecord
                     }
                 }
 
+                e.Handled = true;
+            }
+
+            // ESC key — ยกเลิก Edit Mode ใน Repair tab
+            if (e.KeyCode == Keys.Escape && _isRepairEditMode)
+            {
+                ExitRepairEditMode();
                 e.Handled = true;
             }
         }
