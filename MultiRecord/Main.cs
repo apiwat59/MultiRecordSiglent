@@ -759,6 +759,25 @@ namespace MultiRecord
             }
         }
 
+        private Button GetFunctionButton(MeasurementFunction func)
+        {
+            switch (func)
+            {
+                case MeasurementFunction.VoltageDC:   return buttonMeasureVDC;
+                case MeasurementFunction.VoltageAC:   return buttonMeasureVAC;
+                case MeasurementFunction.CurrentDC:   return buttonMeasureIDC;
+                case MeasurementFunction.CurrentAC:   return buttonMeasureIAC;
+                case MeasurementFunction.Resistance2W: return buttonMeasureRes2W;
+                case MeasurementFunction.Resistance4W: return buttonMeasureRes4W;
+                case MeasurementFunction.Capacitance: return buttonMeasureCap;
+                case MeasurementFunction.Frequency:   return null; // ไม่มีปุ่มใน UI
+                case MeasurementFunction.Temperature: return null; // ไม่มีปุ่มใน UI
+                case MeasurementFunction.Diode:       return buttonMeasureDiode;
+                case MeasurementFunction.Continuous:  return buttonContinus;
+                default: return null;
+            }
+        }
+
         private void ClearDisplayReadings()
         {
             lblMeasurementType.Text = "NO FUNCTION";
@@ -3691,12 +3710,14 @@ namespace MultiRecord
             _repairRecordsTable.Columns.Add("RawValue", typeof(decimal)); // ค่าดิบที่วัดได้จริง (สำหรับ export และคำนวณ) - รองรับ -1000000.0 สำหรับ OVERLOAD
             _repairRecordsTable.Columns.Add("Value", typeof(string)); // ค่าที่วัดได้ (ต้องวัดใหม่) - เปลี่ยนเป็น string เพื่อรองรับ "-" และ "<->"
             _repairRecordsTable.Columns.Add("Status", typeof(string)); // PASS/FAIL status
+            _repairRecordsTable.Columns.Add("Tolerance", typeof(string)); // แสดง tolerance range
             _repairRecordsTable.Columns.Add("TolEnabled", typeof(bool)); // Tolerance Enable/Disable
             _repairRecordsTable.Columns.Add("TolerancePercentage", typeof(decimal)); // เก็บ tolerance % ไว้คำนวณ
             _repairRecordsTable.Columns.Add("SystemInfo", typeof(string)); // System Info
             _repairRecordsTable.Columns.Add("MeasurementId", typeof(int)); // เก็บ measurement ID
             _repairRecordsTable.Columns.Add("UpperLimit", typeof(decimal)); // R&D Upper Limit
             _repairRecordsTable.Columns.Add("LowerLimit", typeof(decimal)); // R&D Lower Limit
+            _repairRecordsTable.Columns.Add("ToleranceType", typeof(string)); // 'percent' | 'absolute'
 
             dataGridViewRepair.DataSource = _repairRecordsTable;
 
@@ -3737,8 +3758,14 @@ namespace MultiRecord
             dataGridViewRepair.Columns["Status"].HeaderText = "สถานะ";
             dataGridViewRepair.Columns["Status"].ReadOnly = true;
             dataGridViewRepair.Columns["Status"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            
-            
+
+            dataGridViewRepair.Columns["Tolerance"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewRepair.Columns["Tolerance"].HeaderText = "Tolerance";
+            dataGridViewRepair.Columns["Tolerance"].ReadOnly = true;
+            dataGridViewRepair.Columns["Tolerance"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            // วาง Tolerance ไว้หลัง RefValue
+            dataGridViewRepair.Columns["Tolerance"].DisplayIndex = dataGridViewRepair.Columns["RefValue"].DisplayIndex + 1;
+
             // ซ่อนคอลัมน์ที่ไม่ต้องแสดง
             dataGridViewRepair.Columns["Select"].Visible = false; // ใช้ row selection แทน checkbox
             dataGridViewRepair.Columns["RawValue"].Visible = false; // ซ่อนค่าดิบ (ใช้สำหรับ export และคำนวณเท่านั้น)
@@ -3748,6 +3775,7 @@ namespace MultiRecord
             dataGridViewRepair.Columns["MeasurementId"].Visible = false;
             dataGridViewRepair.Columns["UpperLimit"].Visible = false;
             dataGridViewRepair.Columns["LowerLimit"].Visible = false;
+            dataGridViewRepair.Columns["ToleranceType"].Visible = false;
 
             // ตั้งค่า DataGridView
             dataGridViewRepair.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -3911,9 +3939,18 @@ namespace MultiRecord
                         _repairSerialId = dialog.SelectedSerialId;
                         _repairSerialNumber = dialog.SelectedSerialNumber;
                         _repairQwid = dialog.SelectedQwid;
-                        
+
+                        // รีเซ็ต edit state เมื่อเปลี่ยนอุปกรณ์
+                        _isRepairEditMode = false;
+                        _repairEditRowIndex = -1;
+                        if (labelRepairEditMode != null)
+                        {
+                            labelRepairEditMode.Text = "";
+                            labelRepairEditMode.Visible = false;
+                        }
+
                         LogActivity($"เลือก QWID: {_repairQwid}, Serial: {_repairSerialNumber}");
-                        
+
                         // โหลดข้อมูล measurements
                         await LoadRepairRecordsFromDatabase();
                         
@@ -4017,9 +4054,17 @@ namespace MultiRecord
             {
                 string columnName = dataGridViewRepair.Columns[e.ColumnIndex].Name;
 
-                // Handle Action button click (อนุญาตให้กดแก้ไขทุก row ได้)
+                // Handle Action button click (อนุญาตเฉพาะเมื่อวัดครบทุกจุดแล้ว)
                 if (columnName == "Action")
                 {
+                    if (_currentRepairRowIndex != -1)
+                    {
+                        MessageBox.Show(
+                            $"กรุณาวัดค่าให้ครบทุกจุดวัดก่อน (กำลังวัด row {_currentRepairRowIndex + 1})\n\n" +
+                            "หากต้องการย้อนกลับ ใช้ Ctrl+Q สองครั้ง",
+                            "ยังวัดไม่ครบ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
                     ShowRepairEditDialog(e.RowIndex);
                 }
             }
@@ -4062,6 +4107,8 @@ namespace MultiRecord
                     {
                         await SetActiveMeasurementAsync(func, null);
                         UpdateRepairParameterControls(func);
+                        var btn = GetFunctionButton(func);
+                        if (btn != null) UpdateButtonStyles(btn);
                     }
                 }
 
@@ -4492,6 +4539,7 @@ namespace MultiRecord
                 decimal refValue = Convert.ToDecimal(selectedRow["RefValue"]);
                 bool tolEnabled = Convert.ToBoolean(selectedRow["TolEnabled"]);
                 decimal tolPercentage = Convert.ToDecimal(selectedRow["TolerancePercentage"]);
+                string tolType = selectedRow["ToleranceType"]?.ToString() ?? "percent";
                 string expectedFunction = selectedRow["Function"].ToString();
 
                 // ตรวจสอบว่า function ที่เลือกตรงกับ row ที่เลือกหรือไม่
@@ -4518,7 +4566,7 @@ namespace MultiRecord
                 {
                     decimal? upperLimit = selectedRow["UpperLimit"] != DBNull.Value ? Convert.ToDecimal(selectedRow["UpperLimit"]) : (decimal?)null;
                     decimal? lowerLimit = selectedRow["LowerLimit"] != DBNull.Value ? Convert.ToDecimal(selectedRow["LowerLimit"]) : (decimal?)null;
-                    status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage, upperLimit, lowerLimit);
+                    status = CalculateRepairStatus(measuredValue, refValue, tolEnabled, tolPercentage, tolType, upperLimit, lowerLimit);
                     isPass = status == "PASS";
                 }
 
@@ -5108,11 +5156,41 @@ namespace MultiRecord
                     
                     row["TolEnabled"] = measurement.ToleranceEnabled;
                     row["TolerancePercentage"] = measurement.TolerancePercentage ?? 0m;
+                    row["ToleranceType"] = measurement.ToleranceType ?? "percent";
+
+                    // คำนวณ Tolerance Range สำหรับแสดง (แยก percent vs absolute)
+                    bool hasExplicitLimits = measurement.UpperLimit.HasValue && measurement.LowerLimit.HasValue &&
+                                            !(measurement.UpperLimit.Value == 0m && measurement.LowerLimit.Value == 0m);
+                    if (!measurement.ToleranceEnabled)
+                    {
+                        row["Tolerance"] = "-";
+                    }
+                    else if (hasExplicitLimits)
+                    {
+                        if (measurement.ToleranceType == "absolute")
+                        {
+                            row["Tolerance"] = $"{measurement.LowerLimit.Value:N4} ~ {measurement.UpperLimit.Value:N4}";
+                        }
+                        else // percent
+                        {
+                            row["Tolerance"] = measurement.UpperLimit.Value == measurement.LowerLimit.Value
+                                ? $"±{measurement.UpperLimit.Value:N1}%"
+                                : $"-{measurement.LowerLimit.Value:N1}% ~ +{measurement.UpperLimit.Value:N1}%";
+                        }
+                    }
+                    else if (measurement.TolerancePercentage.HasValue && measurement.TolerancePercentage.Value > 0)
+                    {
+                        row["Tolerance"] = $"±{measurement.TolerancePercentage.Value:N1}%";
+                    }
+                    else
+                    {
+                        row["Tolerance"] = "-";
+                    }
                     row["SystemInfo"] = measurement.SystemInfo ?? "";
                     row["MeasurementId"] = measurement.Id;
                     row["UpperLimit"] = measurement.UpperLimit.HasValue ? (object)measurement.UpperLimit.Value : DBNull.Value;
                     row["LowerLimit"] = measurement.LowerLimit.HasValue ? (object)measurement.LowerLimit.Value : DBNull.Value;
-                    
+
                     // คำนวณ Status โดยใช้ ActualMeasuredValue ถ้ามี
                     if (measurement.ActualMeasuredValue.HasValue)
                     {
@@ -5128,6 +5206,7 @@ namespace MultiRecord
                                 measurement.MeasurementValue,
                                 measurement.ToleranceEnabled,
                                 measurement.TolerancePercentage ?? 0m,
+                                measurement.ToleranceType ?? "percent",
                                 measurement.UpperLimit,
                                 measurement.LowerLimit
                             );
@@ -5190,6 +5269,8 @@ namespace MultiRecord
                                 await SetActiveMeasurementAsync(func, null);
                                 // อัปเดต Range/Speed controls สำหรับ Repair tab
                                 UpdateRepairParameterControls(func);
+                                var btn = GetFunctionButton(func);
+                                if (btn != null) UpdateButtonStyles(btn);
                             }
                         }
 
@@ -5215,7 +5296,7 @@ namespace MultiRecord
         /// คำนวณ Status (PASS/FAIL) สำหรับ Repair Measurement
         /// </summary>
         private string CalculateRepairStatus(decimal actualValue, decimal refValue,
-            bool tolEnabled, decimal tolPercentage,
+            bool tolEnabled, decimal tolPercentage, string toleranceType = "percent",
             decimal? upperLimit = null, decimal? lowerLimit = null)
         {
             // ถ้าไม่ได้เปิด tolerance ให้ผ่านทันที
@@ -5224,26 +5305,30 @@ namespace MultiRecord
                 return "PASS";
             }
 
-            // ใช้ UpperLimit/LowerLimit จาก R&D ถ้ามี
-            if (upperLimit.HasValue && lowerLimit.HasValue)
+            // ใช้ UpperLimit/LowerLimit จาก R&D ถ้ามี (ข้ามถ้าทั้งคู่เป็น 0 = ไม่ได้กำหนด)
+            if (upperLimit.HasValue && lowerLimit.HasValue &&
+                !(upperLimit.Value == 0m && lowerLimit.Value == 0m))
             {
-                return (actualValue >= lowerLimit.Value && actualValue <= upperLimit.Value) ? "PASS" : "FAIL";
+                if (toleranceType == "absolute")
+                {
+                    // absolute: ใช้ค่า upper/lower โดยตรง
+                    return (actualValue >= lowerLimit.Value && actualValue <= upperLimit.Value) ? "PASS" : "FAIL";
+                }
+                else // "percent"
+                {
+                    // percent: upper/lower เป็น % → คำนวณ absolute bounds จาก ref
+                    decimal absUpper = refValue + Math.Abs(refValue * upperLimit.Value / 100m);
+                    decimal absLower = refValue - Math.Abs(refValue * lowerLimit.Value / 100m);
+                    return (actualValue >= absLower && actualValue <= absUpper) ? "PASS" : "FAIL";
+                }
             }
 
-            // Fallback: คำนวณ tolerance range จาก reference value
+            // Fallback: คำนวณ tolerance range จาก tolerance_percentage (เป็น % เสมอ)
             decimal toleranceRange = Math.Abs(refValue * tolPercentage / 100m);
             decimal calculatedUpper = refValue + toleranceRange;
             decimal calculatedLower = refValue - toleranceRange;
 
-            // เช็คว่าอยู่ใน tolerance range หรือไม่
-            if (actualValue >= calculatedLower && actualValue <= calculatedUpper)
-            {
-                return "PASS";
-            }
-            else
-            {
-                return "FAIL";
-            }
+            return (actualValue >= calculatedLower && actualValue <= calculatedUpper) ? "PASS" : "FAIL";
         }
 
         /// <summary>
